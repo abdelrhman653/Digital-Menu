@@ -27,28 +27,26 @@
             padding: 15px 20px;
             text-align: center;
         }
-        header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        header h1 { font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        .container { max-width: 600px; margin: 15px auto; padding: 0 10px; }
+        .container { max-width: 500px; margin: 15px auto; padding: 0 10px; }
 
         .stats-bar {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
-            overflow-x: auto;
-            padding-bottom: 5px;
         }
         .stat-card {
             background: var(--dark-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 10px 15px;
-            min-width: 120px;
+            padding: 10px;
+            flex: 1;
             text-align: center;
         }
-        .stat-card.active { border-color: var(--warning); background: rgba(255, 165, 2, 0.1); }
+        .stat-card.active { border-color: var(--warning); background: rgba(255, 165, 2, 0.08); }
         .stat-number { font-size: 18px; font-weight: 900; color: var(--warning); }
-        .stat-label { font-size: 12px; color: var(--gray); }
+        .stat-label { font-size: 11px; color: var(--gray); }
 
         .order-card {
             background: var(--dark-card);
@@ -66,11 +64,11 @@
             padding-bottom: 10px;
             margin-bottom: 10px;
         }
-        .table-title { font-size: 16px; font-weight: 700; color: var(--primary); }
-        .order-meta { font-size: 12px; color: var(--gray); }
+        .table-title { font-size: 15px; font-weight: 700; color: var(--primary); }
+        .order-meta { font-size: 11px; color: var(--gray); display: flex; align-items: center; gap: 5px; }
 
         .customer-info {
-            background: #0D1117;
+            background: var(--dark-bg);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 10px;
@@ -81,9 +79,9 @@
         .order-item-row {
             display: flex;
             justify-content: space-between;
-            padding: 6px 0;
+            padding: 5px 0;
             border-bottom: 1px dashed var(--border);
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .order-footer {
@@ -94,19 +92,32 @@
             padding-top: 10px;
             border-top: 1px solid var(--border);
         }
-        .total-price { font-weight: 700; color: var(--secondary); font-size: 15px; }
+        .total-price { font-weight: 700; color: var(--secondary); font-size: 14px; }
 
+        .status-actions {
+            display: flex;
+            gap: 6px;
+        }
         .status-btn {
-            background: var(--warning);
-            color: #000;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 10px;
+            background: var(--dark-bg);
+            color: var(--white);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 8px;
             font-weight: 700;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 11px;
         }
-        .status-btn.ready { background: var(--secondary); }
+        .status-btn.active-status {
+            background: var(--warning);
+            color: #000;
+            border-color: var(--warning);
+        }
+        .status-btn.ready-status {
+            background: var(--secondary);
+            color: #000;
+            border-color: var(--secondary);
+        }
     </style>
 </head>
 <body>
@@ -116,11 +127,11 @@
     </header>
 
     <div class="container">
-        <!-- إحصائيات سريعة -->
+        <!-- إحصائيات -->
         <div class="stats-bar">
             <div class="stat-card active">
                 <div class="stat-number" id="activeOrdersCount">0</div>
-                <div class="stat-label">نشطة / قيد التحضير</div>
+                <div class="stat-label">الطلبات النشطة</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="totalOrdersCount">0</div>
@@ -128,9 +139,9 @@
             </div>
         </div>
 
-        <!-- قائمة الطلبات الواردة -->
+        <!-- قائمة الطلبات -->
         <div id="kitchenOrdersList">
-            <!-- سيتم تحميل الطلبات هنا ديناميكياً -->
+            <!-- الطلبات تحمل هنا -->
         </div>
     </div>
 
@@ -143,53 +154,52 @@
             let container = document.getElementById('kitchenOrdersList');
             
             document.getElementById('totalOrdersCount').innerText = orders.length;
-            let activeOrders = orders.filter(o => o.status === 'قيد التحضير');
+            let activeOrders = orders.filter(o => o.status !== 'تم التسليم' && o.status !== 'ملغي');
             document.getElementById('activeOrdersCount').innerText = activeOrders.length;
 
             if (orders.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 40px;">لا توجد طلبات جديدة حالياً في المطبخ.</p>`;
+                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 40px; font-size: 13px;">لا توجد طلبات واردة حتى الآن.</p>`;
                 return;
             }
 
             let html = '';
-            // ترتيب الطلبات من الأحدث للأقدم
             orders.slice().reverse().forEach(order => {
                 let itemsHtml = '';
-                let totalPrice = 0;
-
                 order.items.forEach(item => {
-                    let itemTotal = item.price * item.qty;
-                    totalPrice += itemTotal;
                     itemsHtml += `
                         <div class="order-item-row">
                             <span>x ${item.qty} ${item.name}</span>
-                            <span style="color: var(--secondary);">${itemTotal} ج.م</span>
+                            <span style="color: var(--secondary);">${item.price * item.qty} ج.م</span>
                         </div>
                     `;
                 });
 
-                let isReady = order.status === 'جاهز';
+                let clientName = order.client ? order.client.name : 'عميل';
+                let clientPhone = order.client ? order.client.phone : '';
 
                 html += `
                     <div class="order-card">
                         <div class="order-header">
-                            <div class="table-title">ترابيزة رقم: ${order.table}</div>
-                            <div class="order-meta"><i class="fa-regular fa-clock"></i> ${order.time} | #${order.id}</div>
+                            <div class="table-title">طلب ${order.type} (${order.table})</div>
+                            <div class="order-meta"><i class="fa-regular fa-calendar"></i> ${order.date || '2026-07-28'} | <i class="fa-regular fa-clock"></i> ${order.time} | #${order.id}</div>
                         </div>
                         
                         <div class="customer-info">
-                            <div><i class="fa-solid fa-user" style="color: var(--primary);"></i> عميل صالة / ترابيزة ${order.table}</div>
+                            <div><i class="fa-solid fa-user" style="color: var(--primary);"></i> ${clientName} (${clientPhone})</div>
                         </div>
 
                         <div>
                             ${itemsHtml}
+                            <div style="font-size: 11px; color: var(--gray); margin-top: 6px;">الخدمة: ${order.serviceFee} ج.م</div>
                         </div>
 
                         <div class="order-footer">
-                            <div class="total-price">الإجمالي: ${totalPrice} ج.م</div>
-                            <button class="status-btn ${isReady ? 'ready' : ''}" onclick="toggleOrderStatus(${order.id})">
-                                ${isReady ? '<i class="fa-solid fa-check"></i> جاهز للتسليم' : '<i class="fa-solid fa-hourglass-half"></i> قيد التحضير'}
-                            </button>
+                            <div class="total-price">الإجمالي: ${order.total} ج.م</div>
+                            <div class="status-actions">
+                                <button class="status-btn ${order.status === 'قيد التحضير' ? 'active-status' : ''}" onclick="updateStatus(${order.id}, 'قيد التحضير')">تحضير</button>
+                                <button class="status-btn ${order.status === 'جاهز' ? 'ready-status' : ''}" onclick="updateStatus(${order.id}, 'جاهز')">جاهز</button>
+                                <button class="status-btn" onclick="updateStatus(${order.id}, 'تم التسليم')" style="background: rgba(46,213,115,0.1); color: var(--secondary);">تسليم</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -198,17 +208,17 @@
             container.innerHTML = html;
         }
 
-        function toggleOrderStatus(orderId) {
+        function updateStatus(orderId, newStatus) {
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
             let order = orders.find(o => o.id === orderId);
             if (order) {
-                order.status = order.status === 'قيد التحضير' ? 'جاهز' : 'قيد التحضير';
+                order.status = newStatus;
                 localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
                 loadKitchenOrders();
             }
         }
 
-        // تحديث تلقائي للمطبخ كل ثواني لضمان ظهور الطلبات الجديدة فور إرسالها من العملاء
+        // تحديث تلقائي كل ثانيتين لتظهر الطلبات الجديدة فوراً
         setInterval(loadKitchenOrders, 2000);
         window.onload = loadKitchenOrders;
     </script>
