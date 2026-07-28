@@ -199,9 +199,40 @@
         .status-btn.success-status { background: var(--secondary); color: #000; border-color: var(--secondary); }
 
         .disabled-card { opacity: 0.85; }
+
+        /* نافذة التنبيهات المخصصة */
+        #customAlertModal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(13, 17, 23, 0.85);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .custom-alert-box {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
+
+    <div id="customAlertModal" class="hidden">
+        <div class="custom-alert-box">
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> تنبيه</h3>
+            <p id="customAlertMessage">رسالة التنبيه هنا</p>
+            <button class="btn" style="background: var(--primary); color: #fff; border:none; padding:10px; width:100%; border-radius:10px; font-weight:700; cursor:pointer;" onclick="closeCustomAlert()">حسناً</button>
+        </div>
+    </div>
 
     <header>
         <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> شاشة المطبخ</h1>
@@ -238,6 +269,14 @@
     </div>
 
     <script>
+        function showCustomAlert(msg) {
+            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
@@ -315,6 +354,8 @@
                 let clientAddress = order.client ? order.client.address : '';
 
                 let isLocked = (order.status === 'تم التسليم' || order.status === 'ملغي');
+                // ضبط اسم الخدمة بدقة
+                let serviceText = order.type === 'صالة' ? `خدمة صالة: ${order.serviceFee} ج.م` : `توصيل: ${order.serviceFee} ج.م`;
 
                 html += `
                     <div class="order-card ${isLocked && order.status === 'ملغي' ? 'disabled-card' : ''}">
@@ -330,7 +371,7 @@
 
                         <div>
                             ${itemsHtml}
-                            <div style="font-size: 11px; color: var(--gray); margin-top: 6px;">الخدمة / التوصيل: ${order.serviceFee} ج.م</div>
+                            <div style="font-size: 11px; color: var(--gray); margin-top: 6px;">${serviceText}</div>
                         </div>
 
                         <div class="order-footer">
@@ -412,7 +453,7 @@
                         <tr><th>الصنف</th><th>الكمية</th><th>السعر</th></tr>
                         ${order.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price * i.qty} ج.م</td></tr>`).join('')}
                     </table>
-                    <div>خدمة التوصيل: ${order.serviceFee} ج.م</div>
+                    <div>${order.type === 'صالة' ? 'خدمة صالة' : 'خدمة التوصيل'}: ${order.serviceFee} ج.م</div>
                     <div class="total">الإجمالي النهائي: ${order.total} ج.م</div>
                 </body>
                 </html>
