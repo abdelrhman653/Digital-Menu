@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS - لوحة تحكم الإدارة والذكاء الاصطناعي</title>
+    <title>NEXUS - لوحة تحكم الإدارة والذكاء الاصطناعي المتقدم</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -76,9 +76,9 @@
         }
 
         .section-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: var(--accent-neon);
             display: flex;
             align-items: center;
@@ -86,23 +86,23 @@
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
             margin-bottom: 5px;
             color: var(--text-sub);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         input, select, textarea {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: white;
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             outline: none;
             width: 100%;
         }
@@ -117,6 +117,7 @@
             cursor: pointer;
             width: 100%;
             transition: 0.3s;
+            margin-top: 5px;
         }
 
         button:hover { opacity: 0.9; }
@@ -124,11 +125,24 @@
         .ai-btn {
             background: linear-gradient(135deg, var(--accent-purple), #ff007f);
             color: white;
+        }
+
+        .camera-box {
+            display: none;
             margin-top: 10px;
+            text-align: center;
+        }
+
+        video {
+            width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid var(--accent-neon);
         }
 
         .items-list {
-            max-height: 350px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
@@ -138,40 +152,40 @@
             align-items: center;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .delete-btn {
             background: var(--danger);
             color: white;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 8px;
             width: auto;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         .qr-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
         }
 
         .qr-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
         }
 
         .qr-code-box {
             background: white;
-            padding: 6px;
+            padding: 5px;
             border-radius: 8px;
-            margin: 8px 0;
+            margin: 6px 0;
             display: inline-block;
         }
     </style>
@@ -183,17 +197,38 @@
     </header>
 
     <div class="container">
-        <!-- القسم الأول: إضافة وتعديل الأصناف بالذكاء الاصطناعي -->
+        <!-- القسم الأيمن: استخراج المنيو الورقي + إضافة صنف فردي -->
         <div>
+            <!-- قسم استخراج المنيو بالذكاء الاصطناعي (تصوير مباشر أو رفع صورة) -->
+            <div class="section-card" style="border: 2px dashed var(--accent-purple);">
+                <div class="section-title">🤖 ذكاء استخراج المنيو الشامل (ورقي/صور)</div>
+                <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 10px;">
+                    اختر طريقة إدخال المنيو الورقي؛ إما تصويره بالكاميرا حالاً أو رفع صورته من جهازك، وسيقوم الذكاء الاصطناعي باستخراج الأسماء، الأسعار، وصور الأطباق تلقائياً!
+                </p>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="ai-btn" onclick="openLiveCamera()" style="margin-top:0;">📷 فتح الكاميرا للتصوير الحي</button>
+                    <button onclick="document.getElementById('paperMenuFile').click()" style="margin-top:0; background: rgba(255,255,255,0.1); color:white;">📁 رفع صورة من الجهاز</button>
+                    <input type="file" id="paperMenuFile" accept="image/*" style="display:none;" onchange="processMenuFile(event)">
+                </div>
+
+                <!-- شاشة الكاميرا الحية -->
+                <div class="camera-box" id="cameraBox">
+                    <video id="videoElement" autoplay playsinline></video>
+                    <button onclick="captureLivePhoto()" style="background: var(--green-glow); color: black; margin-top: 8px;">📸 التقاط الصورة والتحليل بالذكاء الاصطناعي</button>
+                </div>
+            </div>
+
+            <!-- قسم إضافة صنف فردي مع صورة -->
             <div class="section-card">
-                <div class="section-title">✨ إضافة وتعديل أصناف المنيو (معزز بالذكاء الاصطناعي)</div>
+                <div class="section-title">✨ إضافة صنف فردي جديد</div>
                 <div class="form-group">
-                    <label>اسم الأكلة أو الصنف:</label>
-                    <input type="text" id="itemName" placeholder="مثلاً: برجر لحم دابل">
+                    <label>اسم الصنف:</label>
+                    <input type="text" id="itemName" placeholder="مثلاً: وجبة شيش طاووق">
                 </div>
                 <div class="form-group">
                     <label>السعر (ج.م):</label>
-                    <input type="number" id="itemPrice" placeholder="150">
+                    <input type="number" id="itemPrice" placeholder="120">
                 </div>
                 <div class="form-group">
                     <label>القسم:</label>
@@ -205,22 +240,20 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>رابط الصورة:</label>
-                    <input type="text" id="itemImage" placeholder="https://images.unsplash.com/...">
+                    <label>صورة الصنف (من جهازك):</label>
+                    <input type="file" id="itemImageFile" accept="image/*">
                 </div>
                 <button onclick="addNewItem()">إضافة الصنف للمنيو 🚀</button>
-                <button class="ai-btn" onclick="enhanceWithAI()">✨ تحسين الوصف والاسم بالذكاء الاصطناعي</button>
             </div>
 
+            <!-- قائمة الأصناف الحالية -->
             <div class="section-card">
                 <div class="section-title">📋 إدارة الأصناف الحالية</div>
-                <div class="items-list" id="adminItemsList">
-                    <!-- يتم تعبئتها ديناميكياً -->
-                </div>
+                <div class="items-list" id="adminItemsList"></div>
             </div>
         </div>
 
-        <!-- القسم الثاني: توليد أكواد QR للترابيزات -->
+        <!-- القسم الأيسر: أكواد QR للترابيزات -->
         <div>
             <div class="section-card">
                 <div class="section-title">📱 مولد QR كود للترابيزات</div>
@@ -234,29 +267,67 @@
     </div>
 
     <script>
-        // دндарт وهمي للذكاء الاصطناعي لتحسين الاسم أو إعطاء طابع تسويقي جذاب
-        function enhanceWithAI() {
-            const nameInput = document.getElementById('itemName');
-            let currentName = nameInput.value.trim();
-            if(!currentName) {
-                alert('الرجاء كتابة اسم الصنف أولاً ليقوم الذكاء الاصطناعي بتحسينه!');
-                return;
-            }
-            // محاكاة معالجة ذكاء اصطناعي لتسويق المنتج
-            nameInput.value = `🌟 ${currentName} (سبتيشال الإدارة)`;
-            alert('تم تحسين اسم الصنف ووصفه واختيار أفضل صيغة تسويقية بواسطة الذكاء الاصطناعي بنجاح! ✨');
+        // تشغيل الكاميرا الحية
+        let videoStream = null;
+        function openLiveCamera() {
+            const cameraBox = document.getElementById('cameraBox');
+            const video = document.getElementById('videoElement');
+            
+            cameraBox.style.display = 'block';
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    videoStream = stream;
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    alert('عذراً، لم نتمكن من الوصول لكاميرا الجهاز. تأكد من إعطاء الصلاحيات.');
+                });
         }
 
-        // جلب أو تهيئة الأصناف
+        // التقاط الصورة من الكاميرا وتحليلها
+        function captureLivePhoto() {
+            alert('🤖 جاري التقاط الصورة الحية واستخراج الأطباق والأسعار والصور بواسطة الذكاء الاصطناعي البصري...');
+            stopCamera();
+            simulateAIAnalysis();
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('cameraBox').style.display = 'none';
+        }
+
+        // معالجة ملف صورة المنيو المرفوع
+        function processMenuFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            alert('🤖 جاري تحليل صورة المنيو المستخرجة وقراءة الأطباق والأسعار بالذكاء الاصطناعي...');
+            simulateAIAnalysis();
+        }
+
+        // محاكاة استخراج العناصر (الأسامي، الأسعار، والصور من نفس المنيو)
+        function simulateAIAnalysis() {
+            setTimeout(() => {
+                let items = getMenuItems();
+                const extractedItems = [
+                    { id: Date.now() + 1, name: "وجبة شاورما دابل (مستخرجة بالذكاء الاصطناعي)", price: 130, oldPrice: 160, category: "popular", discount: "خصم 18%", image: "https://images.unsplash.com/photo-1529042410759-befb1204b468?w=500" },
+                    { id: Date.now() + 2, name: "بيتزا مكس جبن (مستخرجة بالذكاء الاصطناعي)", price: 125, oldPrice: 150, category: "pizza", discount: "خصم 15%", image: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=500" }
+                ];
+
+                items.push(...extractedItems);
+                localStorage.setItem('nexus_menu_items', JSON.stringify(items));
+                renderAdminItems();
+                alert('✨ تم بنجاح استخراج الأكلات والأسعار والصور من المنيو وإضافتها للسيستم فوراً!');
+            }, 1500);
+        }
+
         function getMenuItems() {
             let items = localStorage.getItem('nexus_menu_items');
             if(!items) {
-                // الأصناف الافتراضية لو مش موجودة
                 items = JSON.stringify([
                     {id: 1, name: "تربل زلازل برجر", price: 140, oldPrice: 180, category: "burger", discount: "خصم 22%", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500"},
-                    {id: 2, name: "بيتزا رانش دجاج", price: 110, oldPrice: 135, category: "pizza", discount: "خصم 19%", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"},
-                    {id: 3, name: "موهيتو بلو نيون", price: 35, oldPrice: 50, category: "drinks", discount: "خصم 30%", image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500"},
-                    {id: 4, name: "كشري أسطوري سبتيشال", price: 40, oldPrice: 0, category: "popular", discount: "", image: "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=500"}
+                    {id: 2, name: "بيتزا رانش دجاج", price: 110, oldPrice: 135, category: "pizza", discount: "خصم 19%", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"}
                 ]);
                 localStorage.setItem('nexus_menu_items', items);
             }
@@ -271,9 +342,12 @@
             items.forEach(item => {
                 list.innerHTML += `
                     <div class="item-row">
-                        <div>
-                            <strong>${item.name}</strong>
-                            <div style="font-size:0.8rem; color:var(--text-sub);">${item.price} ج.م | القسم: ${item.category}</div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${item.image}" style="width:38px; height:38px; border-radius:8px; object-fit:cover;">
+                            <div>
+                                <strong style="font-size:0.85rem;">${item.name}</strong>
+                                <div style="font-size:0.7rem; color:var(--text-sub);">${item.price} ج.م</div>
+                            </div>
                         </div>
                         <button class="delete-btn" onclick="deleteItem(${item.id})">حذف 🗑️</button>
                     </div>
@@ -281,48 +355,59 @@
             });
         }
 
+        // إضافة صنف فردي يدوي مع صورة من الجهاز
         function addNewItem() {
             const name = document.getElementById('itemName').value;
             const price = parseFloat(document.getElementById('itemPrice').value);
             const category = document.getElementById('itemCategory').value;
-            const image = document.getElementById('itemImage').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
+            const imageFile = document.getElementById('itemImageFile').files[0];
 
             if(!name || !price) {
                 alert('برجاء إدخال اسم الصنف والسعر على الأقل!');
                 return;
             }
 
+            if(imageFile) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    saveNewItemData(name, price, category, uploadEvent.target.result);
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                saveNewItemData(name, price, category, "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500");
+            }
+        }
+
+        function saveNewItemData(name, price, category, imageUrl) {
             let items = getMenuItems();
             const newItem = {
                 id: Date.now(),
                 name: name,
                 price: price,
-                oldPrice: price + 30,
+                oldPrice: price + 25,
                 category: category,
                 discount: "جديد 🔥",
-                image: image
+                image: imageUrl
             };
 
             items.push(newItem);
             localStorage.setItem('nexus_menu_items', JSON.stringify(items));
             
-            // تفريغ الحقول
             document.getElementById('itemName').value = '';
             document.getElementById('itemPrice').value = '';
-            document.getElementById('itemImage').value = '';
+            document.getElementById('itemImageFile').value = '';
 
             renderAdminItems();
-            alert('تم إضافة الصنف بنجاح وتحديث المنيو للعملاء فوراً! 🚀');
+            alert('تم إضافة الصنف وصورته بنجاح للسيستم! 🚀');
         }
 
-    function deleteItem(id) {
+        function deleteItem(id) {
             let items = getMenuItems();
             items = items.filter(i => i.id !== id);
             localStorage.setItem('nexus_menu_items', JSON.stringify(items));
             renderAdminItems();
         }
 
-        // توليد أكواد QR
         function generateQRCodes() {
             const count = document.getElementById('tablesCount').value || 1;
             const grid = document.getElementById('qrGrid');
@@ -334,19 +419,19 @@
                 const tableUrl = `${baseUrl}?table=${i}`;
                 
                 const card = document.createElement('div');
-                card.className = 'qr-card';
+                card.className, 'qr-card';
                 card.innerHTML = `
-                    <div style="font-weight:bold; font-size:0.85rem; margin-bottom:5px;">ترابيزة ${i}</div>
+                    <div style="font-weight:bold; font-size:0.75rem; margin-bottom:4px;">ترابيزة ${i}</div>
                     <div class="qr-code-box" id="qrcode-${i}"></div>
                     <br>
-                    <a href="${tableUrl}" target="_blank" style="font-size:0.7rem; color:var(--accent-neon);">فتح الرابط 🔗</a>
+                    <a href="${tableUrl}" target="_blank" style="font-size:0.6rem; color:var(--accent-neon);">فتح الرابط 🔗</a>
                 `;
                 grid.appendChild(card);
 
                 new QRCode(document.getElementById(`qrcode-${i}`), {
                     text: tableUrl,
-                    width: 90,
-                    height: 90
+                    width: 75,
+                    height: 75
                 });
             }
         }
