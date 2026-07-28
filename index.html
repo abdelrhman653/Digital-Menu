@@ -33,7 +33,11 @@
             
             const [showCheckoutModal, setShowCheckoutModal] = useState(false);
             const [activeOrder, setActiveOrder] = useState(null);
-            const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', address: '' });
+            
+            const [customerPhone, setCustomerPhone] = useState(localStorage.getItem('nexus_customer_phone') || '');
+            const [customerName, setCustomerName] = useState(localStorage.getItem('nexus_customer_name') || '');
+            const [customerAddress, setCustomerAddress] = useState(localStorage.getItem('nexus_customer_address') || '');
+            const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('nexus_customer_phone'));
 
             useEffect(() => {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -43,20 +47,35 @@
                 const savedItems = localStorage.getItem('nexus_menu_items');
                 if (savedItems) setMenuItems(JSON.parse(savedItems));
 
-                // فحص حالة الطلب من المطبخ كل ثانية لتأكيد المتابعة اللحظية
-                const interval = setInterval(() => {
-                    const myOrderId = localStorage.getItem('nexus_current_order_id');
-                    if (myOrderId) {
-                        const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                        const found = allOrders.find(o => o.id === myOrderId);
-                        if (found) {
-                            setActiveOrder(found);
-                        }
+                const checkMyOrder = () => {
+                    const phone = localStorage.getItem('nexus_customer_phone');
+                    const table = urlParams.get('table');
+                    const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                    
+                    if (table) {
+                        const found = allOrders.find(o => o.tableNumber === `ترابيزة ${table}` && o.status !== 'delivered' && o.status !== 'cancelled');
+                        setActiveOrder(found || null);
+                    } else if (phone) {
+                        const found = allOrders.find(o => o.customerInfo && o.customerInfo.phone === phone && o.status !== 'delivered' && o.status !== 'cancelled');
+                        setActiveOrder(found || null);
                     }
-                }, 1000);
+                };
 
+                checkMyOrder();
+                const interval = setInterval(checkMyOrder, 1500);
                 return () => clearInterval(interval);
             }, []);
+
+            const handleLogout = () => {
+                localStorage.removeItem('nexus_customer_phone');
+                localStorage.removeItem('nexus_customer_name');
+                localStorage.removeItem('nexus_customer_address');
+                setIsLoggedIn(false);
+                setCustomerPhone('');
+                setCustomerName('');
+                setCustomerAddress('');
+                setActiveOrder(null);
+            };
 
             const addToCart = (item) => {
                 const existing = cart.find(i => i.id === item.id);
@@ -69,7 +88,7 @@
 
             const handleOrderClick = () => {
                 if (cart.length === 0) return;
-                if (!tableNumber) {
+                if (!tableNumber && !isLoggedIn) {
                     setShowCheckoutModal(true);
                 } else {
                     submitOrder();
@@ -79,13 +98,20 @@
             const submitOrder = (e) => {
                 if (e) e.preventDefault();
 
+                if (!tableNumber) {
+                    localStorage.setItem('nexus_customer_phone', customerPhone);
+                    localStorage.setItem('nexus_customer_name', customerName);
+                    localStorage.setItem('nexus_customer_address', customerAddress);
+                    setIsLoggedIn(true);
+                }
+
                 const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
                 const newOrderId = Date.now().toString();
 
                 const newOrder = {
                     id: newOrderId,
                     tableNumber: tableNumber ? `ترابيزة ${tableNumber}` : 'طلب أونلاين 🛵',
-                    customerInfo: !tableNumber ? customerInfo : null,
+                    customerInfo: !tableNumber ? { name: customerName, phone: customerPhone, address: customerAddress } : null,
                     items: cart,
                     totalPrice: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
                     status: 'pending',
@@ -93,8 +119,6 @@
                 };
 
                 localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existingOrders]));
-                localStorage.setItem('nexus_current_order_id', newOrderId);
-
                 setActiveOrder(newOrder);
                 setCart([]);
                 setShowCheckoutModal(false);
@@ -104,7 +128,6 @@
             const filteredItems = selectedCategory === 'الكل' ? menuItems : menuItems.filter(item => item.category === selectedCategory);
             const totalCartPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-            // تحديد المرحلة الحالية من الـ 4 مراحل بناءً على تحديد المطبخ
             const getStatusStep = (status) => {
                 if (status === 'pending') return 1;
                 if (status === 'ready') return 2;
@@ -119,9 +142,21 @@
                 <div className="max-w-md mx-auto min-h-screen bg-[#0b1320] flex flex-col p-4 shadow-2xl border-x border-slate-800">
                     {/* Header */}
                     <header className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                        <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full font-bold">
-                            ✨ تتبع مباشر للطلب
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full font-bold">
+                                ✨ المنيو
+                            </span>
+                            
+                            <a href="orders.html" className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded-full font-bold transition-all flex items-center gap-1">
+                                📋 طلباتي
+                            </a>
+
+                            {isLoggedIn && !tableNumber && (
+                                <button onClick={handleLogout} className="text-[10px] text-rose-400 hover:underline">
+                                    (خروج 🚪)
+                                </button>
+                            )}
+                        </div>
 
                         {tableNumber ? (
                             <div className="bg-purple-600/30 border border-purple-500/50 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold">
@@ -129,72 +164,38 @@
                             </div>
                         ) : (
                             <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-xl text-xs font-bold">
-                                🛵 طلب أونلاين / دليفري
+                                {isLoggedIn ? `👤 أهلاً, ${customerName}` : '🛵 طلب أونلاين'}
                             </div>
                         )}
                     </header>
 
-                    {/* شريط تتبع حالة الطلب في 4 خطوات وظيفية */}
+                    {/* شريط تتبع حالة الطلب النشط */}
                     {activeOrder && (
                         <div className="mb-5 bg-slate-900 border border-cyan-500/40 p-4 rounded-2xl space-y-3 shadow-2xl">
                             <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                                 <h4 className="font-bold text-xs text-cyan-400 flex items-center gap-1.5">
-                                    <i className="fa-solid fa-signal text-emerald-400"></i> حالة الطلب (تحكم المطبخ)
+                                    <i className="fa-solid fa-signal text-emerald-400"></i> تتبع طلبك النشط
                                 </h4>
                                 <span className="text-[10px] text-slate-400">{activeOrder.time}</span>
                             </div>
 
-                            {/* شريط الـ 4 خطوات */}
                             <div className="grid grid-cols-4 text-center pt-2 gap-1 relative">
-                                
-                                {/* 1. قيد التحضير */}
                                 <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                                        currentStep >= 1 ? 'bg-amber-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'
-                                    }`}>
-                                        ⏳
-                                    </div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 1 ? 'text-amber-400' : 'text-slate-500'}`}>
-                                        قيد التحضير
-                                    </span>
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 1 ? 'bg-amber-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'}`}>⏳</div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 1 ? 'text-amber-400' : 'text-slate-500'}`}>قيد التحضير</span>
                                 </div>
-
-                                {/* 2. جاهز */}
                                 <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                                        currentStep >= 2 ? 'bg-cyan-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'
-                                    }`}>
-                                        🍳
-                                    </div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 2 ? 'text-cyan-400' : 'text-slate-500'}`}>
-                                        جاهز
-                                    </span>
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 2 ? 'bg-cyan-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'}`}>🍳</div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 2 ? 'text-cyan-400' : 'text-slate-500'}`}>جاهز</span>
                                 </div>
-
-                                {/* 3. خرج للتوصيل / نازل للترابيزة */}
                                 <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                                        currentStep >= 3 ? 'bg-purple-500 text-white font-black scale-110 shadow-lg animate-pulse' : 'bg-slate-800 text-slate-500'
-                                    }`}>
-                                        🏃
-                                    </div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>
-                                        خرج للتوصيل
-                                    </span>
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 3 ? 'bg-purple-500 text-white font-black scale-110 shadow-lg animate-pulse' : 'bg-slate-800 text-slate-500'}`}>🏃</div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>خرج للتوصيل</span>
                                 </div>
-
-                                {/* 4. تم التسليم */}
                                 <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                                        currentStep >= 4 ? 'bg-emerald-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'
-                                    }`}>
-                                        ✅
-                                    </div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 4 ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                        تم التسليم
-                                    </span>
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 4 ? 'bg-emerald-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'}`}>✅</div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 4 ? 'text-emerald-400' : 'text-slate-500'}`}>تم التسليم</span>
                                 </div>
-
                             </div>
 
                             {currentStep === 4 && (
@@ -202,13 +203,6 @@
                                     🎉 تم تسليم الأكل بنجاح، بالهناء والشفاء!
                                 </div>
                             )}
-
-                            <button 
-                                onClick={() => { localStorage.removeItem('nexus_current_order_id'); setActiveOrder(null); }}
-                                className="w-full text-[10px] text-slate-500 hover:text-slate-300 pt-1 text-center block"
-                            >
-                                إخفاء الشريط / عمل طلب جديد
-                            </button>
                         </div>
                     )}
 
@@ -263,15 +257,36 @@
                         </div>
                     )}
 
-                    {/* نافذة أونلاين */}
+                    {/* نافذة تسجيل البيانات */}
                     {showCheckoutModal && (
                         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-xs space-y-3">
-                                <h3 className="font-bold text-sm text-slate-100 pb-2 border-b border-slate-800">بيانات التوصيل 🛵</h3>
+                                <h3 className="font-bold text-sm text-slate-100 pb-2 border-b border-slate-800">بيانات التوصيل وحفظ الجلسة 🛵</h3>
                                 <form onSubmit={submitOrder} className="space-y-3">
-                                    <input type="text" required placeholder="الاسم بالكامل" value={customerInfo.name} onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                                    <input type="tel" required placeholder="رقم التليفون" value={customerInfo.phone} onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-                                    <textarea required rows="2" placeholder="العنوان بالتفصيل" value={customerInfo.address} onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white resize-none"></textarea>
+                                    <input 
+                                        type="text" 
+                                        required 
+                                        placeholder="الاسم بالكامل" 
+                                        value={customerName} 
+                                        onChange={(e) => setCustomerName(e.target.value)} 
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" 
+                                    />
+                                    <input 
+                                        type="tel" 
+                                        required 
+                                        placeholder="رقم التليفون (لربط الحساب وحفظ الطلب)" 
+                                        value={customerPhone} 
+                                        onChange={(e) => setCustomerPhone(e.target.value)} 
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" 
+                                    />
+                                    <textarea 
+                                        required 
+                                        rows="2" 
+                                        placeholder="العنوان بالتفصيل" 
+                                        value={customerAddress} 
+                                        onChange={(e) => setCustomerAddress(e.target.value)} 
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white resize-none"
+                                    ></textarea>
                                     <button type="submit" className="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">تأكيد وإرسال الطلب</button>
                                 </form>
                             </div>
@@ -285,3 +300,4 @@
     </script>
 </body>
 </html>
+
