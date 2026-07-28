@@ -9,7 +9,6 @@
     <style>
         :root {
             --primary: #FF4757;
-            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
             --secondary: #2ED573;
             --warning: #FFA502;
             --dark-card: #151B22;
@@ -29,187 +28,86 @@
             text-align: center;
         }
         header h1 { font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        #restaurantNameDisplay { color: var(--primary); font-size: 13px; margin-top: 3px; font-weight: 600; }
 
         .container { max-width: 500px; margin: 15px auto; padding: 0 10px; }
 
-        /* شريط الإحصائيات العلوي */
         .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 10px;
-            margin-bottom: 12px;
-            align-items: center;
+            display: flex; justify-content: space-between; background: var(--dark-card);
+            border: 1px solid var(--border); border-radius: 14px; padding: 10px; margin-bottom: 12px; align-items: center;
         }
         .total-badge { font-size: 12px; color: var(--gray); text-align: center; }
         .total-badge span { display: block; font-size: 16px; font-weight: 900; color: var(--white); }
 
-        /* تَبويبات الفلترة (نشطة، تم التسليم، تم الإلغاء) */
-        .tabs-row {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 15px;
-        }
+        .tabs-row { display: flex; gap: 6px; margin-bottom: 15px; }
         .tab-btn {
-            background: var(--dark-card);
-            color: var(--gray);
-            border: 1px solid var(--border);
-            padding: 8px 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            flex: 1;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
+            background: var(--dark-card); color: var(--gray); border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 12px; font-weight: 700; font-size: 12px; cursor: pointer; flex: 1; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
         }
-        .tab-btn.active {
-            background: rgba(255, 165, 2, 0.15);
-            color: var(--warning);
-            border-color: var(--warning);
-        }
-        .tab-btn.active.delivered {
-            background: rgba(46, 213, 115, 0.15);
-            color: var(--secondary);
-            border-color: var(--secondary);
-        }
-        .tab-btn.active.cancelled {
-            background: rgba(255, 71, 87, 0.15);
-            color: var(--primary);
-            border-color: var(--primary);
-        }
+        .tab-btn.active { background: rgba(255, 165, 2, 0.15); color: var(--warning); border-color: var(--warning); }
+        .tab-btn.active.delivered { background: rgba(46, 213, 115, 0.15); color: var(--secondary); border-color: var(--secondary); }
+        .tab-btn.active.cancelled { background: rgba(255, 71, 87, 0.15); color: var(--primary); border-color: var(--primary); }
 
-        /* شريط البحث والفلترة بالتاريخ والوقت */
         .filter-box {
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 10px;
-            margin-bottom: 15px;
+            background: var(--dark-card); border: 1px solid var(--border); border-radius: 14px; padding: 10px; margin-bottom: 15px;
         }
         .search-input {
-            width: 100%;
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px 12px;
-            color: var(--white);
-            font-size: 12px;
-            margin-bottom: 8px;
+            width: 100%; background: var(--dark-bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; color: var(--white); font-size: 12px; margin-bottom: 8px;
         }
-        .filter-row {
-            display: flex;
-            gap: 6px;
-        }
-        .filter-select {
-            flex: 1;
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 6px;
-            color: var(--white);
-            font-size: 11px;
-        }
+        .filter-row { display: flex; gap: 6px; }
+        .filter-select { flex: 1; background: var(--dark-bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px; color: var(--white); font-size: 11px; }
 
-        /* كارت الطلب */
         .order-card {
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            background: var(--dark-card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-        }
+        .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
         .table-title { font-size: 14px; font-weight: 700; color: var(--primary); }
         .order-meta { font-size: 11px; color: var(--gray); }
 
-        .customer-info {
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-            font-size: 12px;
-        }
+        .customer-info { background: var(--dark-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 10px; font-size: 12px; }
+        .order-item-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
 
-        .order-item-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px dashed var(--border);
-            font-size: 12px;
-        }
-
-        .order-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid var(--border);
-        }
+        .order-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
         .total-price { font-weight: 700; color: var(--secondary); font-size: 13px; }
 
         .print-btn {
-            background: rgba(30, 144, 255, 0.15);
-            color: var(--info);
-            border: 1px solid var(--info);
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            background: rgba(30, 144, 255, 0.15); color: var(--info); border: 1px solid var(--info);
+            padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;
         }
 
-        .status-actions {
-            display: flex;
-            gap: 5px;
-            margin-top: 10px;
-        }
+        .status-actions { display: flex; gap: 5px; margin-top: 10px; }
         .status-btn {
-            background: var(--dark-bg);
-            color: var(--white);
-            border: 1px solid var(--border);
-            padding: 6px 8px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 10px;
-            flex: 1;
-            text-align: center;
+            background: var(--dark-bg); color: var(--white); border: 1px solid var(--border); padding: 6px 8px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 10px; flex: 1; text-align: center;
         }
         .status-btn.active-status { background: var(--warning); color: #000; border-color: var(--warning); }
         .status-btn.ready-status { background: var(--info); color: #fff; border-color: var(--info); }
         .status-btn.delivery-status { background: #9b59b6; color: #fff; border-color: #9b59b6; }
         .status-btn.success-status { background: var(--secondary); color: #000; border-color: var(--secondary); }
 
-        .disabled-card { opacity: 0.7; pointer-events: none; }
+        /* Modal مخصص للمطبخ */
+        .custom-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px;
+        }
+        .custom-modal-content {
+            background: var(--dark-card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 20px; width: 100%; max-width: 320px; text-align: center;
+        }
+        .custom-modal-text { font-size: 13px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
+        .custom-modal-btns { display: flex; gap: 10px; }
+        .custom-modal-btn { flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; border: none; }
+        .modal-btn-confirm { background: var(--primary); color: var(--white); }
     </style>
 </head>
 <body>
 
     <header>
         <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> شاشة المطبخ وإدارة الطلبات</h1>
+        <div id="restaurantNameDisplay">Abdo Shop</div>
     </header>
 
     <div class="container">
-        <!-- إحصائيات علوية -->
         <div class="stats-bar">
             <div class="total-badge">إجمالي الطلبات <span id="totalOrdersCount">0</span></div>
             <div class="total-badge" style="color: var(--warning);">النشطة <span id="activeCount">0</span></div>
@@ -217,14 +115,12 @@
             <div class="total-badge" style="color: var(--primary);">المتلفة/الملغاة <span id="cancelledCount">0</span></div>
         </div>
 
-        <!-- تَبويبات الفلترة الرئيسية -->
         <div class="tabs-row">
             <button class="tab-btn active" id="tabActive" onclick="switchTab('active')"><i class="fa-solid fa-hourglass-half"></i> نشطة (<span id="tabActiveCount">0</span>)</button>
             <button class="tab-btn" id="tabDelivered" onclick="switchTab('delivered')"><i class="fa-solid fa-check"></i> تم التسليم</button>
             <button class="tab-btn" id="tabCancelled" onclick="switchTab('cancelled')"><i class="fa-solid fa-xmark"></i> تم الإلغاء</button>
         </div>
 
-        <!-- بحث وفلترة بالتاريخ والوقت -->
         <div class="filter-box">
             <input type="text" id="searchInput" class="search-input" placeholder="بحث برقم الطلب، اسم العميل، أو الطاولة..." oninput="loadKitchenOrders()">
             <div class="filter-row">
@@ -237,9 +133,16 @@
             </div>
         </div>
 
-        <!-- قائمة الطلبات -->
-        <div id="kitchenOrdersList">
-            <!-- الطلبات تحمل هنا -->
+        <div id="kitchenOrdersList"></div>
+    </div>
+
+    <!-- نافذة مخصصة للتنبيهات -->
+    <div id="customModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <div id="modalText" class="custom-modal-text">رسالة تنبيه</div>
+            <div id="modalBtns" class="custom-modal-btns">
+                <button class="custom-modal-btn modal-btn-confirm" onclick="document.getElementById('customModal').style.display='none'">حسناً</button>
+            </div>
         </div>
     </div>
 
@@ -248,11 +151,14 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         let currentTab = 'active';
 
+        let savedClientInfo = JSON.parse(localStorage.getItem(`client_${restaurant}`));
+        if(savedClientInfo && savedClientInfo.restaurantName) {
+            document.getElementById('restaurantNameDisplay').innerText = savedClientInfo.restaurantName;
+        }
+
         function switchTab(tab) {
             currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                b.className = 'tab-btn';
-            });
+            document.querySelectorAll('.tab-btn').forEach(b => b.className = 'tab-btn');
             let btn = document.getElementById(tab === 'active' ? 'tabActive' : (tab === 'delivered' ? 'tabDelivered' : 'tabCancelled'));
             btn.classList.add('active');
             if(tab === 'delivered') btn.classList.add('delivered');
@@ -264,7 +170,6 @@
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
             let container = document.getElementById('kitchenOrdersList');
             
-            // عدادات الإحصائيات
             document.getElementById('totalOrdersCount').innerText = orders.length;
             let activeList = orders.filter(o => o.status !== 'تم التسليم' && o.status !== 'ملغي');
             let deliveredList = orders.filter(o => o.status === 'تم التسليم');
@@ -275,21 +180,18 @@
             document.getElementById('cancelledCount').innerText = cancelledList.length;
             document.getElementById('tabActiveCount').innerText = activeList.length;
 
-            // تحديث قوائم التواريخ والأوقات الفريدة في الفلتر
             updateDateAndTimeFilters(orders);
 
             let searchVal = document.getElementById('searchInput').value.trim().toLowerCase();
             let dateVal = document.getElementById('dateFilter').value;
             let timeVal = document.getElementById('timeFilter').value;
 
-            // فلترة حسب التبويب النشط أولاً
             let filtered = orders.filter(o => {
                 if (currentTab === 'active') return o.status !== 'تم التسليم' && o.status !== 'ملغي';
                 if (currentTab === 'delivered') return o.status === 'تم التسليم';
                 if (currentTab === 'cancelled') return o.status === 'ملغي';
             });
 
-            // فلترة بالبحث (الاسم، رقم الطلب، أو الطاولة)
             if (searchVal) {
                 filtered = filtered.filter(o => 
                     String(o.id).includes(searchVal) ||
@@ -298,7 +200,6 @@
                 );
             }
 
-            // فلترة بالتاريخ والوقت
             if (dateVal !== 'all') filtered = filtered.filter(o => o.date === dateVal);
             if (timeVal !== 'all') filtered = filtered.filter(o => o.time === timeVal);
 
@@ -323,11 +224,8 @@
                 let clientPhone = order.client ? order.client.phone : '';
                 let clientAddress = order.client ? order.client.address : '';
 
-                // إذا الطلب تم تسليمه أو إلغاؤه، يتم قفله نهائياً
-                let isLocked = (order.status === 'تم التسليم' || order.status === 'ملغي');
-
                 html += `
-                    <div class="order-card ${isLocked ? 'disabled-card' : ''}">
+                    <div class="order-card">
                         <div class="order-header">
                             <div class="table-title">طلب ${order.type} (${order.table})</div>
                             <div class="order-meta"><i class="fa-regular fa-calendar"></i> ${order.date} | <i class="fa-regular fa-clock"></i> ${order.time} | #${order.id}</div>
@@ -340,7 +238,7 @@
 
                         <div>
                             ${itemsHtml}
-                            <div style="font-size: 11px; color: var(--gray); margin-top: 6px;">الخدمة / التوصيل: ${order.serviceFee} ج.م</div>
+                            <div style="font-size: 11px; color: var(--gray); margin-top: 6px;">الخدمة / التوصيل: ${order.serviceFee || 0} ج.م</div>
                         </div>
 
                         <div class="order-footer">
@@ -349,10 +247,10 @@
                         </div>
 
                         <div class="status-actions">
-                            <button class="status-btn ${order.status === 'قيد التحضير' ? 'active-status' : ''}" onclick="updateStatus(${order.id}, 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>تحضير</button>
-                            <button class="status-btn ${order.status === 'جاهز' ? 'ready-status' : ''}" onclick="updateStatus(${order.id}, 'جاهز')" ${isLocked ? 'disabled' : ''}>جاهز</button>
-                            <button class="status-btn ${order.status === 'جاري التوصيل' ? 'delivery-status' : ''}" onclick="updateStatus(${order.id}, 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>دليفري</button>
-                            <button class="status-btn ${order.status === 'تم التسليم' ? 'success-status' : ''}" onclick="updateStatus(${order.id}, 'تم التسليم')" ${isLocked ? 'disabled' : ''}>تسليم</button>
+                            <button class="status-btn ${order.status === 'قيد التحضير' ? 'active-status' : ''}" onclick="updateStatus(${order.id}, 'قيد التحضير')">تحضير</button>
+                            <button class="status-btn ${order.status === 'جاهز' ? 'ready-status' : ''}" onclick="updateStatus(${order.id}, 'جاهز')">جاهز</button>
+                            <button class="status-btn ${order.status === 'جاري التوصيل' ? 'delivery-status' : ''}" onclick="updateStatus(${order.id}, 'جاري التوصيل')">دليفري</button>
+                            <button class="status-btn ${order.status === 'تم التسليم' ? 'success-status' : ''}" onclick="updateStatus(${order.id}, 'تم التسليم')">تسليم</button>
                         </div>
                     </div>
                 `;
@@ -364,7 +262,6 @@
         function updateDateAndTimeFilters(orders) {
             let dateSelect = document.getElementById('dateFilter');
             let timeSelect = document.getElementById('timeFilter');
-            
             let currentSelectedDate = dateSelect.value;
             let currentSelectedTime = timeSelect.value;
 
@@ -397,7 +294,15 @@
             let order = orders.find(o => o.id === orderId);
             if (!order) return;
 
-            let printWindow = window.open('', '', 'height=600,width=400');
+            let printWindow = window.open('', '_blank', 'height=600,width=400');
+            if (!printWindow) {
+                document.getElementById('modalText').innerText = 'يرجى السماح بفتح النوافذ المنبثقة (Pop-ups) للطباعة من إعدادات المتصفح.';
+                document.getElementById('customModal').style.display = 'flex';
+                return;
+            }
+
+            let shopTitle = document.getElementById('restaurantNameDisplay').innerText || 'Abdo Shop';
+
             printWindow.document.write(`
                 <html dir="rtl">
                 <head>
@@ -412,29 +317,34 @@
                     </style>
                 </head>
                 <body>
-                    <h2>Abdo Shop</h2>
+                    <h2>${shopTitle}</h2>
                     <div class="info">
                         رقم الطلب: #${order.id}<br>
                         التاريخ: ${order.date} - ${order.time}<br>
-                        العميل: ${order.client.name} (${order.client.phone})<br>
-                        العنوان: ${order.client.address || '-'}<br>
+                        العميل: ${order.client ? order.client.name : '-'} (${order.client ? order.client.phone : ''})<br>
+                        العنوان: ${order.client && order.client.address ? order.client.address : '-'}<br>
                         النوع: ${order.type} (${order.table})
                     </div>
                     <table>
                         <tr><th>الصنف</th><th>الكمية</th><th>السعر</th></tr>
                         ${order.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price * i.qty} ج.م</td></tr>`).join('')}
                     </table>
-                    <div>خدمة التوصيل: ${order.serviceFee} ج.م</div>
+                    <div>خدمة التوصيل: ${order.serviceFee || 0} ج.م</div>
                     <div class="total">الإجمالي النهائي: ${order.total} ج.م</div>
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                                window.close();
+                            }, 400);
+                        };
+                    <\/script>
                 </body>
                 </html>
             `);
             printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
         }
 
-        // تحديث تلقائي كل ثانيتين لتظهر الطلبات الجديدة لحظياً
         setInterval(loadKitchenOrders, 2000);
         window.onload = loadKitchenOrders;
     </script>
