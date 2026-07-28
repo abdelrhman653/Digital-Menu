@@ -18,7 +18,7 @@
         body { font-family: 'Cairo', sans-serif; background-color: #0b1320; color: #f8fafc; }
         .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
 
-        /* تنسيق طباعة الوصل للطيار/الديليفري */
+        /* تنسيق خاص بالطابعة الحرارية للوصل */
         @media print {
             body * { visibility: hidden; }
             #printable-receipt, #printable-receipt * { visibility: visible; }
@@ -29,7 +29,7 @@
                 width: 100%;
                 color: #000 !important;
                 background: #fff !important;
-                padding: 15px;
+                padding: 10px;
             }
             .no-print { display: none !important; }
         }
@@ -40,6 +40,9 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
+
+        const DELIVERY_FEE = 40; // خدمة التوصيل 40 جنيه
+        const SERVICE_PERCENTAGE = 0.12; // خدمة الصالة 12%
 
         function KitchenApp() {
             const [orders, setOrders] = useState([]);
@@ -67,7 +70,6 @@
                 localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updatedOrders));
             };
 
-            // أمر الطباعة للوصل
             const handlePrint = (order) => {
                 setPrintOrder(order);
                 setTimeout(() => {
@@ -79,7 +81,7 @@
                 switch(status) {
                     case 'pending': return <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-lg text-[11px] font-bold">⏳ قيد التحضير</span>;
                     case 'ready': return <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-lg text-[11px] font-bold">🍳 جاهز</span>;
-                    case 'out_for_delivery': return <span className="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg text-[11px] font-bold">🏃 خرج للتوصيل</span>;
+                    case 'out_for_delivery': return <span className="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg text-[11px] font-bold">🏃 للديليفري</span>;
                     case 'delivered': return <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-lg text-[11px] font-bold">✅ تم التسليم</span>;
                     case 'cancelled': return <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded-lg text-[11px] font-bold">❌ ملغي</span>;
                     default: return null;
@@ -95,8 +97,8 @@
                                 <i className="fa-solid fa-fire-burner"></i>
                             </div>
                             <div>
-                                <h1 className="font-extrabold text-base text-slate-100">شاشة المطبخ والطلبات 👨‍🍳</h1>
-                                <p className="text-[10px] text-slate-400">متابعة وتحديث حالات الطلبات الواردة فوراً</p>
+                                <h1 className="font-extrabold text-base text-slate-100">شاشة المطبخ وإدارة الطلبات 👨‍🍳</h1>
+                                <p className="text-[10px] text-slate-400">متابعة وحالات الطلبات والطباعة</p>
                             </div>
                         </div>
                         <span className="text-xs bg-slate-800 text-cyan-400 border border-slate-700 px-3 py-1.5 rounded-xl font-bold font-mono">
@@ -113,6 +115,11 @@
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 no-print">
                             {orders.map((order) => {
                                 const isCompleted = order.status === 'delivered' || order.status === 'cancelled';
+                                const isDelivery = !!order.customerInfo;
+                                
+                                const subtotal = order.totalPrice;
+                                const extraFee = isDelivery ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
+                                const finalTotal = subtotal + extraFee;
 
                                 return (
                                     <div key={order.id} className={`glass-card rounded-2xl p-4 space-y-3 border ${order.status === 'cancelled' ? 'border-rose-500/40 opacity-75' : order.status === 'delivered' ? 'border-emerald-500/30' : 'border-slate-800/80'}`}>
@@ -131,8 +138,8 @@
                                             {getStatusBadge(order.status)}
                                         </div>
 
-                                        {/* بيانات التوصيل للديليفري */}
-                                        {order.customerInfo && (
+                                        {/* بيانات العميل إن وجدت */}
+                                        {isDelivery && (
                                             <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1">
                                                 <p className="text-slate-200 font-bold">👤 {order.customerInfo.name}</p>
                                                 <p className="text-slate-400 font-mono">📞 {order.customerInfo.phone}</p>
@@ -148,12 +155,19 @@
                                                     <span className="text-pink-400 font-bold font-mono">x {item.quantity}</span>
                                                 </div>
                                             ))}
+                                            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-800/60 text-amber-400 font-medium">
+                                                <span>{isDelivery ? '🚴 خدمة توصيل' : '🍽️ خدمة صالة (12%)'}</span>
+                                                <span className="font-bold font-mono">{extraFee} ج.م</span>
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center justify-between pt-1">
-                                            <span className="text-xs font-black text-cyan-400">الإجمالي: {order.totalPrice} ج.م</span>
+                                            <div>
+                                                <span className="text-xs font-black text-cyan-400 block">الإجمالي الكلي: {finalTotal} ج.م</span>
+                                                <span className="text-[9px] text-slate-400">(شامل {isDelivery ? 'التوصيل' : 'الخدمة'})</span>
+                                            </div>
                                             
-                                            {/* زرار طباعة الوصل للديليفري */}
+                                            {/* زرار الطباعة */}
                                             <button 
                                                 onClick={() => handlePrint(order)}
                                                 className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all"
@@ -182,55 +196,74 @@
                         </div>
                     )}
 
-                    {/* قالب الطباعة الشفاف (بيظهر فقط وقت الضغط على زرار الطباعة) */}
-                    {printOrder && (
-                        <div id="printable-receipt" className="hidden print:block font-sans">
-                            <div className="text-center border-b pb-2 mb-2">
-                                <h2 className="text-xl font-bold">Abdo Shop 🍔</h2>
-                                <p className="text-xs">وصل الطلب / الديليفري</p>
-                                <p className="text-xs font-mono mt-1">رقم الطلب: #{String(printOrder.id).slice(-8)} | {printOrder.time}</p>
-                            </div>
+                    {/* قالب الوصل المطبوع */}
+                    {printOrder && (() => {
+                        const isDelivery = !!printOrder.customerInfo;
+                        const subtotal = printOrder.totalPrice;
+                        const extraFee = isDelivery ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
+                        const grandTotal = subtotal + extraFee;
 
-                            {printOrder.customerInfo ? (
-                                <div className="border-b pb-2 mb-2 text-xs space-y-1">
-                                    <p><strong>العميل:</strong> {printOrder.customerInfo.name}</p>
-                                    <p><strong>التليفون:</strong> {printOrder.customerInfo.phone}</p>
-                                    <p><strong>العنوان:</strong> {printOrder.customerInfo.address}</p>
+                        return (
+                            <div id="printable-receipt" className="hidden print:block font-sans">
+                                <div className="text-center border-b pb-2 mb-2">
+                                    <h2 className="text-xl font-bold">Abdo Shop 🍔</h2>
+                                    <p className="text-xs">{isDelivery ? 'وصل توصيل (ديليفري)' : 'وصل طلب صالة'}</p>
+                                    <p className="text-xs font-mono mt-1">رقم الطلب: #{String(printOrder.id).slice(-8)} | {printOrder.time}</p>
                                 </div>
-                            ) : (
-                                <div className="border-b pb-2 mb-2 text-xs">
-                                    <p><strong>المكان:</strong> {printOrder.tableNumber}</p>
-                                </div>
-                            )}
 
-                            <table className="w-full text-right text-xs border-b pb-2 mb-2">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="py-1">الصنف</th>
-                                        <th className="py-1 text-center">العدد</th>
-                                        <th className="py-1 text-left">السعر</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {printOrder.items.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td className="py-1">{item.name}</td>
-                                            <td className="py-1 text-center">{item.quantity}</td>
-                                            <td className="py-1 text-left">{item.price * item.quantity} ج.م</td>
+                                {isDelivery ? (
+                                    <div className="border-b pb-2 mb-2 text-xs space-y-1">
+                                        <p><strong>العميل:</strong> {printOrder.customerInfo.name}</p>
+                                        <p><strong>التليفون:</strong> {printOrder.customerInfo.phone}</p>
+                                        <p><strong>العنوان:</strong> {printOrder.customerInfo.address}</p>
+                                    </div>
+                                ) : (
+                                    <div className="border-b pb-2 mb-2 text-xs">
+                                        <p><strong>الطاولة:</strong> {printOrder.tableNumber}</p>
+                                    </div>
+                                )}
+
+                                <table className="w-full text-right text-xs border-b pb-2 mb-2">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className="py-1">الصنف</th>
+                                            <th className="py-1 text-center">العدد</th>
+                                            <th className="py-1 text-left">السعر</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {printOrder.items.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td className="py-1">{item.name}</td>
+                                                <td className="py-1 text-center">{item.quantity}</td>
+                                                <td className="py-1 text-left">{item.price * item.quantity} ج.م</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
 
-                            <div className="text-left font-bold text-sm mb-4">
-                                الإجمالي: {printOrder.totalPrice} ج.م
-                            </div>
+                                <div className="text-xs space-y-1 border-b pb-2 mb-2">
+                                    <div className="flex justify-between">
+                                        <span>مجموع الأصناف:</span>
+                                        <span>{subtotal} ج.م</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold">
+                                        <span>{isDelivery ? 'رسوم التوصيل:' : 'خدمة صالة (12%):'}</span>
+                                        <span>{extraFee} ج.م</span>
+                                    </div>
+                                </div>
 
-                            <div className="text-center text-[10px] border-t pt-2">
-                                شكراً لطلبكم من Abdo Shop! نتمنى لكم وجبة شهية ❤️
+                                <div className="flex justify-between font-black text-sm mb-4">
+                                    <span>الإجمالي الكلي:</span>
+                                    <span>{grandTotal} ج.م</span>
+                                </div>
+
+                                <div className="text-center text-[10px] border-t pt-2">
+                                    شكراً لطلبكم من Abdo Shop! نتمنى لكم وجبة شهية ❤️
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                 </div>
             );
