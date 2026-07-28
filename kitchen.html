@@ -46,6 +46,7 @@
 
         function KitchenApp() {
             const [orders, setOrders] = useState([]);
+            const [activeTab, setActiveTab] = useState('active'); // 'active' أو 'completed'
             const [printOrder, setPrintOrder] = useState(null);
 
             const loadKitchenOrders = () => {
@@ -88,10 +89,16 @@
                 }
             };
 
+            // تصفية الطلبات حسب القسم النشط
+            const activeOrders = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+            const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'cancelled');
+
+            const displayedOrders = activeTab === 'active' ? activeOrders : completedOrders;
+
             return (
                 <div className="max-w-4xl mx-auto min-h-screen bg-[#0b1320] flex flex-col p-4 shadow-2xl">
                     {/* Header */}
-                    <header className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6 no-print">
+                    <header className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 no-print">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center font-bold">
                                 <i className="fa-solid fa-fire-burner"></i>
@@ -106,20 +113,46 @@
                         </span>
                     </header>
 
-                    {orders.length === 0 ? (
+                    {/* أزرار التنقل بين الأقسام */}
+                    <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 mb-6 no-print">
+                        <button 
+                            onClick={() => setActiveTab('active')} 
+                            className={`py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'active' ? 'bg-cyan-500 text-slate-950 shadow-lg font-black' : 'text-slate-400 hover:text-slate-200'}`}
+                        >
+                            <span>⏳ طلبات نشطة (شغالة)</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'active' ? 'bg-slate-950 text-cyan-400' : 'bg-slate-800 text-slate-300'}`}>
+                                {activeOrders.length}
+                            </span>
+                        </button>
+                        
+                        <button 
+                            onClick={() => setActiveTab('completed')} 
+                            className={`py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'completed' ? 'bg-emerald-500 text-slate-950 shadow-lg font-black' : 'text-slate-400 hover:text-slate-200'}`}
+                        >
+                            <span>✅ طلبات منتهية (مغلقة)</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'completed' ? 'bg-slate-950 text-emerald-400' : 'bg-slate-800 text-slate-300'}`}>
+                                {completedOrders.length}
+                            </span>
+                        </button>
+                    </div>
+
+                    {/* عرض الطلبات بناءً على القسم المختار */}
+                    {displayedOrders.length === 0 ? (
                         <div className="text-center py-20 glass-card rounded-2xl p-6 space-y-3 no-print">
-                            <i className="fa-solid fa-utensils text-4xl text-slate-600"></i>
-                            <h3 className="font-bold text-slate-300 text-sm">لا توجد طلبات واردة حالياً</h3>
+                            <i className={`fa-solid ${activeTab === 'active' ? 'fa-utensils text-slate-600' : 'fa-check-double text-emerald-600'} text-4xl`}></i>
+                            <h3 className="font-bold text-slate-300 text-sm">
+                                {activeTab === 'active' ? 'لا توجد طلبات جارية حالياً' : 'لا توجد طلبات مكتملة حتى الآن'}
+                            </h3>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 no-print">
-                            {orders.map((order) => {
+                            {displayedOrders.map((order) => {
                                 const isCompleted = order.status === 'delivered' || order.status === 'cancelled';
                                 const isDelivery = !!order.customerInfo;
                                 
-                                const subtotal = order.totalPrice;
-                                const extraFee = isDelivery ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
-                                const finalTotal = subtotal + extraFee;
+                                const subtotal = order.subtotal || order.totalPrice;
+                                const extraFee = order.extraFee !== undefined ? order.extraFee : (isDelivery ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE));
+                                const finalTotal = order.totalPrice || (subtotal + extraFee);
 
                                 return (
                                     <div key={order.id} className={`glass-card rounded-2xl p-4 space-y-3 border ${order.status === 'cancelled' ? 'border-rose-500/40 opacity-75' : order.status === 'delivered' ? 'border-emerald-500/30' : 'border-slate-800/80'}`}>
@@ -199,9 +232,9 @@
                     {/* قالب الوصل المطبوع */}
                     {printOrder && (() => {
                         const isDelivery = !!printOrder.customerInfo;
-                        const subtotal = printOrder.totalPrice;
-                        const extraFee = isDelivery ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
-                        const grandTotal = subtotal + extraFee;
+                        const subtotal = printOrder.subtotal || printOrder.totalPrice;
+                        const extraFee = printOrder.extraFee !== undefined ? printOrder.extraFee : (isDelivery ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE));
+                        const grandTotal = printOrder.totalPrice || (subtotal + extraFee);
 
                         return (
                             <div id="printable-receipt" className="hidden print:block font-sans">
