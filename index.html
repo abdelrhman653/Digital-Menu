@@ -47,6 +47,10 @@
         const SERVICE_PERCENTAGE = 0.12;
 
         function MainApp() {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [loginPhone, setLoginPhone] = useState('');
+            const [loginName, setLoginName] = useState('');
+
             const [menuItems, setMenuItems] = useState([]);
             const [cart, setCart] = useState([]);
             const [selectedCategory, setSelectedCategory] = useState('الكل');
@@ -55,15 +59,15 @@
             const [tableNumber, setTableNumber] = useState('');
             
             const [customerInfo, setCustomerInfo] = useState({
-                name: localStorage.getItem('abdo_shop_cust_name') || '',
-                phone: localStorage.getItem('abdo_shop_cust_phone') || '',
-                address: localStorage.getItem('abdo_shop_cust_address') || ''
+                name: '',
+                phone: '',
+                address: ''
             });
 
             const [activeOrder, setActiveOrder] = useState(null);
             const [successMsg, setSuccessMsg] = useState(false);
             const [showOrdersModal, setShowOrdersModal] = useState(false);
-            const [allMyOrders, setAllMyOrders] = useState([]);
+            const [myOrders, setMyOrders] = useState([]);
 
             const loadMenu = () => {
                 const saved = localStorage.getItem('nexus_menu_items');
@@ -74,44 +78,93 @@
                 }
             };
 
-            const syncOrderState = () => {
-                const orders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                setAllMyOrders(orders);
+            const fetchMyOrders = (phoneToUse) => {
+                const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                // تصفية الطلبات بحيث تظهر فقط الخاصة برقم هاتف العميل الحالي المسجل
+                const userOrders = allOrders.filter(o => o.customerInfo && o.customerInfo.phone === phoneToUse);
+                setMyOrders(userOrders);
+
                 if (activeOrder) {
-                    const current = orders.find(o => o.id === activeOrder.id);
-                    if (current) {
-                        setActiveOrder(current);
-                    }
+                    const current = userOrders.find(o => o.id === activeOrder.id);
+                    if (current) setActiveOrder(current);
                 }
             };
 
             useEffect(() => {
                 loadMenu();
                 
+                const savedPhone = localStorage.getItem('abdo_shop_logged_phone');
+                const savedName = localStorage.getItem('abdo_shop_logged_name');
+                const savedAddress = localStorage.getItem('abdo_shop_logged_address') || '';
+
+                if (savedPhone) {
+                    setLoginPhone(savedPhone);
+                    setLoginName(savedName || '');
+                    setCustomerInfo({
+                        name: savedName || '',
+                        phone: savedPhone,
+                        address: savedAddress
+                    });
+                    setIsLoggedIn(true);
+                    fetchMyOrders(savedPhone);
+                }
+
                 const params = new URLSearchParams(window.location.search);
                 const t = params.get('table');
                 if (t) {
                     setTableNumber(`ترابيزة رقم ${t}`);
                     setOrderType('table');
-                } else {
-                    setOrderType('delivery');
                 }
-
-                const orders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                setAllMyOrders(orders);
 
                 const interval = setInterval(() => {
                     loadMenu();
-                    syncOrderState();
+                    const currentPhone = localStorage.getItem('abdo_shop_logged_phone');
+                    if (currentPhone) {
+                        fetchMyOrders(currentPhone);
+                    }
                 }, 1500);
 
                 return () => clearInterval(interval);
             }, []);
 
+            const handleLoginSubmit = (e) => {
+                e.preventDefault();
+                if (!loginPhone || loginPhone.length < 10) {
+                    return alert('الرجاء إدخال رقم موبايل صحيح.');
+                }
+                if (!loginName) {
+                    return alert('الرجاء إدخال الاسم بالكامل.');
+                }
+
+                localStorage.setItem('abdo_shop_logged_phone', loginPhone);
+                localStorage.setItem('abdo_shop_logged_name', loginName);
+                
+                setCustomerInfo(prev => ({
+                    ...prev,
+                    name: loginName,
+                    phone: loginPhone
+                }));
+
+                setIsLoggedIn(true);
+                fetchMyOrders(loginPhone);
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('abdo_shop_logged_phone');
+                localStorage.removeItem('abdo_shop_logged_name');
+                setIsLoggedIn(false);
+                setLoginPhone('');
+                setLoginName('');
+                setCart([]);
+                setActiveOrder(null);
+            };
+
             const handleCustomerChange = (field, val) => {
                 const updated = { ...customerInfo, [field]: val };
                 setCustomerInfo(updated);
-                localStorage.setItem(`abdo_shop_cust_${field}`, val);
+                if (field === 'address') {
+                    localStorage.setItem('abdo_shop_logged_address', val);
+                }
             };
 
             const categories = ['الكل', ...new Set(menuItems.map(item => item.category || 'عام'))];
@@ -134,7 +187,7 @@
             const submitOrder = () => {
                 if (cart.length === 0) return alert('السلة فارغة!');
                 if (orderType === 'delivery' && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
-                    return alert('الرجاء إدخال بيانات التوصيل كاملة (الاسم، الموبايل، العنوان)');
+                    return alert('الرجاء إدخال بيانات التوصيل كاملة (العنوان مطلوب)');
                 }
 
                 const now = new Date();
@@ -145,10 +198,10 @@
                     subtotal: subtotal,
                     extraFee: extraFee,
                     totalPrice: grandTotal,
-                    status: 'pending', // يبدأ كـ قيد التحضير
+                    status: 'pending',
                     date: now.toISOString().split('T')[0],
                     time: now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-                    customerInfo: orderType === 'delivery' ? customerInfo : null
+                    customerInfo: customerInfo
                 };
 
                 const existing = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
@@ -156,32 +209,76 @@
                 localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updatedOrders));
 
                 setActiveOrder(newOrder);
-                setAllMyOrders(updatedOrders);
+                fetchMyOrders(customerInfo.phone);
                 setCart([]);
                 setSuccessMsg(true);
                 setTimeout(() => setSuccessMsg(false), 4000);
             };
 
+            // شاشة تسجيل الدخول الإجبارية أول ما يفتح الرابط
+            if (!isLoggedIn) {
+                return (
+                    <div className="max-w-md mx-auto min-h-screen flex items-center justify-center p-4">
+                        <div className="glass-card w-full p-6 rounded-3xl border border-brand-pink/30 space-y-5 shadow-2xl">
+                            <div className="text-center space-y-2">
+                                <div className="w-16 h-16 bg-brand-pink/20 rounded-2xl mx-auto flex items-center justify-center text-brand-pink text-2xl font-bold">
+                                    <i className="fa-solid fa-utensils"></i>
+                                </div>
+                                <h2 className="text-xl font-black text-slate-100">مرحباً بك في Abdo Shop</h2>
+                                <p className="text-xs text-slate-400">الرجاء إدخال بياناتك لمتابعة طلباتك وعرض المنيو</p>
+                            </div>
+
+                            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+                                <div>
+                                    <label className="text-[11px] font-bold text-slate-300 block mb-1">الاسم بالكامل:</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="مثال: أحمد محمد"
+                                        value={loginName}
+                                        onChange={(e) => setLoginName(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-bold text-slate-300 block mb-1">رقم الموبايل:</label>
+                                    <input 
+                                        type="tel" 
+                                        placeholder="01xxxxxxxx"
+                                        value={loginPhone}
+                                        onChange={(e) => setLoginPhone(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 font-mono focus:outline-none focus:border-brand-pink"
+                                        required
+                                    />
+                                </div>
+                                <button type="submit" className="w-full py-3 bg-brand-pink text-white font-black text-xs rounded-xl shadow-lg active:scale-95 transition-all">
+                                    دخول للمنيو والطلب <i className="fa-solid fa-arrow-left mr-1"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
             return (
                 <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
                     
-                    {/* رأس الصفحة مع زرار "سجل طلباتي" */}
+                    {/* رأس الصفحة مع زرار سجل طلباتي */}
                     <div className="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-3 rounded-2xl mb-4">
                         <div className="flex items-center gap-2">
-                            <span className="text-base">📍</span>
                             <span className="text-xs font-extrabold text-brand-pink">
-                                {orderType === 'table' ? tableNumber : 'طلب ديلفري أونلاين 🛵'}
+                                أهلاً، {customerInfo.name} 👤
                             </span>
                         </div>
                         <button 
                             onClick={() => setShowOrdersModal(true)}
                             className="bg-brand-cyan/20 border border-brand-cyan/40 text-brand-cyan px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-sm">
                             <i className="fa-solid fa-clock-rotate-left"></i>
-                            <span>سجل طلباتي</span>
+                            <span>سجل طلباتي ({myOrders.length})</span>
                         </button>
                     </div>
 
-                    {/* شريط حالة الطلب الأخير (يظهر فقط إذا قام العميل بطلب جديد في الجلسة الحالية) */}
+                    {/* شريط حالة الطلب الحالي (يظهر فقط لأحدث طلب يخص هذا الرقم) */}
                     {activeOrder && (
                         <div className="glass-card p-3.5 rounded-2xl mb-4 border border-brand-cyan/30 space-y-2.5 animate-fadeIn">
                             <div className="flex justify-between items-center text-xs">
@@ -189,41 +286,24 @@
                                 <span className="text-slate-400 font-mono text-[10px]">{activeOrder.time}</span>
                             </div>
 
-                            {/* مربعات الحالة الأربعة بدقة (قيد التحضير - جاهز - جاري الديلفري - تم التسليم) */}
                             <div className="grid grid-cols-4 gap-1 pt-1">
                                 <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'pending' 
-                                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30 scale-105' 
-                                    : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>
-                                    ⏳ قيد التحضير
-                                </div>
+                                    activeOrder.status === 'pending' ? 'bg-amber-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
+                                }`}>⏳ قيد التحضير</div>
                                 <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'ready' 
-                                    ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30 scale-105' 
-                                    : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>
-                                    🔥 جاهز
-                                </div>
+                                    activeOrder.status === 'ready' ? 'bg-cyan-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
+                                }`}>🔥 جاهز</div>
                                 <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'out_for_delivery' 
-                                    ? 'bg-blue-500 text-slate-950 shadow-lg shadow-blue-500/30 scale-105' 
-                                    : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>
-                                    ⚡ جاري التوصيل
-                                </div>
+                                    activeOrder.status === 'out_for_delivery' ? 'bg-blue-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
+                                }`}>⚡ جاري التوصيل</div>
                                 <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'delivered' 
-                                    ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 scale-105' 
-                                    : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>
-                                    ✅ تم التسليم
-                                </div>
+                                    activeOrder.status === 'delivered' ? 'bg-emerald-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
+                                }`}>✅ تم التسليم</div>
                             </div>
                         </div>
                     )}
 
-                    {/* نموذج بيانات التوصيل */}
+                    {/* بيانات التوصيل */}
                     {orderType === 'delivery' && (
                         <div className="glass-card p-3.5 rounded-2xl mb-4 space-y-2.5">
                             <h3 className="text-xs font-black text-brand-cyan">🛵 بيانات التوصيل:</h3>
@@ -234,13 +314,13 @@
                                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
                             />
                             <input 
-                                type="tel" placeholder="رقم الموبايل (يتم حفظه تلقائياً)" 
+                                type="tel" placeholder="رقم الموبايل" 
                                 value={customerInfo.phone} 
-                                onChange={(e) => handleCustomerChange('phone', e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-brand-pink"
+                                disabled
+                                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-400 font-mono cursor-not-allowed"
                             />
                             <textarea 
-                                rows="2" placeholder="العنوان بالتفصيل..." 
+                                rows="2" placeholder="العنوان بالتفصيل (رقم الشارع، الحارة، العلامة المميزة)..." 
                                 value={customerInfo.address} 
                                 onChange={(e) => handleCustomerChange('address', e.target.value)}
                                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
@@ -254,7 +334,7 @@
                         </div>
                     )}
 
-                    {/* الفئات */}
+                    {/* التصنيفات */}
                     <div className="flex gap-2 overflow-x-auto pb-3 mb-2">
                         {categories.map((cat, i) => (
                             <button key={i} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap ${selectedCategory === cat ? 'bg-brand-pink text-white shadow-lg' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>
@@ -263,7 +343,7 @@
                         ))}
                     </div>
 
-                    {/* المنيو والأصناف */}
+                    {/* عرض الأصناف */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         {filteredItems.map(item => (
                             <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
@@ -287,21 +367,25 @@
                         ))}
                     </div>
 
-                    {/* نافذة سجل طلباتي */}
+                    {/* نافذة سجل طلباتي الخاصة بالعميل فقط مع زر تسجيل الخروج */}
                     {showOrdersModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="glass-card w-full max-w-sm rounded-2xl p-4 border border-slate-700 max-h-[80vh] flex flex-col">
+                            <div className="glass-card w-full max-w-sm rounded-2xl p-4 border border-slate-700 max-h-[85vh] flex flex-col">
                                 <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
-                                    <h3 className="text-sm font-bold text-brand-cyan">📋 سجل طلباتي السابقة</h3>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-brand-cyan">📋 سجل طلباتي السابقة</h3>
+                                        <span className="text-[10px] text-slate-400 font-mono">رقمك: {loginPhone}</span>
+                                    </div>
                                     <button onClick={() => setShowOrdersModal(false)} className="text-slate-400 hover:text-white text-sm">
                                         <i className="fa-solid fa-xmark"></i>
                                     </button>
                                 </div>
+
                                 <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                                    {allMyOrders.length === 0 ? (
-                                        <p className="text-center text-xs text-slate-500 py-6">لا توجد طلبات سابقة مسجلة.</p>
+                                    {myOrders.length === 0 ? (
+                                        <p className="text-center text-xs text-slate-500 py-6">لا توجد طلبات سابقة مسجلة برقمك.</p>
                                     ) : (
-                                        allMyOrders.map(ord => (
+                                        myOrders.map(ord => (
                                             <div key={ord.id} className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl space-y-2">
                                                 <div className="flex justify-between items-center text-xs">
                                                     <span className="font-bold text-slate-300">طلب #{ord.id.toString().slice(-6)}</span>
@@ -330,14 +414,22 @@
                                         ))
                                     )}
                                 </div>
-                                <button onClick={() => setShowOrdersModal(false)} className="w-full mt-3 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-700">
-                                    إغلاق
-                                </button>
+
+                                <div className="pt-3 border-t border-slate-800 space-y-2">
+                                    {/* زر تسجيل الخروج */}
+                                    <button onClick={handleLogout} className="w-full py-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1.5">
+                                        <i className="fa-solid fa-right-from-bracket"></i>
+                                        <span>تسجيل خروج (الدخول برقم آخر)</span>
+                                    </button>
+                                    <button onClick={() => setShowOrdersModal(false)} className="w-full py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-700">
+                                        إغلاق
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    {/* سلة الطلبات المثبتة أسفل الشاشة */}
+                    {/* سلة الطلبات */}
                     {cart.length > 0 && (
                         <div className="fixed bottom-3 left-4 right-4 max-w-md mx-auto glass-card p-3 rounded-2xl border border-brand-pink/40 shadow-2xl space-y-2 z-40">
                             <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1 border-b border-slate-800 pb-2">
