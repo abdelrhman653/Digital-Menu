@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abdo Shop - المنيو والطلب</title>
+    <title id="pageTitle">المنيو الرقمي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -16,9 +16,7 @@
             theme: {
                 extend: {
                     fontFamily: { cairo: ['Cairo', 'sans-serif'] },
-                    colors: {
-                        brand: { dark: '#0b1320', card: '#1e293b', pink: '#ec4899', cyan: '#06b6d4', amber: '#f59e0b' }
-                    }
+                    colors: { brand: { dark: '#0b1320', card: '#1e293b', pink: '#ec4899', cyan: '#06b6d4', amber: '#f59e0b' } }
                 }
             }
         }
@@ -28,553 +26,202 @@
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
-<body class="min-h-screen pb-28">
+<body class="min-h-screen pb-24">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const DEFAULT_MENU = [
-            { id: 1, name: "Chicken Royale", price: 160, category: "البرجر", calories: "Cal 440", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" },
-            { id: 2, name: "Chicken Whopper", price: 175, category: "البرجر", calories: "Cal 430", image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500" },
-            { id: 3, name: "Chicken Burger", price: 120, category: "البرجر", calories: "Cal 390", image: "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=500" },
-            { id: 4, name: "Chicken Royale Steakhouse", price: 210, category: "البرجر", calories: "Cal 850", image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=500" },
-            { id: 5, name: "Crunchy Chicken", price: 170, category: "البرجر", calories: "Cal 670", image: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=500" },
-            { id: 6, name: "Big Fish Burger", price: 155, category: "الأسماك", calories: "Cal 515", image: "https://images.unsplash.com/photo-1521305916504-4a1121188589?w=500" }
-        ];
-
-        const DELIVERY_FEE = 40;
-        const SERVICE_PERCENTAGE = 0.12;
-
-        function MainApp() {
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
-            const [loginPhone, setLoginPhone] = useState('');
-            const [loginName, setLoginName] = useState('');
-
+        function MenuApp() {
+            const [restaurantName, setRestaurantName] = useState('Abdo Shop');
             const [menuItems, setMenuItems] = useState([]);
             const [cart, setCart] = useState([]);
-            const [selectedCategory, setSelectedCategory] = useState('الكل');
-            
-            const [orderType, setOrderType] = useState('delivery'); 
-            const [tableNumber, setTableNumber] = useState('');
-            
-            const [customerInfo, setCustomerInfo] = useState({
-                name: '',
-                phone: '',
-                address: ''
-            });
-
-            const [activeOrder, setActiveOrder] = useState(null);
-            const [successMsg, setSuccessMsg] = useState(false);
-            const [showOrdersModal, setShowOrdersModal] = useState(false);
-            const [myOrders, setMyOrders] = useState([]);
-
-            const [cancelModalOpen, setCancelModalOpen] = useState(false);
-            const [orderToCancelId, setOrderToCancelId] = useState(null);
-
-            const loadMenu = () => {
-                const saved = localStorage.getItem('nexus_menu_items');
-                if (saved) {
-                    try { setMenuItems(JSON.parse(saved)); } catch(e) { setMenuItems(DEFAULT_MENU); }
-                } else {
-                    setMenuItems(DEFAULT_MENU);
-                }
-            };
-
-            const fetchMyOrders = (phoneToUse) => {
-                const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                const userOrders = allOrders.filter(o => o.customerInfo && o.customerInfo.phone === phoneToUse);
-                setMyOrders(userOrders);
-
-                if (activeOrder) {
-                    const current = userOrders.find(o => o.id === activeOrder.id);
-                    if (current) {
-                        if (current.status === 'cancelled') {
-                            setActiveOrder(null);
-                        } else {
-                            setActiveOrder(current);
-                        }
-                    }
-                }
-            };
+            const [activeCategory, setActiveCategory] = useState('الكل');
+            const [tableNumber, setTableNumber] = useState('1');
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', address: '' });
+            const [orderSuccess, setOrderSuccess] = useState(false);
 
             useEffect(() => {
-                loadMenu();
-                
-                const savedPhone = localStorage.getItem('abdo_shop_logged_phone');
-                const savedName = localStorage.getItem('abdo_shop_logged_name');
-                const savedAddress = localStorage.getItem('abdo_shop_logged_address') || '';
+                const savedName = localStorage.getItem('nexus_restaurant_name');
+                if (savedName) setRestaurantName(savedName);
 
-                if (savedPhone) {
-                    setLoginPhone(savedPhone);
-                    setLoginName(savedName || '');
-                    setCustomerInfo({
-                        name: savedName || '',
-                        phone: savedPhone,
-                        address: savedAddress
-                    });
-                    setIsLoggedIn(true);
-                    fetchMyOrders(savedPhone);
+                const urlParams = new URLSearchParams(window.location.search);
+                const table = urlParams.get('table');
+                if (table) setTableNumber(table);
+
+                const savedMenu = localStorage.getItem('nexus_menu_items');
+                if (savedMenu) {
+                    setMenuItems(JSON.parse(savedMenu));
+                } else {
+                    setMenuItems([
+                        { id: '1', name: 'تريبل زلازل برجر', category: 'البرجر 🍔', price: 140, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80', calories: '850 Cal' },
+                        { id: '2', name: 'بيتزا رانش دجاج', category: 'البيتزا 🍕', price: 110, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80', calories: '620 Cal' }
+                    ]);
                 }
-
-                const params = new URLSearchParams(window.location.search);
-                const t = params.get('table');
-                if (t) {
-                    setTableNumber(`ترابيزة رقم ${t}`);
-                    setOrderType('table');
-                }
-
-                const interval = setInterval(() => {
-                    loadMenu();
-                    const currentPhone = localStorage.getItem('abdo_shop_logged_phone');
-                    if (currentPhone) {
-                        fetchMyOrders(currentPhone);
-                    }
-                }, 1500);
-
-                return () => clearInterval(interval);
             }, []);
 
-            const handleLoginSubmit = (e) => {
-                e.preventDefault();
-                if (!loginPhone || loginPhone.length < 10) {
-                    return alert('الرجاء إدخال رقم موبايل صحيح.');
-                }
-                if (!loginName) {
-                    return alert('الرجاء إدخال الاسم بالكامل.');
-                }
+            const categories = ['الكل', ...new Set(menuItems.map(item => item.category))];
+            const filteredItems = activeCategory === 'الكل' ? menuItems : menuItems.filter(i => i.category === activeCategory);
 
-                localStorage.setItem('abdo_shop_logged_phone', loginPhone);
-                localStorage.setItem('abdo_shop_logged_name', loginName);
-                
-                setCustomerInfo(prev => ({
-                    ...prev,
-                    name: loginName,
-                    phone: loginPhone
-                }));
-
-                setIsLoggedIn(true);
-                fetchMyOrders(loginPhone);
-            };
-
-            const handleLogout = () => {
-                localStorage.removeItem('abdo_shop_logged_phone');
-                localStorage.removeItem('abdo_shop_logged_name');
-                setIsLoggedIn(false);
-                setLoginPhone('');
-                setLoginName('');
-                setCart([]);
-                setActiveOrder(null);
-            };
-
-            const handleCustomerChange = (field, val) => {
-                const updated = { ...customerInfo, [field]: val };
-                setCustomerInfo(updated);
-                if (field === 'address') {
-                    localStorage.setItem('abdo_shop_logged_address', val);
+            const addToCart = (item) => {
+                const existing = cart.find(c => c.id === item.id);
+                if (existing) {
+                    setCart(cart.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c));
+                } else {
+                    setCart([...cart, { ...item, quantity: 1 }]);
                 }
             };
 
-            const categories = ['الكل', ...new Set(menuItems.map(item => item.category || 'عام'))];
-            const filteredItems = selectedCategory === 'الكل' ? menuItems : menuItems.filter(item => item.category === selectedCategory);
-
-            const addToCart = (product) => {
-                setCart(prev => {
-                    const exist = prev.find(x => x.id === product.id);
-                    if (exist) return prev.map(x => x.id === product.id ? { ...x, quantity: x.quantity + 1 } : x);
-                    return [...prev, { ...product, quantity: 1 }];
-                });
-            };
-
-            const decreaseQuantity = (productId) => {
-                setCart(prev => {
-                    const exist = prev.find(x => x.id === productId);
-                    if (exist && exist.quantity > 1) {
-                        return prev.map(x => x.id === productId ? { ...x, quantity: x.quantity - 1 } : x);
+            const updateQuantity = (id, delta) => {
+                setCart(cart.map(c => {
+                    if (c.id === id) {
+                        const newQ = c.quantity + delta;
+                        return newQ > 0 ? { ...c, quantity: newQ } : null;
                     }
-                    return prev.filter(x => x.id !== productId);
-                });
+                    return c;
+                }).filter(Boolean));
             };
 
-            const getItemQuantityInCart = (id) => {
-                const item = cart.find(x => x.id === id);
-                return item ? item.quantity : 0;
-            };
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            // التعديل هنا: رسوم التوصيل للأونلاين فقط، وخدمة الصالة 12% للترابيزة فقط
-            const extraFee = orderType === 'delivery' ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
-            const grandTotal = subtotal + (cart.length > 0 ? extraFee : 0);
+            const handleCheckout = (e) => {
+                e.preventDefault();
+                if (cart.length === 0) return;
 
-            const submitOrder = () => {
-                if (cart.length === 0) return alert('السلة فارغة!');
-                if (orderType === 'delivery' && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
-                    return alert('الرجاء إدخال بيانات التوصيل كاملة (العنوان مطلوب)');
-                }
-
-                const now = new Date();
                 const newOrder = {
                     id: Date.now(),
-                    tableNumber: orderType === 'delivery' ? 'طلب أونلاين 🛵' : tableNumber,
+                    tableNumber: `ترابيزة رقم ${tableNumber}`,
                     items: cart,
-                    subtotal: subtotal,
-                    extraFee: extraFee,
-                    feeLabel: orderType === 'delivery' ? 'رسوم التوصيل' : 'خدمة صالة (12%)',
-                    totalPrice: grandTotal,
+                    totalPrice: totalPrice,
+                    customerInfo: customerInfo,
                     status: 'pending',
-                    date: now.toISOString().split('T')[0],
-                    time: now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-                    customerInfo: customerInfo
+                    date: new Date().toLocaleDateString('ar-EG'),
+                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
                 };
 
-                const existing = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                const updatedOrders = [newOrder, ...existing];
-                localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updatedOrders));
+                const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existingOrders]));
 
-                setActiveOrder(newOrder);
-                fetchMyOrders(customerInfo.phone);
                 setCart([]);
-                setSuccessMsg(true);
-                setTimeout(() => setSuccessMsg(false), 4000);
+                setOrderSuccess(true);
+                setIsCartOpen(false);
+                setTimeout(() => setOrderSuccess(false), 5000);
             };
-
-            const confirmCancelOrder = (orderId) => {
-                setOrderToCancelId(orderId);
-                setCancelModalOpen(true);
-            };
-
-            const executeCancelOrder = () => {
-                if (!orderToCancelId) return;
-
-                const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                const updated = allOrders.map(o => {
-                    if (o.id === orderToCancelId) {
-                        if (o.status === 'pending' || o.status === 'ready') {
-                            return { ...o, status: 'cancelled' };
-                        }
-                    }
-                    return o;
-                });
-
-                localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updated));
-                if (activeOrder && activeOrder.id === orderToCancelId) {
-                    setActiveOrder(null);
-                }
-                fetchMyOrders(customerInfo.phone);
-                setCancelModalOpen(false);
-                setOrderToCancelId(null);
-            };
-
-            if (!isLoggedIn) {
-                return (
-                    <div className="max-w-md mx-auto min-h-screen flex items-center justify-center p-4">
-                        <div className="glass-card w-full p-6 rounded-3xl border border-brand-pink/30 space-y-5 shadow-2xl">
-                            <div className="text-center space-y-2">
-                                <div className="w-16 h-16 bg-brand-pink/20 rounded-2xl mx-auto flex items-center justify-center text-brand-pink text-2xl font-bold">
-                                    <i className="fa-solid fa-utensils"></i>
-                                </div>
-                                <h2 className="text-xl font-black text-slate-100">مرحباً بك في Abdo Shop</h2>
-                                <p className="text-xs text-slate-400">الرجاء إدخال بياناتك لمتابعة طلباتك وعرض المنيو</p>
-                            </div>
-
-                            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-                                <div>
-                                    <label className="text-[11px] font-bold text-slate-300 block mb-1">الاسم بالكامل:</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="مثال: أحمد محمد"
-                                        value={loginName}
-                                        onChange={(e) => setLoginName(e.target.value)}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[11px] font-bold text-slate-300 block mb-1">رقم الموبايل:</label>
-                                    <input 
-                                        type="tel" 
-                                        placeholder="01xxxxxxxx"
-                                        value={loginPhone}
-                                        onChange={(e) => setLoginPhone(e.target.value)}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 font-mono focus:outline-none focus:border-brand-pink"
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="w-full py-3 bg-brand-pink text-white font-black text-xs rounded-xl shadow-lg active:scale-95 transition-all">
-                                    دخول للمنيو والطلب <i className="fa-solid fa-arrow-left mr-1"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                );
-            }
 
             return (
                 <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
-                    
-                    <div className="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-3 rounded-2xl mb-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-extrabold text-brand-pink">
-                                أهلاً، {customerInfo.name} 👤
-                            </span>
+                    <header className="glass-card p-4 rounded-2xl flex justify-between items-center mb-4">
+                        <div>
+                            <h1 className="text-base font-black text-brand-cyan flex items-center gap-2">
+                                <i className="fa-solid fa-store"></i> <span>{restaurantName}</span>
+                            </h1>
+                            <p className="text-[11px] text-slate-400">ترابيزة رقم: <strong className="text-brand-pink">{tableNumber}</strong></p>
                         </div>
-                        <button 
-                            onClick={() => setShowOrdersModal(true)}
-                            className="bg-brand-cyan/20 border border-brand-cyan/40 text-brand-cyan px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-sm">
-                            <i className="fa-solid fa-clock-rotate-left"></i>
-                            <span>سجل طلباتي ({myOrders.filter(o => o.status !== 'cancelled').length})</span>
-                        </button>
-                    </div>
+                        <div className="flex gap-2">
+                            <a href="kitchen.html" target="_blank" className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-brand-cyan font-bold">
+                                <i className="fa-solid fa-fire ml-1"></i> المطبخ
+                            </a>
+                            <button onClick={() => setIsCartOpen(true)} className="relative bg-brand-pink text-white px-3 py-1.5 rounded-xl text-xs font-bold">
+                                <i className="fa-solid fa-cart-shopping"></i>
+                                {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-amber-500 text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.reduce((a,b)=>a+b.quantity,0)}</span>}
+                            </button>
+                        </div>
+                    </header>
 
-                    {activeOrder && activeOrder.status !== 'cancelled' && (
-                        <div className="glass-card p-3.5 rounded-2xl mb-4 border border-brand-cyan/30 space-y-3 animate-fadeIn">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-slate-200">تتبع طلبك الحالي (#{activeOrder.id.toString().slice(-6)})</span>
-                                <span className="text-slate-400 font-mono text-[10px]">{activeOrder.time}</span>
-                            </div>
-
-                            <div className="grid grid-cols-4 gap-1 pt-1">
-                                <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'pending' ? 'bg-amber-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>⏳ قيد التحضير</div>
-                                <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'ready' ? 'bg-cyan-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>🔥 جاهز</div>
-                                <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'out_for_delivery' ? 'bg-blue-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>⚡ جاري التوصيل</div>
-                                <div className={`py-1.5 px-0.5 rounded-lg text-center text-[10px] font-bold transition-all ${
-                                    activeOrder.status === 'delivered' ? 'bg-emerald-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
-                                }`}>✅ تم التسليم</div>
-                            </div>
-
-                            {(activeOrder.status === 'pending' || activeOrder.status === 'ready') && (
-                                <button 
-                                    onClick={() => confirmCancelOrder(activeOrder.id)}
-                                    className="w-full py-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1.5">
-                                    <i className="fa-solid fa-ban"></i>
-                                    <span>إلغاء الطلب</span>
-                                </button>
-                            )}
+                    {orderSuccess && (
+                        <div className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 p-3 rounded-xl text-xs text-center font-bold mb-4 animate-bounce">
+                            🎉 تم إرسال طلبك بنجاح إلى المطبخ!
                         </div>
                     )}
 
-                    {orderType === 'delivery' && (
-                        <div className="glass-card p-3.5 rounded-2xl mb-4 space-y-2.5">
-                            <h3 className="text-xs font-black text-brand-cyan">🛵 بيانات التوصيل:</h3>
-                            <input 
-                                type="text" placeholder="الاسم بالكامل" 
-                                value={customerInfo.name} 
-                                onChange={(e) => handleCustomerChange('name', e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
-                            />
-                            <input 
-                                type="tel" placeholder="رقم الموبايل" 
-                                value={customerInfo.phone} 
-                                disabled
-                                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-400 font-mono cursor-not-allowed"
-                            />
-                            <textarea 
-                                rows="2" placeholder="العنوان بالتفصيل (رقم الشارع، الحارة، العلامة المميزة)..." 
-                                value={customerInfo.address} 
-                                onChange={(e) => handleCustomerChange('address', e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
-                            ></textarea>
-                        </div>
-                    )}
-
-                    {successMsg && (
-                        <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 p-2.5 rounded-xl mb-4 text-center text-xs font-bold animate-pulse">
-                            🎉 تم إرسال طلبك بنجاح للمطبخ!
-                        </div>
-                    )}
-
-                    <div className="flex gap-2 overflow-x-auto pb-3 mb-2">
-                        {categories.map((cat, i) => (
-                            <button key={i} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap ${selectedCategory === cat ? 'bg-brand-pink text-white shadow-lg' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>
+                    <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+                        {categories.map(cat => (
+                            <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-brand-pink text-white shadow-lg shadow-pink-500/20' : 'glass-card text-slate-300'}`}>
                                 {cat}
                             </button>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                        {filteredItems.map(item => {
-                            const qty = getItemQuantityInCart(item.id);
-                            return (
-                                <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
-                                    <div className="relative h-28 bg-slate-900">
-                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                        {item.calories && <span className="absolute top-2 left-2 bg-slate-950/80 text-[9px] font-mono font-bold text-amber-400 px-2 py-0.5 rounded-full">{item.calories}</span>}
-                                    </div>
-                                    <div className="p-2.5 flex-1 flex flex-col justify-between space-y-2">
-                                        <div>
-                                            <h4 className="text-xs font-bold text-slate-100 line-clamp-1">{item.name}</h4>
-                                            <p className="text-[10px] text-slate-400">{item.category}</p>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-black text-brand-cyan font-mono">{item.price} ج.م</span>
-                                            
-                                            {qty === 0 ? (
-                                                <button onClick={() => addToCart(item)} className="w-7 h-7 bg-brand-pink text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-md active:scale-95">
-                                                    <i className="fa-solid fa-plus"></i>
-                                                </button>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-xl border border-slate-800">
-                                                    <button onClick={() => decreaseQuantity(item.id)} className="text-rose-400 text-xs w-5 h-5 flex items-center justify-center font-bold">
-                                                        <i className="fa-solid fa-minus"></i>
-                                                    </button>
-                                                    <span className="text-xs font-bold text-slate-100 font-mono">{qty}</span>
-                                                    <button onClick={() => addToCart(item)} className="text-emerald-400 text-xs w-5 h-5 flex items-center justify-center font-bold">
-                                                        <i className="fa-solid fa-plus"></i>
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                    <div className="grid grid-cols-2 gap-3 flex-1">
+                        {filteredItems.map(item => (
+                            <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
+                                <img src={item.image} alt={item.name} className="w-full h-28 object-cover" />
+                                <div className="p-3 space-y-1">
+                                    <h3 className="font-bold text-xs truncate text-slate-100">{item.name}</h3>
+                                    {item.calories && <span className="text-[10px] text-slate-400 block">{item.calories}</span>}
+                                    <div className="flex justify-between items-center pt-2">
+                                        <span className="text-brand-cyan font-black text-xs">{item.price} ج.م</span>
+                                        <button onClick={() => addToCart(item)} className="bg-brand-pink/20 text-brand-pink border border-brand-pink/30 p-1.5 rounded-xl text-xs hover:bg-brand-pink hover:text-white transition-all">
+                                            <i className="fa-solid fa-plus"></i>
+                                        </button>
                                     </div>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
 
-                    {showOrdersModal && (
-                        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="glass-card w-full max-w-sm rounded-2xl p-4 border border-slate-700 max-h-[85vh] flex flex-col">
-                                <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
-                                    <div>
-                                        <h3 className="text-sm font-bold text-brand-cyan">📋 سجل طلباتي السابقة</h3>
-                                        <span className="text-[10px] text-slate-400 font-mono">رقمك: {loginPhone}</span>
+                    {/* سلة المشتريات Modal */}
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
+                            <div className="w-full max-w-sm bg-brand-dark h-full p-4 flex flex-col justify-between border-l border-slate-800">
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                                        <h2 className="text-sm font-bold text-white"><i className="fa-solid fa-cart-shopping text-brand-pink ml-1"></i> سلة طلباتك</h2>
+                                        <button onClick={() => setIsCartOpen(false)} className="text-slate-400 hover:text-white text-sm"><i className="fa-solid fa-xmark"></i></button>
                                     </div>
-                                    <button onClick={() => setShowOrdersModal(false)} className="text-slate-400 hover:text-white text-sm">
-                                        <i className="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
 
-                                <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                                    {myOrders.length === 0 ? (
-                                        <p className="text-center text-xs text-slate-500 py-6">لا توجد طلبات سابقة مسجلة برقمك.</p>
-                                    ) : (
-                                        myOrders.map(ord => (
-                                            <div key={ord.id} className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl space-y-2">
-                                                <div className="flex justify-between items-center text-xs">
-                                                    <span className="font-bold text-slate-300">طلب #{ord.id.toString().slice(-6)}</span>
-                                                    <span className="text-[10px] text-slate-400 font-mono">{ord.time} - {ord.date}</span>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                        {cart.length === 0 ? (
+                                            <p className="text-center text-xs text-slate-500 py-8">السلة فارغة حالياً</p>
+                                        ) : (
+                                            cart.map(item => (
+                                                <div key={item.id} className="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-xs">
+                                                    <div>
+                                                        <h4 className="font-bold text-slate-200">{item.name}</h4>
+                                                        <span className="text-brand-cyan">{item.price * item.quantity} ج.م</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button onClick={() => updateQuantity(item.id, -1)} className="w-6 h-6 bg-slate-800 rounded-lg text-slate-300">-</button>
+                                                        <span className="font-bold">{item.quantity}</span>
+                                                        <button onClick={() => updateQuantity(item.id, 1)} className="w-6 h-6 bg-slate-800 rounded-lg text-slate-300">+</button>
+                                                    </div>
                                                 </div>
-                                                <div className="text-[11px] text-slate-400 border-t border-slate-800 pt-1.5 space-y-1">
-                                                    {ord.items.map((it, idx) => (
-                                                        <div key={idx} className="flex justify-between">
-                                                            <span>{it.name} (x{it.quantity})</span>
-                                                            <span className="font-mono text-brand-cyan">{it.price * it.quantity} ج.م</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] text-amber-400">
-                                                    <span>{ord.feeLabel || (ord.tableNumber?.includes('ترابيزة') ? 'خدمة صالة (12%)' : 'رسوم التوصيل')}:</span>
-                                                    <span className="font-mono">{ord.extraFee} ج.م</span>
-                                                </div>
-                                                <div className="flex justify-between items-center pt-1 border-t border-slate-800/60 text-xs font-bold">
-                                                    <span className="text-slate-300">الإجمالي: <span className="text-brand-pink font-mono">{ord.totalPrice} ج.م</span></span>
-                                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] ${
-                                                        ord.status === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                                                        ord.status === 'ready' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
-                                                        ord.status === 'out_for_delivery' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                                                        ord.status === 'cancelled' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                                                        'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    }`}>
-                                                        {ord.status === 'pending' ? 'قيد التحضير' : ord.status === 'ready' ? 'جاهز' : ord.status === 'out_for_delivery' ? 'جاري التوصيل' : ord.status === 'cancelled' ? 'تم الإلغاء' : 'تم التسليم'}
-                                                    </span>
-                                                </div>
+                                            ))
+                                        )}
+                                    </div>
 
-                                                {(ord.status === 'pending' || ord.status === 'ready') && (
-                                                    <button 
-                                                        onClick={() => confirmCancelOrder(ord.id)}
-                                                        className="w-full mt-2 py-1.5 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-lg text-[11px] font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1">
-                                                        <i className="fa-solid fa-ban"></i>
-                                                        <span>إلغاء هذا الطلب</span>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))
+                                    {cart.length > 0 && (
+                                        <form onSubmit={handleCheckout} className="space-y-3 border-t border-slate-800 pt-3">
+                                            <h3 className="text-xs font-bold text-slate-300">بيانات العميل (اختياري)</h3>
+                                            <input type="text" placeholder="الاسم" value={customerInfo.name} onChange={(e)=>setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
+                                            <input type="text" placeholder="رقم الهاتف" value={customerInfo.phone} onChange={(e)=>setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
+                                        </form>
                                     )}
                                 </div>
 
-                                <div className="pt-3 border-t border-slate-800 space-y-2">
-                                    <button onClick={handleLogout} className="w-full py-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1.5">
-                                        <i className="fa-solid fa-right-from-bracket"></i>
-                                        <span>تسجيل خروج (الدخول برقم آخر)</span>
-                                    </button>
-                                    <button onClick={() => setShowOrdersModal(false)} className="w-full py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-700">
-                                        إغلاق
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {cancelModalOpen && (
-                        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
-                            <div className="glass-card w-full max-w-xs rounded-2xl p-5 border border-rose-500/30 text-center space-y-4 shadow-2xl">
-                                <div className="w-12 h-12 bg-rose-500/20 rounded-full mx-auto flex items-center justify-center text-rose-400 text-xl font-bold">
-                                    <i className="fa-solid fa-triangle-exclamation"></i>
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-sm font-black text-slate-100">تأكيد إلغاء الطلب</h3>
-                                    <p className="text-xs text-slate-400">هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟</p>
-                                </div>
-                                <div className="flex gap-2 pt-2">
-                                    <button 
-                                        onClick={() => setCancelModalOpen(false)} 
-                                        className="flex-1 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition-all">
-                                        تراجع
-                                    </button>
-                                    <button 
-                                        onClick={executeCancelOrder} 
-                                        className="flex-1 py-2.5 bg-rose-500 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-rose-600 transition-all">
-                                        تأكيد الإلغاء
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {cart.length > 0 && (
-                        <div className="fixed bottom-3 left-4 right-4 max-w-md mx-auto glass-card p-3 rounded-2xl border border-brand-pink/40 shadow-2xl space-y-2 z-40">
-                            <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1 border-b border-slate-800 pb-2">
-                                {cart.map(i => (
-                                    <div key={i.id} className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-200 font-semibold">{i.name} (x{i.quantity})</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-brand-cyan font-mono">{i.price * i.quantity} ج.م</span>
-                                            <div className="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded-lg border border-slate-800">
-                                                <button onClick={() => decreaseQuantity(i.id)} className="text-rose-400 text-[10px] px-1"><i className="fa-solid fa-minus"></i></button>
-                                                <span className="text-[11px] font-bold font-mono text-slate-100">{i.quantity}</span>
-                                                <button onClick={() => addToCart(i)} className="text-emerald-400 text-[10px] px-1"><i className="fa-solid fa-plus"></i></button>
-                                            </div>
+                                {cart.length > 0 && (
+                                    <div className="space-y-3 border-t border-slate-800 pt-4">
+                                        <div className="flex justify-between text-xs font-bold">
+                                            <span>الإجمالي:</span>
+                                            <span className="text-brand-pink text-sm">{totalPrice} ج.م</span>
                                         </div>
+                                        <button onClick={handleCheckout} className="w-full py-3 bg-brand-pink text-white rounded-xl text-xs font-bold shadow-lg shadow-pink-500/20">
+                                            إرسال الطلب للمطبخ 🚀
+                                        </button>
                                     </div>
-                                ))}
-                            </div>
-                            <div className="flex justify-between text-[11px] text-slate-400">
-                                <span>{orderType === 'delivery' ? 'رسوم التوصيل:' : 'خدمة صالة (12%):'}</span>
-                                <span className="font-mono text-amber-400">{extraFee} ج.م</span>
-                            </div>
-                            <div className="flex items-center justify-between pt-1">
-                                <div>
-                                    <span className="text-[10px] text-slate-400 block">الإجمالي الكلي:</span>
-                                    <span className="text-sm font-black text-brand-pink font-mono">{grandTotal} ج.م</span>
-                                </div>
-                                <button onClick={submitOrder} className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 flex items-center gap-1.5">
-                                    <span>تأكيد الطلب</span>
-                                    <i className="fa-solid fa-paper-plane"></i>
-                                </button>
+                                )}
                             </div>
                         </div>
                     )}
+
+                    <footer className="mt-8 text-center text-[11px] text-slate-500 border-t border-slate-800/60 pt-4">
+                        تطوير Abdelrhman Mohamed | Web Developer
+                    </footer>
                 </div>
             );
         }
-
-        ReactDOM.createRoot(document.getElementById('root')).render(<MainApp />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<MenuApp />);
     </script>
 </body>
 </html>
