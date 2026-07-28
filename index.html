@@ -69,6 +69,10 @@
             const [showOrdersModal, setShowOrdersModal] = useState(false);
             const [myOrders, setMyOrders] = useState([]);
 
+            // حالات نافذة التأكيد المخصصة لإلغاء الطلب
+            const [cancelModalOpen, setCancelModalOpen] = useState(false);
+            const [orderToCancelId, setOrderToCancelId] = useState(null);
+
             const loadMenu = () => {
                 const saved = localStorage.getItem('nexus_menu_items');
                 if (saved) {
@@ -233,13 +237,19 @@
                 setTimeout(() => setSuccessMsg(false), 4000);
             };
 
-            // دالة إلغاء الطلب (تتيح الإلغاء فقط في مرحلة قيد التحضير أو جاهز)
-            const cancelOrder = (orderId) => {
-                if (!confirm('هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟')) return;
+            // فتح نافذة تأكيد الإلغاء الشيك
+            const confirmCancelOrder = (orderId) => {
+                setOrderToCancelId(orderId);
+                setCancelModalOpen(true);
+            };
+
+            // تنفيذ الإلغاء الفعلي
+            const executeCancelOrder = () => {
+                if (!orderToCancelId) return;
 
                 const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
                 const updated = allOrders.map(o => {
-                    if (o.id === orderId) {
+                    if (o.id === orderToCancelId) {
                         if (o.status === 'pending' || o.status === 'ready') {
                             return { ...o, status: 'cancelled' };
                         }
@@ -248,10 +258,12 @@
                 });
 
                 localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updated));
-                if (activeOrder && activeOrder.id === orderId) {
+                if (activeOrder && activeOrder.id === orderToCancelId) {
                     setActiveOrder(null);
                 }
                 fetchMyOrders(customerInfo.phone);
+                setCancelModalOpen(false);
+                setOrderToCancelId(null);
             };
 
             if (!isLoggedIn) {
@@ -337,10 +349,9 @@
                                 }`}>✅ تم التسليم</div>
                             </div>
 
-                            {/* زر إلغاء الطلب يظهر فقط في حالتي pending أو ready */}
                             {(activeOrder.status === 'pending' || activeOrder.status === 'ready') && (
                                 <button 
-                                    onClick={() => cancelOrder(activeOrder.id)}
+                                    onClick={() => confirmCancelOrder(activeOrder.id)}
                                     className="w-full py-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1.5">
                                     <i className="fa-solid fa-ban"></i>
                                     <span>إلغاء الطلب</span>
@@ -474,10 +485,9 @@
                                                     </span>
                                                 </div>
 
-                                                {/* زر الإلغاء يظهر داخل سجل الطلبات أيضاً طالما الطلب قيد التحضير أو جاهز */}
                                                 {(ord.status === 'pending' || ord.status === 'ready') && (
                                                     <button 
-                                                        onClick={() => cancelOrder(ord.id)}
+                                                        onClick={() => confirmCancelOrder(ord.id)}
                                                         className="w-full mt-2 py-1.5 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-lg text-[11px] font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1">
                                                         <i className="fa-solid fa-ban"></i>
                                                         <span>إلغاء هذا الطلب</span>
@@ -495,6 +505,33 @@
                                     </button>
                                     <button onClick={() => setShowOrdersModal(false)} className="w-full py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-700">
                                         إغلاق
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* نافذة تأكيد إلغاء الطلب المخصصة (Modal نظيف ومتناسق) */}
+                    {cancelModalOpen && (
+                        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+                            <div className="glass-card w-full max-w-xs rounded-2xl p-5 border border-rose-500/30 text-center space-y-4 shadow-2xl">
+                                <div className="w-12 h-12 bg-rose-500/20 rounded-full mx-auto flex items-center justify-center text-rose-400 text-xl font-bold">
+                                    <i className="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-sm font-black text-slate-100">تأكيد إلغاء الطلب</h3>
+                                    <p className="text-xs text-slate-400">هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟</p>
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <button 
+                                        onClick={() => setCancelModalOpen(false)} 
+                                        className="flex-1 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition-all">
+                                        تراجع
+                                    </button>
+                                    <button 
+                                        onClick={executeCancelOrder} 
+                                        className="flex-1 py-2.5 bg-rose-500 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-rose-600 transition-all">
+                                        تأكيد الإلغاء
                                     </button>
                                 </div>
                             </div>
@@ -542,3 +579,4 @@
     </script>
 </body>
 </html>
+
