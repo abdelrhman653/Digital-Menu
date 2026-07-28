@@ -85,7 +85,13 @@
 
                 if (activeOrder) {
                     const current = userOrders.find(o => o.id === activeOrder.id);
-                    if (current) setActiveOrder(current);
+                    if (current) {
+                        if (current.status === 'cancelled') {
+                            setActiveOrder(null);
+                        } else {
+                            setActiveOrder(current);
+                        }
+                    }
                 }
             };
 
@@ -227,6 +233,27 @@
                 setTimeout(() => setSuccessMsg(false), 4000);
             };
 
+            // دالة إلغاء الطلب (تتيح الإلغاء فقط في مرحلة قيد التحضير أو جاهز)
+            const cancelOrder = (orderId) => {
+                if (!confirm('هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟')) return;
+
+                const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                const updated = allOrders.map(o => {
+                    if (o.id === orderId) {
+                        if (o.status === 'pending' || o.status === 'ready') {
+                            return { ...o, status: 'cancelled' };
+                        }
+                    }
+                    return o;
+                });
+
+                localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updated));
+                if (activeOrder && activeOrder.id === orderId) {
+                    setActiveOrder(null);
+                }
+                fetchMyOrders(customerInfo.phone);
+            };
+
             if (!isLoggedIn) {
                 return (
                     <div className="max-w-md mx-auto min-h-screen flex items-center justify-center p-4">
@@ -284,12 +311,12 @@
                             onClick={() => setShowOrdersModal(true)}
                             className="bg-brand-cyan/20 border border-brand-cyan/40 text-brand-cyan px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-sm">
                             <i className="fa-solid fa-clock-rotate-left"></i>
-                            <span>سجل طلباتي ({myOrders.length})</span>
+                            <span>سجل طلباتي ({myOrders.filter(o => o.status !== 'cancelled').length})</span>
                         </button>
                     </div>
 
-                    {activeOrder && (
-                        <div className="glass-card p-3.5 rounded-2xl mb-4 border border-brand-cyan/30 space-y-2.5 animate-fadeIn">
+                    {activeOrder && activeOrder.status !== 'cancelled' && (
+                        <div className="glass-card p-3.5 rounded-2xl mb-4 border border-brand-cyan/30 space-y-3 animate-fadeIn">
                             <div className="flex justify-between items-center text-xs">
                                 <span className="font-bold text-slate-200">تتبع طلبك الحالي (#{activeOrder.id.toString().slice(-6)})</span>
                                 <span className="text-slate-400 font-mono text-[10px]">{activeOrder.time}</span>
@@ -309,6 +336,16 @@
                                     activeOrder.status === 'delivered' ? 'bg-emerald-500 text-slate-950 shadow-lg scale-105' : 'bg-slate-950/60 text-slate-500 border border-slate-800'
                                 }`}>✅ تم التسليم</div>
                             </div>
+
+                            {/* زر إلغاء الطلب يظهر فقط في حالتي pending أو ready */}
+                            {(activeOrder.status === 'pending' || activeOrder.status === 'ready') && (
+                                <button 
+                                    onClick={() => cancelOrder(activeOrder.id)}
+                                    className="w-full py-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1.5">
+                                    <i className="fa-solid fa-ban"></i>
+                                    <span>إلغاء الطلب</span>
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -430,11 +467,22 @@
                                                         ord.status === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                                                         ord.status === 'ready' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
                                                         ord.status === 'out_for_delivery' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                                                        ord.status === 'cancelled' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
                                                         'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                     }`}>
-                                                        {ord.status === 'pending' ? 'قيد التحضير' : ord.status === 'ready' ? 'جاهز' : ord.status === 'out_for_delivery' ? 'جاري التوصيل' : 'تم التسليم'}
+                                                        {ord.status === 'pending' ? 'قيد التحضير' : ord.status === 'ready' ? 'جاهز' : ord.status === 'out_for_delivery' ? 'جاري التوصيل' : ord.status === 'cancelled' ? 'تم الإلغاء' : 'تم التسليم'}
                                                     </span>
                                                 </div>
+
+                                                {/* زر الإلغاء يظهر داخل سجل الطلبات أيضاً طالما الطلب قيد التحضير أو جاهز */}
+                                                {(ord.status === 'pending' || ord.status === 'ready') && (
+                                                    <button 
+                                                        onClick={() => cancelOrder(ord.id)}
+                                                        className="w-full mt-2 py-1.5 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-lg text-[11px] font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1">
+                                                        <i className="fa-solid fa-ban"></i>
+                                                        <span>إلغاء هذا الطلب</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         ))
                                     )}
