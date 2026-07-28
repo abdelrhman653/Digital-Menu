@@ -147,9 +147,40 @@
             font-weight: 600;
         }
         .hidden { display: none !important; }
+
+        /* نافذة التنبيهات المخصصة بدلاً من الـ Alert العادية */
+        #customAlertModal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(13, 17, 23, 0.85);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .custom-alert-box {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
     </style>
 </head>
 <body>
+
+    <!-- نافذة التنبيهات المخصصة -->
+    <div id="customAlertModal" class="hidden">
+        <div class="custom-alert-box">
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> تنبيه</h3>
+            <p id="customAlertMessage">رسالة التنبيه هنا</p>
+            <button class="btn" onclick="closeCustomAlert()">حسناً</button>
+        </div>
+    </div>
 
     <div id="authSection" class="container" style="margin-top: 50px;">
         <div class="card" style="text-align: center;">
@@ -224,6 +255,14 @@
     </div>
 
     <script>
+        function showCustomAlert(msg) {
+            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
+
         let currentRestaurant = localStorage.getItem('current_restaurant');
         let uploadedImageBase64 = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
 
@@ -236,7 +275,7 @@
         function handleLogin() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             if (!nameInput) {
-                alert('الرجاء كتابة اسم أو كود المطعم!');
+                showCustomAlert('الرجاء كتابة اسم أو كود المطعم!');
                 return;
             }
             currentRestaurant = nameInput;
@@ -291,7 +330,7 @@
             let price = document.getElementById('newItemPrice').value;
 
             if (!name || !price) {
-                alert('الرجاء إدخال اسم الصنف والسعر!');
+                showCustomAlert('الرجاء إدخال اسم الصنف والسعر!');
                 return;
             }
 
@@ -355,7 +394,7 @@
                 );
                 saveItems(items);
                 renderItems();
-                alert('تم تحليل صورة المنيو القديم واستخراج الأصناف وإضافتها بنجاح!');
+                showCustomAlert('تم تحليل صورة المنيو القديم واستخراج الأصناف وإضافتها بنجاح!');
             }, 2000);
         }
 
