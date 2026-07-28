@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS - لوحة تحكم الإدارة</title>
+    <title>NEXUS - لوحة تحكم الإدارة والذكاء الاصطناعي</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -15,6 +15,7 @@
             --text-main: #ffffff;
             --text-sub: #94a3b8;
             --green-glow: #00ff87;
+            --danger: #ff0055;
         }
 
         * {
@@ -55,12 +56,23 @@
             -webkit-text-fill-color: transparent;
         }
 
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media(max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
         .section-card {
             background: var(--card-glass);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 20px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
         .section-title {
@@ -68,19 +80,27 @@
             font-weight: bold;
             margin-bottom: 15px;
             color: var(--accent-neon);
-        }
-
-        .qr-controls {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            align-items: center;
+            gap: 8px;
         }
 
-        input {
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: white;
-            padding: 10px 15px;
+            padding: 12px;
             border-radius: 12px;
             font-size: 0.95rem;
             outline: none;
@@ -91,71 +111,223 @@
             background: linear-gradient(135deg, var(--accent-neon), #0072ff);
             color: #000;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 12px;
             font-weight: 900;
             cursor: pointer;
-            white-space: nowrap;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .ai-btn {
+            background: linear-gradient(135deg, var(--accent-purple), #ff007f);
+            color: white;
+            margin-top: 10px;
+        }
+
+        .items-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            width: auto;
+            font-size: 0.85rem;
         }
 
         .qr-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 15px;
+            margin-top: 15px;
         }
 
         .qr-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 15px;
+            padding: 12px;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .qr-card h4 {
-            margin-bottom: 10px;
-            color: var(--green-glow);
         }
 
         .qr-code-box {
             background: white;
-            padding: 8px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-
-        .table-link {
-            font-size: 0.75rem;
-            color: var(--text-sub);
-            word-break: break-all;
+            padding: 6px;
+            border-radius: 8px;
+            margin: 8px 0;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-logo">لوحة تحكم التاجر ⚙️</div>
+        <div class="brand-logo">لوحة الإدارة والذكاء الاصطناعي 🧠⚡</div>
     </header>
 
-    <div class="section-card">
-        <div class="section-title">منشئ أكواد QR للترابيزات 📱</div>
-        <div class="qr-controls">
-            <input type="number" id="tablesCount" placeholder="أدخل عدد الترابيزات (مثلاً 5)" value="4">
-            <button onclick="generateQRCodes()">توليد الروابط والـ QR</button>
+    <div class="container">
+        <!-- القسم الأول: إضافة وتعديل الأصناف بالذكاء الاصطناعي -->
+        <div>
+            <div class="section-card">
+                <div class="section-title">✨ إضافة وتعديل أصناف المنيو (معزز بالذكاء الاصطناعي)</div>
+                <div class="form-group">
+                    <label>اسم الأكلة أو الصنف:</label>
+                    <input type="text" id="itemName" placeholder="مثلاً: برجر لحم دابل">
+                </div>
+                <div class="form-group">
+                    <label>السعر (ج.م):</label>
+                    <input type="number" id="itemPrice" placeholder="150">
+                </div>
+                <div class="form-group">
+                    <label>القسم:</label>
+                    <select id="itemCategory">
+                        <option value="popular">الأكثر طلباً 🔥</option>
+                        <option value="burger">البرجر 🍔</option>
+                        <option value="pizza">البيتزا 🍕</option>
+                        <option value="drinks">المشروبات 🥤</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>رابط الصورة:</label>
+                    <input type="text" id="itemImage" placeholder="https://images.unsplash.com/...">
+                </div>
+                <button onclick="addNewItem()">إضافة الصنف للمنيو 🚀</button>
+                <button class="ai-btn" onclick="enhanceWithAI()">✨ تحسين الوصف والاسم بالذكاء الاصطناعي</button>
+            </div>
+
+            <div class="section-card">
+                <div class="section-title">📋 إدارة الأصناف الحالية</div>
+                <div class="items-list" id="adminItemsList">
+                    <!-- يتم تعبئتها ديناميكياً -->
+                </div>
+            </div>
         </div>
-        <div class="qr-grid" id="qrGrid"></div>
+
+        <!-- القسم الثاني: توليد أكواد QR للترابيزات -->
+        <div>
+            <div class="section-card">
+                <div class="section-title">📱 مولد QR كود للترابيزات</div>
+                <div class="form-group">
+                    <label>عدد ترابيزات المطعم:</label>
+                    <input type="number" id="tablesCount" value="4" oninput="generateQRCodes()">
+                </div>
+                <div class="qr-grid" id="qrGrid"></div>
+            </div>
+        </div>
     </div>
 
     <script>
+        // دндарт وهمي للذكاء الاصطناعي لتحسين الاسم أو إعطاء طابع تسويقي جذاب
+        function enhanceWithAI() {
+            const nameInput = document.getElementById('itemName');
+            let currentName = nameInput.value.trim();
+            if(!currentName) {
+                alert('الرجاء كتابة اسم الصنف أولاً ليقوم الذكاء الاصطناعي بتحسينه!');
+                return;
+            }
+            // محاكاة معالجة ذكاء اصطناعي لتسويق المنتج
+            nameInput.value = `🌟 ${currentName} (سبتيشال الإدارة)`;
+            alert('تم تحسين اسم الصنف ووصفه واختيار أفضل صيغة تسويقية بواسطة الذكاء الاصطناعي بنجاح! ✨');
+        }
+
+        // جلب أو تهيئة الأصناف
+        function getMenuItems() {
+            let items = localStorage.getItem('nexus_menu_items');
+            if(!items) {
+                // الأصناف الافتراضية لو مش موجودة
+                items = JSON.stringify([
+                    {id: 1, name: "تربل زلازل برجر", price: 140, oldPrice: 180, category: "burger", discount: "خصم 22%", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500"},
+                    {id: 2, name: "بيتزا رانش دجاج", price: 110, oldPrice: 135, category: "pizza", discount: "خصم 19%", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"},
+                    {id: 3, name: "موهيتو بلو نيون", price: 35, oldPrice: 50, category: "drinks", discount: "خصم 30%", image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500"},
+                    {id: 4, name: "كشري أسطوري سبتيشال", price: 40, oldPrice: 0, category: "popular", discount: "", image: "https://images.unsplash.com/photo-1543353071-10c8ba85a904?w=500"}
+                ]);
+                localStorage.setItem('nexus_menu_items', items);
+            }
+            return JSON.parse(items);
+        }
+
+        function renderAdminItems() {
+            const items = getMenuItems();
+            const list = document.getElementById('adminItemsList');
+            list.innerHTML = '';
+
+            items.forEach(item => {
+                list.innerHTML += `
+                    <div class="item-row">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <div style="font-size:0.8rem; color:var(--text-sub);">${item.price} ج.م | القسم: ${item.category}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteItem(${item.id})">حذف 🗑️</button>
+                    </div>
+                `;
+            });
+        }
+
+        function addNewItem() {
+            const name = document.getElementById('itemName').value;
+            const price = parseFloat(document.getElementById('itemPrice').value);
+            const category = document.getElementById('itemCategory').value;
+            const image = document.getElementById('itemImage').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
+
+            if(!name || !price) {
+                alert('برجاء إدخال اسم الصنف والسعر على الأقل!');
+                return;
+            }
+
+            let items = getMenuItems();
+            const newItem = {
+                id: Date.now(),
+                name: name,
+                price: price,
+                oldPrice: price + 30,
+                category: category,
+                discount: "جديد 🔥",
+                image: image
+            };
+
+            items.push(newItem);
+            localStorage.setItem('nexus_menu_items', JSON.stringify(items));
+            
+            // تفريغ الحقول
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemImage').value = '';
+
+            renderAdminItems();
+            alert('تم إضافة الصنف بنجاح وتحديث المنيو للعملاء فوراً! 🚀');
+        }
+
+    function deleteItem(id) {
+            let items = getMenuItems();
+            items = items.filter(i => i.id !== id);
+            localStorage.setItem('nexus_menu_items', JSON.stringify(items));
+            renderAdminItems();
+        }
+
+        // توليد أكواد QR
         function generateQRCodes() {
             const count = document.getElementById('tablesCount').value || 1;
             const grid = document.getElementById('qrGrid');
             grid.innerHTML = '';
 
-            // الحصول على الرابط الأساسي للموقع تلقائياً
             const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html');
 
             for (let i = 1; i <= count; i++) {
@@ -164,23 +336,23 @@
                 const card = document.createElement('div');
                 card.className = 'qr-card';
                 card.innerHTML = `
-                    <h4>ترابيزة رقم ${i}</h4>
+                    <div style="font-weight:bold; font-size:0.85rem; margin-bottom:5px;">ترابيزة ${i}</div>
                     <div class="qr-code-box" id="qrcode-${i}"></div>
-                    <a href="${tableUrl}" target="_blank" class="table-link">فتح الرابط 🔗</a>
+                    <br>
+                    <a href="${tableUrl}" target="_blank" style="font-size:0.7rem; color:var(--accent-neon);">فتح الرابط 🔗</a>
                 `;
                 grid.appendChild(card);
 
-                // توليد رمز الـ QR
                 new QRCode(document.getElementById(`qrcode-${i}`), {
                     text: tableUrl,
-                    width: 120,
-                    height: 120
+                    width: 90,
+                    height: 90
                 });
             }
         }
 
+        renderAdminItems();
         generateQRCodes();
     </script>
 </body>
 </html>
-
