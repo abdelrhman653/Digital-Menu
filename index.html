@@ -134,6 +134,14 @@
             border-radius: 10px;
             display: inline-block;
             margin: 10px 0;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px dashed transparent;
+        }
+        .qr-img-container:hover {
+            transform: scale(1.05);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.4);
         }
         .table-link {
             color: var(--secondary);
@@ -256,6 +264,7 @@
 
             <div class="card">
                 <h3><i class="fa-solid fa-qrcode" style="color: var(--primary);"></i> مولد QR كود للترابيزات</h3>
+                <p style="color: var(--gray); font-size: 12px; margin-top: 5px;">اضغط على أي QR كود لطباعته أو حفظه لترابيزة المطعم.</p>
                 <label>عدد ترابيزات المطعم:</label>
                 <input type="number" id="tablesCountInput" value="2" min="1" oninput="generateTablesQR()">
                 <div id="qrResultsContainer" class="qr-grid"></div>
@@ -425,20 +434,89 @@
                 box.className = 'qr-box';
                 box.innerHTML = `
                     <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">ترابيزة ${i}</div>
-                    <div class="qr-img-container" id="qrcode-${i}"></div>
+                    <div class="qr-img-container" id="qrcode-${i}" title="اضغط لطباعة الـ QR" onclick="printQRCode(${i})"></div>
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> فتح الرابط</a>
                 `;
                 container.appendChild(box);
 
                 new QRCode(document.getElementById(`qrcode-${i}`), {
                     text: tableUrl,
-                    width: 100,
-                    height: 100,
+                    width: 110,
+                    height: 110,
                     colorDark: "#000000",
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
                 });
             }
+        }
+
+        function printQRCode(tableNum) {
+            let qrEl = document.getElementById(`qrcode-${tableNum}`);
+            let qrImg = qrEl.querySelector('img') ? qrEl.querySelector('img').src : '';
+            let canvas = qrEl.querySelector('canvas');
+            let imgSrc = qrImg || (canvas ? canvas.toDataURL("image/png") : '');
+
+            if (!imgSrc) {
+                showCustomAlert('جاري إنشاء الـ QR، حاول مرة أخرى بعد لحظات.');
+                return;
+            }
+
+            let printContent = `
+                <html dir="rtl">
+                <head>
+                    <title>طباعة QR - ترابيزة ${tableNum}</title>
+                    <style>
+                        body {
+                            font-family: 'Cairo', sans-serif;
+                            text-align: center;
+                            padding: 30px;
+                            background: #fff;
+                            color: #000;
+                        }
+                        .print-card {
+                            border: 3px solid #000;
+                            border-radius: 20px;
+                            padding: 30px;
+                            max-width: 320px;
+                            margin: 0 auto;
+                        }
+                        h1 { font-size: 24px; margin-bottom: 5px; color: #000; }
+                        h2 { font-size: 32px; margin: 15px 0; background: #000; color: #fff; padding: 10px; border-radius: 10px; }
+                        p { font-size: 14px; color: #333; margin-top: 15px; }
+                        img { width: 220px; height: 220px; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-card">
+                        <h1>${currentRestaurant.toUpperCase()}</h1>
+                        <h2>ترابيزة ${tableNum}</h2>
+                        <div><img src="${imgSrc}" alt="QR Code"></div>
+                        <p>امسح الكود لتصفح المنيو وطلب الطعام مباشرة</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            let iframe = document.getElementById('printIframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'printIframe';
+                iframe.style.position = 'absolute';
+                iframe.style.width = '0px';
+                iframe.style.height = '0px';
+                iframe.style.border = 'none';
+                document.body.appendChild(iframe);
+            }
+
+            let doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(printContent);
+            doc.close();
+
+            iframe.contentWindow.focus();
+            setTimeout(() => {
+                iframe.contentWindow.print();
+            }, 500);
         }
     </script>
 </body>
