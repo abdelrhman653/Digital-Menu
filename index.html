@@ -69,7 +69,6 @@
             const [showOrdersModal, setShowOrdersModal] = useState(false);
             const [myOrders, setMyOrders] = useState([]);
 
-            // حالات نافذة التأكيد المخصصة لإلغاء الطلب
             const [cancelModalOpen, setCancelModalOpen] = useState(false);
             const [orderToCancelId, setOrderToCancelId] = useState(null);
 
@@ -203,6 +202,8 @@
             };
 
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // التعديل هنا: رسوم التوصيل للأونلاين فقط، وخدمة الصالة 12% للترابيزة فقط
             const extraFee = orderType === 'delivery' ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
             const grandTotal = subtotal + (cart.length > 0 ? extraFee : 0);
 
@@ -219,6 +220,7 @@
                     items: cart,
                     subtotal: subtotal,
                     extraFee: extraFee,
+                    feeLabel: orderType === 'delivery' ? 'رسوم التوصيل' : 'خدمة صالة (12%)',
                     totalPrice: grandTotal,
                     status: 'pending',
                     date: now.toISOString().split('T')[0],
@@ -237,13 +239,11 @@
                 setTimeout(() => setSuccessMsg(false), 4000);
             };
 
-            // فتح نافذة تأكيد الإلغاء الشيك
             const confirmCancelOrder = (orderId) => {
                 setOrderToCancelId(orderId);
                 setCancelModalOpen(true);
             };
 
-            // تنفيذ الإلغاء الفعلي
             const executeCancelOrder = () => {
                 if (!orderToCancelId) return;
 
@@ -469,11 +469,11 @@
                                                     ))}
                                                 </div>
                                                 <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] text-amber-400">
-                                                    <span>رسوم التوصيل:</span>
+                                                    <span>{ord.feeLabel || (ord.tableNumber?.includes('ترابيزة') ? 'خدمة صالة (12%)' : 'رسوم التوصيل')}:</span>
                                                     <span className="font-mono">{ord.extraFee} ج.م</span>
                                                 </div>
                                                 <div className="flex justify-between items-center pt-1 border-t border-slate-800/60 text-xs font-bold">
-                                                    <span className="text-slate-300">الإجمالي: <span className="text-brand-pink font-mono">{ord.totalPrice} ج.م</span> <span className="text-[9px] text-slate-400 font-normal">(شامل رسوم التوصيل)</span></span>
+                                                    <span className="text-slate-300">الإجمالي: <span className="text-brand-pink font-mono">{ord.totalPrice} ج.م</span></span>
                                                     <span className={`px-2 py-0.5 rounded-lg text-[10px] ${
                                                         ord.status === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                                                         ord.status === 'ready' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
@@ -511,7 +511,6 @@
                         </div>
                     )}
 
-                    {/* نافذة تأكيد إلغاء الطلب المخصصة (Modal نظيف ومتناسق) */}
                     {cancelModalOpen && (
                         <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
                             <div className="glass-card w-full max-w-xs rounded-2xl p-5 border border-rose-500/30 text-center space-y-4 shadow-2xl">
@@ -561,7 +560,7 @@
                             </div>
                             <div className="flex items-center justify-between pt-1">
                                 <div>
-                                    <span className="text-[10px] text-slate-400 block">الإجمالي الكلي <span className="text-slate-500">(شامل رسوم التوصيل)</span>:</span>
+                                    <span className="text-[10px] text-slate-400 block">الإجمالي الكلي:</span>
                                     <span className="text-sm font-black text-brand-pink font-mono">{grandTotal} ج.م</span>
                                 </div>
                                 <button onClick={submitOrder} className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 flex items-center gap-1.5">
@@ -579,4 +578,3 @@
     </script>
 </body>
 </html>
-
