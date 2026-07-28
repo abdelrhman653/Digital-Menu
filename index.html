@@ -51,11 +51,9 @@
             const [cart, setCart] = useState([]);
             const [selectedCategory, setSelectedCategory] = useState('الكل');
             
-            // الحالة الافتراضية أونلاين (ديلفري) ما لم يتم تمرير رقم ترابيزة في الرابط
             const [orderType, setOrderType] = useState('delivery'); 
             const [tableNumber, setTableNumber] = useState('');
             
-            // بيانات الديلفري مع استرجاعها لمحفوظات التخزين المحلي
             const [customerInfo, setCustomerInfo] = useState({
                 name: localStorage.getItem('abdo_shop_cust_name') || '',
                 phone: localStorage.getItem('abdo_shop_cust_phone') || '',
@@ -74,28 +72,38 @@
                 }
             };
 
+            const syncOrderState = () => {
+                const orders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                if (orders.length > 0 && lastOrderStatus) {
+                    // تحديث حالة الطلب الحالي تلقائياً لو المطبخ غيرها
+                    const current = orders.find(o => o.id === lastOrderStatus.id);
+                    if (current) {
+                        setLastOrderStatus(current);
+                    }
+                } else if (orders.length > 0 && !lastOrderStatus) {
+                    setLastOrderStatus(orders[0]);
+                }
+            };
+
             useEffect(() => {
                 loadMenu();
                 
-                // قراءة رابط الصفحة للبحث عن رقم الترابيزة (مثال: ?table=3)
                 const params = new URLSearchParams(window.location.search);
                 const t = params.get('table');
                 if (t) {
                     setTableNumber(`ترابيزة رقم ${t}`);
-                    setOrderType('table'); // تحويل تلقائي للصالة لو فتح من كيو آر ترابيزة
+                    setOrderType('table');
                 } else {
-                    setOrderType('delivery'); // الافتراضي أونلاين
+                    setOrderType('delivery');
                 }
 
-                // جلب آخر طلب للعميل لمتابعة حالته
                 const orders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
                 if (orders.length > 0) setLastOrderStatus(orders[0]);
 
                 const interval = setInterval(() => {
                     loadMenu();
-                    const updatedOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                    if (updatedOrders.length > 0) setLastOrderStatus(updatedOrders[0]);
-                }, 2000);
+                    syncOrderState();
+                }, 1500);
 
                 return () => clearInterval(interval);
             }, []);
@@ -137,7 +145,7 @@
                     subtotal: subtotal,
                     extraFee: extraFee,
                     totalPrice: grandTotal,
-                    status: 'pending',
+                    status: 'pending', // يبدأ في المطبخ كـ قيد التحضير
                     date: now.toISOString().split('T')[0],
                     time: now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
                     customerInfo: orderType === 'delivery' ? customerInfo : null
@@ -155,25 +163,42 @@
             return (
                 <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
                     
-                    {/* شريط حالة الطلب اللحظي العلوي */}
-                    <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-2xl mb-4 shadow-lg">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                            <span className="text-xs font-bold text-slate-200">
-                                {lastOrderStatus ? `حالة طلبك الأخير: ${
-                                    lastOrderStatus.status === 'pending' ? '⏳ قيد التحضير في المطبخ' :
-                                    lastOrderStatus.status === 'ready' ? '🍳 الطلب جاهز!' :
-                                    lastOrderStatus.status === 'out_for_delivery' ? '🏃 الطلب في الطريق إليك' :
-                                    lastOrderStatus.status === 'delivered' ? '✅ تم التسليم' : '❌ ملغي'
-                                }` : '✨ مرحباً بك في Abdo Shop'}
-                            </span>
-                        </div>
-                        <a href="orders.html" className="text-[11px] bg-brand-pink/20 text-brand-pink px-2.5 py-1 rounded-xl font-bold border border-brand-pink/30">
-                            سجل طلباتي 📄
-                        </a>
-                    </div>
+                    {/* شريط حالة الطلب الأخير (شكل بصري منور حسب حالة المطبخ) */}
+                    {lastOrderStatus && (
+                        <div className="glass-card p-3.5 rounded-2xl mb-4 border border-slate-800 space-y-2.5">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-slate-300">طلب #{lastOrderStatus.id.toString().slice(-6)}</span>
+                                <span className="text-slate-400 font-mono text-[10px]">{lastOrderStatus.time}</span>
+                            </div>
 
-                    {/* معلومات النوع (يظهر تلقائياً ديلفري لو الرابط عادي، أو رقم الترابيزة لو جاي من QR) */}
+                            {/* مربعات الحالة المرئية تماماً مثل شاشة المطبخ (لكن للعرض فقط وتضيء حسب حالة المطبخ) */}
+                            <div className="grid grid-cols-3 gap-1.5 pt-1">
+                                <div className={`py-1.5 px-1 rounded-xl text-center text-[11px] font-bold transition-all ${
+                                    lastOrderStatus.status === 'pending' 
+                                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30 scale-105' 
+                                    : 'bg-slate-950/60 text-slate-500 border border-slate-800'
+                                }`}>
+                                    ⏳ قيد التحضير
+                                </div>
+                                <div className={`py-1.5 px-1 rounded-xl text-center text-[11px] font-bold transition-all ${
+                                    lastOrderStatus.status === 'ready' || lastOrderStatus.status === 'out_for_delivery' 
+                                    ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30 scale-105' 
+                                    : 'bg-slate-950/60 text-slate-500 border border-slate-800'
+                                }`}>
+                                    🔥 جاهز
+                                </div>
+                                <div className={`py-1.5 px-1 rounded-xl text-center text-[11px] font-bold transition-all ${
+                                    lastOrderStatus.status === 'delivered' 
+                                    ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 scale-105' 
+                                    : 'bg-slate-950/60 text-slate-500 border border-slate-800'
+                                }`}>
+                                    ✅ تم التسليم
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* معلومات النوع */}
                     <div className="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-3 rounded-2xl mb-4">
                         <div className="flex items-center gap-2">
                             <span className="text-base">📍</span>
@@ -186,7 +211,7 @@
                         </span>
                     </div>
 
-                    {/* نموذج بيانات التوصيل يظهر فقط في وضع الأونلاين/الديلفري */}
+                    {/* نموذج بيانات التوصيل */}
                     {orderType === 'delivery' && (
                         <div className="glass-card p-3.5 rounded-2xl mb-4 space-y-2.5 animate-fadeIn">
                             <h3 className="text-xs font-black text-brand-cyan">🛵 بيانات التوصيل:</h3>
@@ -226,7 +251,7 @@
                         ))}
                     </div>
 
-                    {/* قائمة الأصناف والمنيو */}
+                    {/* المنيو والأصناف */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         {filteredItems.map(item => (
                             <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
