@@ -62,6 +62,8 @@
         }
         .btn:hover { opacity: 0.9; }
         .btn-success { background: var(--secondary); color: #000; }
+        .btn-secondary-action { background: transparent; border: 1px solid var(--border); color: var(--gray); margin-top: 10px; }
+        .btn-secondary-action:hover { border-color: var(--white); color: var(--white); }
         .btn-logout { background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: auto; padding: 6px 12px; font-size: 13px; }
         
         input, select {
@@ -190,7 +192,7 @@
         </div>
     </div>
 
-    <!-- شاشة تسجيل الدخول -->
+    <!-- شاشة تسجيل الدخول وإنشاء الحساب -->
     <div id="authSection" class="container" style="margin-top: 40px;">
         <div class="card" style="text-align: right;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -204,7 +206,8 @@
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;">رقم التليفون:</label>
             <input type="tel" id="authPhoneNumber" placeholder="مثال: 01012345678">
 
-            <button class="btn" style="margin-top: 10px;" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> دخول / إنشاء حساب للمطعم</button>
+            <button class="btn" style="margin-top: 10px;" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</button>
+            <button class="btn btn-secondary-action" onclick="handleRegister()"><i class="fa-solid fa-user-plus"></i> إنشاء حساب جديد للمطعم</button>
         </div>
     </div>
 
@@ -290,14 +293,69 @@
             }
         }
 
+        // جلب قاعدة بيانات المطاعم المسجلة من التخزين المشترك
+        function getAllRestaurants() {
+            return JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+        }
+
+        function saveAllRestaurants(db) {
+            localStorage.setItem('all_restaurants_db', JSON.stringify(db));
+        }
+
+        // إنشاء حساب جديد
+        function handleRegister() {
+            let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
+            let phoneInput = document.getElementById('authPhoneNumber').value.trim();
+
+            if (!nameInput || !phoneInput) {
+                showCustomAlert('الرجاء كتابة اسم أو كود المطعم ورقم التليفون لإنشاء الحساب!');
+                return;
+            }
+
+            let db = getAllRestaurants();
+
+            if (db[nameInput]) {
+                showCustomAlert('هذا المطعم مسجل مسبقاً! يمكنك تسجيل الدخول مباشرة.');
+                return;
+            }
+
+            // إنشاء مطعم جديد في قاعدة البيانات المشتركة
+            db[nameInput] = {
+                phone: phoneInput,
+                items: []
+            };
+            saveAllRestaurants(db);
+
+            currentRestaurant = nameInput;
+            localStorage.setItem('current_restaurant', currentRestaurant);
+            localStorage.setItem('current_phone', phoneInput);
+            
+            showCustomAlert('تم إنشاء حساب المطعم بنجاح!');
+            showDashboard();
+        }
+
+        // تسجيل الدخول
         function handleLogin() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
 
             if (!nameInput || !phoneInput) {
-                showCustomAlert('الرجاء كتابة اسم أو كود المطعم ورقم التليفون!');
+                showCustomAlert('الرجاء كتابة اسم أو كود المطعم ورقم التليفون لتسجيل الدخول!');
                 return;
             }
+
+            let db = getAllRestaurants();
+
+            if (!db[nameInput]) {
+                showCustomAlert('هذا المطعم غير موجود! يرجى الضغط على "إنشاء حساب جديد للمطعم" أولاً.');
+                return;
+            }
+
+            if (db[nameInput].phone !== phoneInput) {
+                showCustomAlert('رقم التليفون غير صحيح لهذا المطعم!');
+                return;
+            }
+
             currentRestaurant = nameInput;
             localStorage.setItem('current_restaurant', currentRestaurant);
             localStorage.setItem('current_phone', phoneInput);
@@ -334,16 +392,20 @@
             reader.readAsDataURL(file);
         }
 
-        function getRestaurantItemsKey() {
-            return `menu_items_${currentRestaurant}`;
-        }
-
         function getItems() {
-            return JSON.parse(localStorage.getItem(getRestaurantItemsKey())) || [];
+            let db = getAllRestaurants();
+            if (db[currentRestaurant]) {
+                return db[currentRestaurant].items || [];
+            }
+            return [];
         }
 
         function saveItems(items) {
-            localStorage.setItem(getRestaurantItemsKey(), JSON.stringify(items));
+            let db = getAllRestaurants();
+            if (db[currentRestaurant]) {
+                db[currentRestaurant].items = items;
+                saveAllRestaurants(db);
+            }
         }
 
         function addNewItem() {
