@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنيو الرقمي - متابعة الطلب</title>
+    <title>Abdo Shop | طلب الطعام</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -25,271 +25,286 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        const DELIVERY_FEE = 40; // رسوم التوصيل
+        const SERVICE_RATE = 0.12; // نسبة خدمة الصالة 12%
+
+        // قائمة الأصناف والمنيو
+        const INITIAL_MENU = [
+            { id: 1, name: "برجر كلاسيك سينجل", price: 120, category: "برجر", image: "🍔", description: "شريحة لحم بقر مشوي مع صوص كلاسيك وخس وطماطم" },
+            { id: 2, name: "برجر دبل تشيز", price: 175, category: "برجر", image: "🧀", description: "شريحتين لحم مع طبقات جبنة شيدر صريحة" },
+            { id: 3, name: "تيكن كريسبي ساندوتش", price: 110, category: "دجاج", image: "🍗", description: "صدر دجاج مقرمش مع صوص المايونيز والماسترد" },
+            { id: 4, name: "بطاطس فارم فريتس", price: 45, category: "مقبلات", image: "🍟", description: "بطاطس مقرمشة مبهرة" },
+            { id: 5, name: "كوكاكولا كانز", price: 25, category: "مشروبات", image: "🥤", description: "مشروب غازي منعش 330 مل" }
+        ];
+
         function App() {
-            const [menuItems, setMenuItems] = useState([]);
             const [cart, setCart] = useState([]);
-            const [tableNumber, setTableNumber] = useState(null);
-            const [selectedCategory, setSelectedCategory] = useState('الكل');
-            
-            const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-            const [activeOrder, setActiveOrder] = useState(null);
-            
-            const [customerPhone, setCustomerPhone] = useState(localStorage.getItem('nexus_customer_phone') || '');
-            const [customerName, setCustomerName] = useState(localStorage.getItem('nexus_customer_name') || '');
-            const [customerAddress, setCustomerAddress] = useState(localStorage.getItem('nexus_customer_address') || '');
-            const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('nexus_customer_phone'));
+            const [orderType, setOrderType] = useState('hall'); // 'hall' أو 'delivery'
+            const [tableNum, setTableNum] = useState('');
+            const [customerName, setCustomerName] = useState('');
+            const [customerPhone, setCustomerPhone] = useState('');
+            const [customerAddress, setCustomerAddress] = useState('');
+            const [currentOrder, setCurrentOrder] = useState(null);
 
+            // جلب الأوردر القائم إن وجد
             useEffect(() => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const tableFromUrl = urlParams.get('table');
-                if (tableFromUrl) setTableNumber(tableFromUrl);
+                const queryParams = new URLSearchParams(window.location.search);
+                const table = queryParams.get('table');
+                if (table) setTableNum(table);
 
-                const savedItems = localStorage.getItem('nexus_menu_items');
-                if (savedItems) setMenuItems(JSON.parse(savedItems));
-
-                const checkMyOrder = () => {
-                    const phone = localStorage.getItem('nexus_customer_phone');
-                    const table = urlParams.get('table');
-                    const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                    
-                    if (table) {
-                        const found = allOrders.find(o => o.tableNumber === `ترابيزة ${table}` && o.status !== 'delivered' && o.status !== 'cancelled');
-                        setActiveOrder(found || null);
-                    } else if (phone) {
-                        const found = allOrders.find(o => o.customerInfo && o.customerInfo.phone === phone && o.status !== 'delivered' && o.status !== 'cancelled');
-                        setActiveOrder(found || null);
-                    }
-                };
-
-                checkMyOrder();
-                const interval = setInterval(checkMyOrder, 1500);
-                return () => clearInterval(interval);
+                const activeOrder = JSON.parse(localStorage.getItem('nexus_active_order') || 'null');
+                if (activeOrder) {
+                    setCurrentOrder(activeOrder);
+                }
             }, []);
 
-            const handleLogout = () => {
-                localStorage.removeItem('nexus_customer_phone');
-                localStorage.removeItem('nexus_customer_name');
-                localStorage.removeItem('nexus_customer_address');
-                setIsLoggedIn(false);
-                setCustomerPhone('');
-                setCustomerName('');
-                setCustomerAddress('');
-                setActiveOrder(null);
-            };
+            // المتابعة الحية لحالة الطلب
+            useEffect(() => {
+                if (!currentOrder) return;
+                const interval = setInterval(() => {
+                    const allKitchenOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                    const match = allKitchenOrders.find(o => o.id === currentOrder.id);
+                    if (match) {
+                        setCurrentOrder(match);
+                        localStorage.setItem('nexus_active_order', JSON.stringify(match));
+                    }
+                }, 1500);
+                return () => clearInterval(interval);
+            }, [currentOrder]);
 
-            const addToCart = (item) => {
-                const existing = cart.find(i => i.id === item.id);
-                if (existing) {
-                    setCart(cart.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
+            const addToCart = (product) => {
+                const exist = cart.find(x => x.id === product.id);
+                if (exist) {
+                    setCart(cart.map(x => x.id === product.id ? { ...exist, quantity: exist.quantity + 1 } : x));
                 } else {
-                    setCart([...cart, { ...item, quantity: 1 }]);
+                    setCart([...cart, { ...product, quantity: 1 }]);
                 }
             };
 
-            const handleOrderClick = () => {
-                if (cart.length === 0) return;
-                if (!tableNumber && !isLoggedIn) {
-                    setShowCheckoutModal(true);
+            const removeFromCart = (productId) => {
+                const exist = cart.find(x => x.id === productId);
+                if (exist.quantity === 1) {
+                    setCart(cart.filter(x => x.id !== productId));
                 } else {
-                    submitOrder();
+                    setCart(cart.map(x => x.id === productId ? { ...exist, quantity: exist.quantity - 1 } : x));
                 }
             };
 
-            const submitOrder = (e) => {
-                if (e) e.preventDefault();
+            // الحسابات
+            const itemsSubtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            const extraFee = orderType === 'delivery' ? DELIVERY_FEE : Math.round(itemsSubtotal * SERVICE_RATE);
+            const grandTotal = itemsSubtotal + extraFee;
 
-                if (!tableNumber) {
-                    localStorage.setItem('nexus_customer_phone', customerPhone);
-                    localStorage.setItem('nexus_customer_name', customerName);
-                    localStorage.setItem('nexus_customer_address', customerAddress);
-                    setIsLoggedIn(true);
+            const handleSendOrder = () => {
+                if (cart.length === 0) return alert('السلة فارغة!');
+
+                if (orderType === 'hall' && !tableNum) {
+                    return alert('يرجى تحديد رقم الطاولة!');
                 }
 
-                const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                const newOrderId = Date.now().toString();
+                if (orderType === 'delivery' && (!customerName || !customerPhone || !customerAddress)) {
+                    return alert('يرجى كتابة الاسم ورقم الهاتف والعنوان بالكامل لاستلام الديليفري!');
+                }
 
                 const newOrder = {
-                    id: newOrderId,
-                    tableNumber: tableNumber ? `ترابيزة ${tableNumber}` : 'طلب أونلاين 🛵',
-                    customerInfo: !tableNumber ? { name: customerName, phone: customerPhone, address: customerAddress } : null,
+                    id: Date.now(),
+                    tableNumber: orderType === 'hall' ? `طاولة ${tableNum}` : 'طلب توصيل (ديليفري)',
+                    customerInfo: orderType === 'delivery' ? { name: customerName, phone: customerPhone, address: customerAddress } : null,
                     items: cart,
-                    totalPrice: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                    subtotal: itemsSubtotal,
+                    extraFee: extraFee,
+                    feeType: orderType === 'delivery' ? 'خدمة توصيل' : 'خدمة صالة (12%)',
+                    totalPrice: grandTotal,
                     status: 'pending',
                     time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
                 };
 
+                // حفظ الأوردر للمطبخ
+                const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
                 localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existingOrders]));
-                setActiveOrder(newOrder);
+
+                setCurrentOrder(newOrder);
+                localStorage.setItem('nexus_active_order', JSON.stringify(newOrder));
                 setCart([]);
-                setShowCheckoutModal(false);
             };
 
-            const categories = ['الكل', ...new Set(menuItems.map(item => item.category))];
-            const filteredItems = selectedCategory === 'الكل' ? menuItems : menuItems.filter(item => item.category === selectedCategory);
-            const totalCartPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-            const getStatusStep = (status) => {
-                if (status === 'pending') return 1;
-                if (status === 'ready') return 2;
-                if (status === 'out_for_delivery') return 3;
-                if (status === 'delivered') return 4;
-                return 1;
+            const handleCancelOrder = () => {
+                if (!currentOrder) return;
+                const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                const updatedOrders = existingOrders.map(o => o.id === currentOrder.id ? { ...o, status: 'cancelled' } : o);
+                localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updatedOrders));
+                
+                const cancelled = { ...currentOrder, status: 'cancelled' };
+                setCurrentOrder(cancelled);
+                localStorage.setItem('nexus_active_order', JSON.stringify(cancelled));
             };
-
-            const currentStep = activeOrder ? getStatusStep(activeOrder.status) : 0;
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-[#0b1320] flex flex-col p-4 shadow-2xl border-x border-slate-800">
+                <div className="max-w-md mx-auto p-4 space-y-6">
                     {/* Header */}
-                    <header className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full font-bold">
-                                ✨ المنيو
-                            </span>
-                            
-                            <a href="orders.html" className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded-full font-bold transition-all flex items-center gap-1">
-                                📋 طلباتي
-                            </a>
+                    <header className="flex justify-between items-center bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                        <div>
+                            <h1 className="text-lg font-black text-slate-100 flex items-center gap-2">
+                                <span>Abdo Shop</span> 🍔
+                            </h1>
+                            <p className="text-[10px] text-slate-400">أطيبي المأكولات وأسرع خدمة</p>
+                        </div>
+                        <span className="text-xs px-2.5 py-1 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 font-bold">
+                            {orderType === 'hall' ? (tableNum ? `طاولة #${tableNum}` : 'صالة') : 'ديليفري 🏃'}
+                        </span>
+                    </header>
 
-                            {isLoggedIn && !tableNumber && (
-                                <button onClick={handleLogout} className="text-[10px] text-rose-400 hover:underline">
-                                    (خروج 🚪)
+                    {/* متابعة أوردر مباشر لو موجود */}
+                    {currentOrder && (
+                        <div className="glass-card rounded-2xl p-4 space-y-3 border border-pink-500/30 bg-pink-500/5">
+                            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <span className="text-xs font-bold text-slate-200">حالة أوردرك الحالي</span>
+                                <span className="text-xs font-mono text-slate-400">#{String(currentOrder.id).slice(-6)}</span>
+                            </div>
+
+                            <div className="text-center py-2">
+                                {currentOrder.status === 'pending' && <p className="text-amber-400 font-bold text-sm">⏳ قيد التحضير في المطبخ...</p>}
+                                {currentOrder.status === 'ready' && <p className="text-cyan-400 font-bold text-sm">🍳 الأوردر جاهز الآن!</p>}
+                                {currentOrder.status === 'out_for_delivery' && <p className="text-purple-400 font-bold text-sm">🏃 الأوردر خرج مع الطيار للتوصيل!</p>}
+                                {currentOrder.status === 'delivered' && <p className="text-emerald-400 font-bold text-sm">✅ تم تسليم الأوردر.. وبالهناء والشفاء!</p>}
+                                {currentOrder.status === 'cancelled' && <p className="text-rose-400 font-bold text-sm">❌ تم إلغاء هذا الطلب</p>}
+                            </div>
+
+                            {currentOrder.status === 'pending' && (
+                                <button onClick={handleCancelOrder} className="w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition-all">
+                                    إلغاء الطلب
                                 </button>
                             )}
                         </div>
+                    )}
 
-                        {tableNumber ? (
-                            <div className="bg-purple-600/30 border border-purple-500/50 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold">
-                                📍 ترابيزة رقم {tableNumber}
-                            </div>
-                        ) : (
-                            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-xl text-xs font-bold">
-                                {isLoggedIn ? `👤 أهلاً, ${customerName}` : '🛵 طلب أونلاين'}
-                            </div>
-                        )}
-                    </header>
+                    {/* نوع الطلب */}
+                    <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
+                        <button 
+                            onClick={() => setOrderType('hall')} 
+                            className={`py-2 rounded-xl text-xs font-bold transition-all ${orderType === 'hall' ? 'bg-pink-500 text-white' : 'text-slate-400'}`}
+                        >
+                            🍽️ أكل بالصالة (خدمة 12%)
+                        </button>
+                        <button 
+                            onClick={() => setOrderType('delivery')} 
+                            className={`py-2 rounded-xl text-xs font-bold transition-all ${orderType === 'delivery' ? 'bg-pink-500 text-white' : 'text-slate-400'}`}
+                        >
+                            🛵 توصيل أونلاين (40 ج)
+                        </button>
+                    </div>
 
-                    {/* شريط تتبع حالة الطلب النشط */}
-                    {activeOrder && (
-                        <div className="mb-5 bg-slate-900 border border-cyan-500/40 p-4 rounded-2xl space-y-3 shadow-2xl">
-                            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <h4 className="font-bold text-xs text-cyan-400 flex items-center gap-1.5">
-                                    <i className="fa-solid fa-signal text-emerald-400"></i> تتبع طلبك النشط
-                                </h4>
-                                <span className="text-[10px] text-slate-400">{activeOrder.time}</span>
-                            </div>
-
-                            <div className="grid grid-cols-4 text-center pt-2 gap-1 relative">
-                                <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 1 ? 'bg-amber-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'}`}>⏳</div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 1 ? 'text-amber-400' : 'text-slate-500'}`}>قيد التحضير</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 2 ? 'bg-cyan-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'}`}>🍳</div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 2 ? 'text-cyan-400' : 'text-slate-500'}`}>جاهز</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 3 ? 'bg-purple-500 text-white font-black scale-110 shadow-lg animate-pulse' : 'bg-slate-800 text-slate-500'}`}>🏃</div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>خرج للتوصيل</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${currentStep >= 4 ? 'bg-emerald-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'}`}>✅</div>
-                                    <span className={`text-[9px] block font-bold ${currentStep >= 4 ? 'text-emerald-400' : 'text-slate-500'}`}>تم التسليم</span>
-                                </div>
-                            </div>
-
-                            {currentStep === 4 && (
-                                <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-center text-xs py-2 rounded-xl font-bold mt-2">
-                                    🎉 تم تسليم الأكل بنجاح، بالهناء والشفاء!
-                                </div>
-                            )}
+                    {/* أدخال البيانات حسب نوع الطلب */}
+                    {orderType === 'hall' ? (
+                        <div className="bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 space-y-1">
+                            <label className="text-[11px] text-slate-400">رقم الطاولة / الترابيزة:</label>
+                            <input 
+                                type="text" 
+                                value={tableNum} 
+                                onChange={(e) => setTableNum(e.target.value)} 
+                                placeholder="اكتب رقم ترابيزتك هنا..." 
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500"
+                            />
+                        </div>
+                    ) : (
+                        <div className="bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 space-y-2">
+                            <p className="text-xs font-bold text-pink-400">بيانات التوصيل للديليفري:</p>
+                            <input 
+                                type="text" 
+                                value={customerName} 
+                                onChange={(e) => setCustomerName(e.target.value)} 
+                                placeholder="الاسم بالكامل" 
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500"
+                            />
+                            <input 
+                                type="tel" 
+                                value={customerPhone} 
+                                onChange={(e) => setCustomerPhone(e.target.value)} 
+                                placeholder="رقم الموبايل" 
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500"
+                            />
+                            <textarea 
+                                value={customerAddress} 
+                                onChange={(e) => setCustomerAddress(e.target.value)} 
+                                placeholder="العنوان بالتفصيل (الشارع، الدور، شقة)..." 
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500 h-16 resize-none"
+                            ></textarea>
                         </div>
                     )}
 
-                    {/* التصنيفات */}
-                    <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-none">
-                        {categories.map((cat) => (
-                            <button
-                                key={cat}
-                                onClick={() => setSelectedCategory(cat)}
-                                className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                                    selectedCategory === cat ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md' : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
-                                }`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* قائمة الأصناف */}
-                    <div className="grid grid-cols-2 gap-3 flex-1">
-                        {filteredItems.map((item) => (
-                            <div key={item.id} className="glass-card rounded-2xl p-2.5 flex flex-col justify-between border border-slate-800/80">
-                                <div className="relative mb-2">
-                                    <img src={item.image} alt={item.name} className="w-full h-28 object-cover rounded-xl" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-xs text-slate-100 line-clamp-1">{item.name}</h3>
-                                    <div className="flex items-center justify-between mt-2">
-                                        <span className="font-extrabold text-cyan-400 text-xs">{item.price} ج.م</span>
-                                        <button onClick={() => addToCart(item)} className="w-7 h-7 bg-pink-500 text-white rounded-lg font-bold text-xs">+</button>
+                    {/* قائمه المنيو */}
+                    <div className="space-y-3">
+                        <h2 className="text-sm font-extrabold text-slate-200">المنيو الأصناف 📜</h2>
+                        <div className="space-y-2.5">
+                            {INITIAL_MENU.map((item) => (
+                                <div key={item.id} className="glass-card rounded-2xl p-3 flex items-center justify-between gap-3">
+                                    <div className="text-3xl bg-slate-800/60 p-2 rounded-xl">{item.image}</div>
+                                    <div className="flex-1">
+                                        <h3 className="text-xs font-bold text-slate-100">{item.name}</h3>
+                                        <p className="text-[10px] text-slate-400 line-clamp-1">{item.description}</p>
+                                        <span className="text-xs font-black text-pink-400 mt-1 block">{item.price} ج.م</span>
                                     </div>
+                                    <button 
+                                        onClick={() => addToCart(item)}
+                                        className="w-8 h-8 rounded-xl bg-pink-500/20 text-pink-400 hover:bg-pink-500 hover:text-white font-bold flex items-center justify-center transition-all"
+                                    >
+                                        +
+                                    </button>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
 
-                    {/* السلة */}
+                    {/* سلة المشتريات */}
                     {cart.length > 0 && (
-                        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 max-w-md w-[92%] bg-slate-900/95 border border-cyan-500/40 p-3 rounded-2xl shadow-2xl flex items-center justify-between z-40">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-xl flex items-center justify-center font-bold">
-                                    <i className="fa-solid fa-basket-shopping"></i>
-                                </div>
-                                <div>
-                                    <span className="text-[10px] text-slate-400 block">الإجمالي</span>
-                                    <span className="font-extrabold text-sm text-cyan-400">{totalCartPrice} ج.م</span>
-                                </div>
+                        <div className="glass-card rounded-2xl p-4 space-y-3 border border-pink-500/40">
+                            <h3 className="text-xs font-black text-slate-100 border-b border-slate-800 pb-2">سلة طلباتك 🛒</h3>
+                            
+                            <div className="space-y-2">
+                                {cart.map(item => (
+                                    <div key={item.id} className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-300 font-medium">{item.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => removeFromCart(item.id)} className="w-5 h-5 bg-slate-800 rounded text-slate-300 font-bold">-</button>
+                                            <span className="font-bold text-pink-400">{item.quantity}</span>
+                                            <button onClick={() => addToCart(item)} className="w-5 h-5 bg-slate-800 rounded text-slate-300 font-bold">+</button>
+                                            <span className="w-12 text-left font-mono">{item.price * item.quantity} ج</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <button onClick={handleOrderClick} className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs rounded-xl">
-                                إرسال الطلب 🚀
-                            </button>
-                        </div>
-                    )}
 
-                    {/* نافذة تسجيل البيانات */}
-                    {showCheckoutModal && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-xs space-y-3">
-                                <h3 className="font-bold text-sm text-slate-100 pb-2 border-b border-slate-800">بيانات التوصيل وحفظ الجلسة 🛵</h3>
-                                <form onSubmit={submitOrder} className="space-y-3">
-                                    <input 
-                                        type="text" 
-                                        required 
-                                        placeholder="الاسم بالكامل" 
-                                        value={customerName} 
-                                        onChange={(e) => setCustomerName(e.target.value)} 
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" 
-                                    />
-                                    <input 
-                                        type="tel" 
-                                        required 
-                                        placeholder="رقم التليفون (لربط الحساب وحفظ الطلب)" 
-                                        value={customerPhone} 
-                                        onChange={(e) => setCustomerPhone(e.target.value)} 
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" 
-                                    />
-                                    <textarea 
-                                        required 
-                                        rows="2" 
-                                        placeholder="العنوان بالتفصيل" 
-                                        value={customerAddress} 
-                                        onChange={(e) => setCustomerAddress(e.target.value)} 
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white resize-none"
-                                    ></textarea>
-                                    <button type="submit" className="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">تأكيد وإرسال الطلب</button>
-                                </form>
+                            {/* تفاصيل الحساب والرسوم التوضيحية */}
+                            <div className="pt-2 border-t border-slate-800 text-xs space-y-1.5">
+                                <div className="flex justify-between text-slate-400">
+                                    <span>مجموع الأصناف:</span>
+                                    <span>{itemsSubtotal} ج.م</span>
+                                </div>
+
+                                {orderType === 'delivery' ? (
+                                    <div className="flex justify-between text-amber-400 font-bold">
+                                        <span>🛵 خدمة التوصيل (ثابت):</span>
+                                        <span>+{DELIVERY_FEE} ج.م</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex justify-between text-amber-400 font-bold">
+                                        <span>🍽️ خدمة الصالة (12%):</span>
+                                        <span>+{extraFee} ج.م</span>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between text-sm font-black text-cyan-400 pt-1 border-t border-slate-800/80">
+                                    <span>الإجمالي النهائى:</span>
+                                    <span>{grandTotal} ج.م</span>
+                                </div>
                             </div>
+
+                            <button 
+                                onClick={handleSendOrder}
+                                className="w-full py-3 bg-pink-500 hover:bg-pink-600 text-white font-black text-xs rounded-xl shadow-lg transition-all"
+                            >
+                                تأكيد وإرسال الطلب 🚀
+                            </button>
                         </div>
                     )}
                 </div>
