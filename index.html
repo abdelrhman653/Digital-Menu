@@ -276,6 +276,12 @@
     </div>
 
     <script>
+        // تنظيف مطبق عند أول تشغيل لحذف أي بيانات قديمة نهائياً
+        if (!localStorage.getItem('system_cleaned_v2')) {
+            localStorage.clear();
+            localStorage.setItem('system_cleaned_v2', 'true');
+        }
+
         function showCustomAlert(msg) {
             document.getElementById('customAlertMessage').innerText = msg;
             document.getElementById('customAlertModal').classList.remove('hidden');
@@ -293,7 +299,6 @@
             }
         }
 
-        // جلب قاعدة بيانات المطاعم المسجلة من التخزين المشترك
         function getAllRestaurants() {
             return JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
         }
@@ -302,7 +307,6 @@
             localStorage.setItem('all_restaurants_db', JSON.stringify(db));
         }
 
-        // إنشاء حساب جديد
         function handleRegister() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
@@ -319,7 +323,6 @@
                 return;
             }
 
-            // إنشاء مطعم جديد في قاعدة البيانات المشتركة
             db[nameInput] = {
                 phone: phoneInput,
                 items: []
@@ -334,7 +337,6 @@
             showDashboard();
         }
 
-        // تسجيل الدخول
         function handleLogin() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
