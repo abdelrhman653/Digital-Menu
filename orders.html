@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منيو المطعم - طلبات العملاء</title>
+    <title>Abdo Shop - المنيو والطلب</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -16,24 +16,27 @@
             --white: #FFFFFF;
             --gray: #8B949E;
             --border: #30363D;
+            --warning: #FFA502;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 100px; }
+        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 120px; }
 
         header {
             background: var(--dark-card);
             border-bottom: 1px solid var(--border);
             padding: 12px 15px;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        header h1 { font-size: 16px; font-weight: 700; }
+        header h1 { font-size: 15px; font-weight: 700; }
 
-        .container { max-width: 500px; margin: 12px auto; padding: 0 10px; }
+        .container { max-width: 480px; margin: 12px auto; padding: 0 10px; }
 
-        /* نافذة تسجيل بيانات العميل */
+        /* نافذة تسجيل بيانات العميل (الاسم، الهاتف، العنوان) */
         #authModal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13, 17, 23, 0.95);
+            background: rgba(13, 17, 23, 0.96);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -46,10 +49,10 @@
             border-radius: 16px;
             padding: 20px;
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
             text-align: center;
         }
-        .auth-box h3 { margin-bottom: 15px; font-size: 16px; }
+        .auth-box h3 { margin-bottom: 15px; font-size: 15px; color: var(--white); }
         .auth-input {
             width: 100%;
             background: var(--dark-bg);
@@ -58,7 +61,7 @@
             padding: 10px 12px;
             color: var(--white);
             margin-bottom: 12px;
-            font-size: 14px;
+            font-size: 13px;
         }
         .auth-btn {
             background: var(--primary-gradient);
@@ -69,28 +72,38 @@
             border-radius: 10px;
             font-weight: 700;
             cursor: pointer;
+            font-size: 14px;
         }
 
-        .badge-box {
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
             background: var(--dark-card);
-            padding: 8px 12px;
-            border-radius: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
             border: 1px solid var(--border);
             font-size: 13px;
         }
-        .table-badge { color: var(--primary); font-weight: 700; }
+        .history-btn-top {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 700;
+        }
 
-        /* شبكة الأطقم والأطباق مقاسات مظبوطة */
+        /* شبكة الأصناف */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
-        @media(max-width: 350px) { .menu-grid { grid-template-columns: 1fr; } }
+        @media(max-width: 340px) { .menu-grid { grid-template-columns: 1fr; } }
 
         .menu-card {
             background: var(--dark-card);
@@ -103,7 +116,7 @@
         }
         .menu-card img {
             width: 100%;
-            height: 110px;
+            height: 105px;
             object-fit: cover;
         }
         .menu-content { padding: 8px; }
@@ -116,7 +129,6 @@
         }
         .menu-price { color: var(--secondary); font-weight: 700; font-size: 13px; }
 
-        /* أزرار الكمية + و - */
         .qty-controls {
             display: flex;
             align-items: center;
@@ -151,7 +163,36 @@
             font-weight: 700;
         }
 
-        /* شريط السلة السفلي مع التفاصيل والحسابات */
+        /* نافذة سجل طلباتي السابقة */
+        #historyModal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(13, 17, 23, 0.95);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+        .history-card-box {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px;
+            width: 100%;
+            max-width: 440px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .history-item-row {
+            background: var(--dark-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        /* شريط السلة السفلي */
         .cart-bar {
             position: fixed;
             bottom: 0; left: 0; right: 0;
@@ -159,13 +200,12 @@
             border-top: 1px solid var(--border);
             padding: 12px 15px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+            z-index: 990;
         }
         .cart-details {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--gray);
             margin-bottom: 6px;
-            display: flex;
-            justify-content: space-between;
         }
         .cart-main-row {
             display: flex;
@@ -187,40 +227,56 @@
 </head>
 <body>
 
-    <!-- نافذة تسجيل بيانات العميل أول ما يفتح -->
+    <!-- نافذة تسجيل بيانات العميل (الاسم، الهاتف، العنوان) -->
     <div id="authModal">
         <div class="auth-box">
-            <h3>أهلاً بك! يرجى إدخال بياناتك للمتابعة</h3>
-            <input type="text" id="clientName" class="auth-input" placeholder="اسم العميل (مثال: أحمد محمد)">
-            <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الهاتف (مثال: 01012345678)">
-            <button class="auth-btn" onclick="saveClientData()">دخول للمنيو <i class="fa-solid fa-arrow-left"></i></button>
+            <h3>تسجيل بيانات العميل للطلب</h3>
+            <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد)">
+            <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الموبايل (مثال: 01012345678)">
+            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل (مثال: شارع الهرم، عمارة 5)">
+            <button class="auth-btn" onclick="saveClientData()">حفظ ودخول للمنيو <i class="fa-solid fa-arrow-left"></i></button>
+        </div>
+    </div>
+
+    <!-- نافذة سجل طلباتي السابقة -->
+    <div id="historyModal" class="hidden">
+        <div class="history-card-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="font-size: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> سجل طلباتي السابقة</h3>
+                <button onclick="toggleHistory(false)" style="background: none; border: none; color: var(--white); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="historyListContainer">
+                <!-- الطلبات السابقة تحمل هنا -->
+            </div>
+            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;">تسجيل خروج (تغيير البيانات)</button>
         </div>
     </div>
 
     <header>
-        <h1>منيو المطعم - طلبات العملاء</h1>
+        <h1>Abdo Shop - المنيو والطلب</h1>
     </header>
 
     <div class="container">
-        <div class="badge-box">
-            <span id="orderTypeBadge" style="font-weight: 700;">نوع الطلب: صالة</span>
-            <span id="tableDisplayBadge" class="table-badge">الترابيزة: 1</span>
+        <div class="top-bar">
+            <div>
+                <span id="orderTypeBadge" style="font-weight: 700; font-size: 12px;">نوع الطلب: أونلاين</span>
+                <span id="tableDisplayBadge" style="color: var(--primary); font-weight: 700; font-size: 12px; margin-right: 8px;">توصيل دليفري</span>
+            </div>
+            <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> طلباتي السابقة</button>
         </div>
 
         <div id="customerMenuGrid" class="menu-grid">
-            <!-- الأصناف تحمل هنا تلقائياً -->
+            <!-- الأصناف تحمل هنا -->
         </div>
     </div>
 
-    <!-- شريط السلة -->
+    <!-- شريط السلة السفلي -->
     <div id="cartBar" class="cart-bar hidden">
-        <div class="cart-details" id="cartBreakdown">
-            <!-- تفاصيل الخدمة والإجمالي -->
-        </div>
+        <div class="cart-details" id="cartBreakdown"></div>
         <div class="cart-main-row">
             <div>
-                <div style="font-size: 11px; color: var(--gray);">الإجمالي النهائي</div>
-                <div style="font-weight: 900; color: var(--secondary); font-size: 16px;" id="cartTotal">0.0 ج.م</div>
+                <div style="font-size: 10px; color: var(--gray);">الإجمالي النهائي</div>
+                <div style="font-weight: 900; color: var(--secondary); font-size: 15px;" id="cartTotal">0.0 ج.م</div>
             </div>
             <button class="btn-submit" onclick="submitOrder()">إرسال الطلب <i class="fa-solid fa-paper-plane"></i></button>
         </div>
@@ -232,12 +288,10 @@
         const table = urlParams.get('table');
         const isOnline = !table || table === 'online';
 
-        // تحديد نوع الطلب
         let orderType = isOnline ? 'أونلاين' : 'صالة';
         document.getElementById('orderTypeBadge').innerText = `نوع الطلب: ${orderType}`;
-        document.getElementById('tableDisplayBadge').innerText = isOnline ? 'خدمة توصيل' : `الترابيزة: ${table}`;
+        document.getElementById('tableDisplayBadge').innerText = isOnline ? 'توصيل دليفري' : `ترابيزة: ${table}`;
 
-        // التحقق من تسجيل العميل مسبقاً
         let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`));
         if (currentUser) {
             document.getElementById('authModal').classList.add('hidden');
@@ -246,20 +300,95 @@
         function saveClientData() {
             let name = document.getElementById('clientName').value.trim();
             let phone = document.getElementById('clientPhone').value.trim();
-            if(!name || phone.length < 10) {
-                alert('الرجاء إدخال الاسم ورقم هاتف صحيح.');
+            let address = document.getElementById('clientAddress').value.trim();
+            
+            if(!name || phone.length < 10 || !address) {
+                alert('الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.');
                 return;
             }
-            currentUser = { name, phone };
+            currentUser = { name, phone, address };
             localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
             document.getElementById('authModal').classList.add('hidden');
+            loadMenu();
+        }
+
+        function logoutClient() {
+            localStorage.removeItem(`current_client_${restaurant}`);
+            location.reload();
+        }
+
+        function toggleHistory(show) {
+            let modal = document.getElementById('historyModal');
+            if (show) {
+                renderClientHistory();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderClientHistory() {
+            let container = document.getElementById('historyListContainer');
+            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let myOrders = orders.filter(o => currentUser && o.client && o.client.phone === currentUser.phone);
+
+            if (myOrders.length === 0) {
+                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">لا توجد طلبات سابقة مسجلة برقم هاتفك.</p>`;
+                return;
+            }
+
+            let html = '';
+            myOrders.slice().reverse().forEach(ord => {
+                let itemsStr = ord.items.map(i => `${i.name} (x${i.qty})`).join('، ');
+                
+                // زر الإلغاء يظهر فقط لو الحالة "قيد التحضير" أو "جاهز"
+                let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
+                let cancelBtnHtml = canCancel ? 
+                    `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : 
+                    ``;
+
+                html += `
+                    <div class="history-item-row">
+                        <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 5px;">
+                            <span>طلب #${ord.id}</span>
+                            <span><i class="fa-regular fa-calendar"></i> ${ord.date} - ${ord.time}</span>
+                        </div>
+                        <div style="font-weight: 600; margin-bottom: 5px; font-size: 12px;">${itemsStr}</div>
+                        <div style="font-size: 11px; color: var(--gray); margin-bottom: 8px;"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${ord.client.address || ''}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
+                            <span style="color: var(--secondary); font-weight: 700;">الإجمالي: ${ord.total} ج.م</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${ord.status}</span>
+                                ${cancelBtnHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function cancelOrder(orderId) {
+            if(!confirm('هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟')) return;
+            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let order = orders.find(o => o.id === orderId);
+            if (order) {
+                if(order.status === 'قيد التحضير' || order.status === 'جاهز') {
+                    order.status = 'ملغي';
+                    localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
+                    renderClientHistory();
+                    alert('تم إلغاء الطلب بنجاح.');
+                } else {
+                    alert('عذراً، لا يمكن إلغاء الطلب لتخطيه مرحلة التحضير.');
+                }
+            }
         }
 
         let cart = {};
 
         function loadMenu() {
             let items = JSON.parse(localStorage.getItem(`menu_items_${restaurant}`)) || [
-                { id: 1, name: "برجر كبير", price: 150, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" }
+                { id: 1, name: "برجر كلاسيك سينجل", price: 120, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" }
             ];
 
             let grid = document.getElementById('customerMenuGrid');
@@ -293,14 +422,10 @@
 
         function changeQty(id, name, price, change) {
             if (!cart[id]) {
-                if (change > 0) {
-                    cart[id] = { id, name, price, qty: 1 };
-                }
+                if (change > 0) cart[id] = { id, name, price, qty: 1 };
             } else {
                 cart[id].qty += change;
-                if (cart[id].qty <= 0) {
-                    delete cart[id];
-                }
+                if (cart[id].qty <= 0) delete cart[id];
             }
             loadMenu();
             updateCartBar();
@@ -313,17 +438,10 @@
             if (itemsArray.length > 0) {
                 document.getElementById('cartBar').classList.remove('hidden');
                 
-                let serviceFee = 0;
-                let serviceText = '';
-                if (isOnline) {
-                    serviceFee = 40; // خدمة توصيل أونلاين
-                    serviceText = `المجموع: ${subtotal} + توصيل: 40 ج.م`;
-                } else {
-                    serviceFee = Math.round(subtotal * 0.10); // 10% خدمة صالة
-                    serviceText = `المجموع: ${subtotal} + خدمة صالة 10% (${serviceFee} ج.م)`;
-                }
-                
+                let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
+                let serviceText = isOnline ? `المجموع: ${subtotal} + توصيل: 40 ج.م` : `المجموع: ${subtotal} + خدمة صالة 10%`;
                 let finalTotal = subtotal + serviceFee;
+
                 document.getElementById('cartBreakdown').innerText = serviceText;
                 document.getElementById('cartTotal').innerText = `${finalTotal} ج.م`;
             } else {
@@ -348,7 +466,7 @@
                 id: Math.floor(100000 + Math.random() * 900000),
                 client: currentUser,
                 type: orderType,
-                table: isOnline ? 'أونلاين' : table,
+                table: isOnline ? 'أونلاين (دليفري)' : table,
                 items: itemsArray,
                 subtotal: subtotal,
                 serviceFee: serviceFee,
@@ -371,4 +489,3 @@
     </script>
 </body>
 </html>
-
