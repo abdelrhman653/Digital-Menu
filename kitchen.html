@@ -194,15 +194,14 @@
     </div>
 
     <script>
-        let previousOrdersCount = 0;
+        let previousOrdersJson = "";
 
-        // دالة صوت الجرس عند نزول أوردر جديد
         function playBeep() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // نغمة جرس
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
                 osc.connect(ctx.destination);
                 osc.start();
                 osc.stop(ctx.currentTime + 0.4);
@@ -210,23 +209,30 @@
         }
 
         function checkNewOrders() {
-            const orders = JSON.parse(localStorage.getItem('nexus_orders') || '[]');
-            const grid = document.getElementById('ordersGrid');
-            document.getElementById('ordersCount').innerText = `${orders.length} طلبات معلقة`;
+            const rawData = localStorage.getItem('nexus_orders') || '[]';
+            
+            // عدم تحديث الصفحة لو مفيش أي أوردر جديد اتغير لمنع الرعشة
+            if (rawData === previousOrdersJson) return;
 
-            // إطلاق جرس التنبيه لو نزل أوردر جديد
-            if (orders.length > previousOrdersCount) {
+            const currentOrders = JSON.parse(rawData);
+            const previousOrders = previousOrdersJson ? JSON.parse(previousOrdersJson) : [];
+
+            if (currentOrders.length > previousOrders.length) {
                 playBeep();
             }
-            previousOrdersCount = orders.length;
 
-            if (orders.length === 0) {
+            previousOrdersJson = rawData;
+
+            document.getElementById('ordersCount').innerText = `${currentOrders.length} طلبات معلقة`;
+            const grid = document.getElementById('ordersGrid');
+
+            if (currentOrders.length === 0) {
                 grid.innerHTML = `<div class="no-orders">في انتظار أوردرات جديدة من العملاء... ☕</div>`;
                 return;
             }
 
             grid.innerHTML = '';
-            orders.forEach(order => {
+            currentOrders.forEach(order => {
                 let itemsListHtml = '';
                 order.items.forEach(i => {
                     itemsListHtml += `
@@ -268,10 +274,10 @@
             checkNewOrders();
         }
 
-        // فحص تلقائي كل ثانية للطلبات الجديدة (Real-time polling)
         setInterval(checkNewOrders, 1000);
         checkNewOrders();
     </script>
+
 </body>
 </html>
 
