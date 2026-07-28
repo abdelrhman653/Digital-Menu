@@ -32,7 +32,6 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // كلمة السر الخاصة بمدير المطعم
         const ADMIN_PIN = "1234";
 
         const INITIAL_MENU = [
@@ -57,12 +56,16 @@
             const [menuItems, setMenuItems] = useState([]);
             const [modal, setModal] = useState({ isOpen: false, type: 'loading', title: '', message: '' });
 
+            // نموذج إضافة صنف يدوي
+            const [newItem, setNewItem] = useState({ name: '', price: '', category: 'البرجر 🍔', calories: '', image: '' });
+            
+            // مولد الـ QR Code للترابيزات
+            const [tablesCount, setTablesCount] = useState(5);
+            const [generatedQRs, setGeneratedQRs] = useState([]);
+
             useEffect(() => {
-                // التحقق مما إذا كان الادمن سجل دخوله مسبقاً في هذه الجلسة
                 const sessionAuth = sessionStorage.getItem('admin_authenticated');
-                if (sessionAuth === 'true') {
-                    setIsAuthenticated(true);
-                }
+                if (sessionAuth === 'true') setIsAuthenticated(true);
 
                 const saved = localStorage.getItem('nexus_menu_items');
                 if (saved) {
@@ -80,7 +83,7 @@
                     sessionStorage.setItem('admin_authenticated', 'true');
                     setErrorMsg("");
                 } else {
-                    setErrorMsg("رمز المرور غير صحيح! حاول مرة أخرى.");
+                    setErrorMsg("رمز المرور غير صحيح!");
                 }
             };
 
@@ -89,6 +92,48 @@
                 localStorage.setItem('nexus_menu_items', JSON.stringify(newItems));
             };
 
+            // رفع صورة الصنف اليدوي
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setNewItem({ ...newItem, image: reader.result });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // إضافة صنف جديد يدوياً
+            const handleAddManualItem = (e) => {
+                e.preventDefault();
+                if (!newItem.name || !newItem.price) {
+                    alert("برجاء إدخال اسم الصنف والسعر!");
+                    return;
+                }
+
+                const itemToAdd = {
+                    id: Date.now().toString(),
+                    name: newItem.name,
+                    price: Number(newItem.price),
+                    category: newItem.category,
+                    calories: newItem.calories ? `${newItem.calories} Cal` : '',
+                    image: newItem.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80'
+                };
+
+                const updated = [itemToAdd, ...menuItems];
+                updateMenu(updated);
+                setNewItem({ name: '', price: '', category: 'البرجر 🍔', calories: '', image: '' });
+                
+                setModal({
+                    isOpen: true,
+                    type: 'success',
+                    title: 'تمت الإضافة بنجاح! ✨',
+                    message: `تم إضافة صنف (${itemToAdd.name}) لقائمة العميل مباشرة.`
+                });
+            };
+
+            // استخراج بالذكاء الاصطناعي
             const handleAIExtract = (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -123,7 +168,18 @@
                 updateMenu(updated);
             };
 
-            // شاشة تسجيل الدخول لو لم يكن مسجلاً
+            // إنتاج أكواد الـ QR للترابيزات
+            const handleGenerateQRs = () => {
+                const baseUrl = window.location.href.replace('admin.html', 'index.html');
+                const qrs = [];
+                for (let i = 1; i <= tablesCount; i++) {
+                    const tableUrl = `${baseUrl}?table=${i}`;
+                    const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tableUrl)}`;
+                    qrs.push({ table: i, url: tableUrl, qrImg });
+                }
+                setGeneratedQRs(qrs);
+            };
+
             if (!isAuthenticated) {
                 return (
                     <div className="max-w-md mx-auto min-h-screen bg-[#0b1320] flex items-center justify-center p-4">
@@ -165,7 +221,7 @@
                         </div>
                         <div className="flex gap-2">
                             <a href="index.html" target="_blank" className="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 px-3 py-1.5 rounded-lg border border-slate-700 transition-all font-bold">
-                                <i className="fa-solid fa-eye ml-1"></i> معااينة المنيو
+                                <i className="fa-solid fa-eye ml-1"></i> معاينة المنيو
                             </a>
                             <button onClick={() => { sessionStorage.removeItem('admin_authenticated'); setIsAuthenticated(false); }} className="text-xs bg-rose-500/20 text-rose-400 px-2 py-1.5 rounded-lg border border-rose-500/30">
                                 <i className="fa-solid fa-right-from-bracket"></i>
@@ -174,23 +230,135 @@
                     </header>
 
                     <div className="space-y-6">
-                        {/* AI Upload Section */}
+                        {/* 1. قسم الذكاء الاصطناعي */}
                         <div className="glass-panel p-5 rounded-2xl border border-purple-500/30 space-y-3">
                             <h3 className="font-bold text-cyan-300 text-sm flex items-center gap-2">
-                                <i className="fa-solid fa-robot"></i> استخراج المنيو بالذكاء الاصطناعي
+                                <i className="fa-solid fa-robot"></i> 1. استخراج المنيو بالذكاء الاصطناعي
                             </h3>
                             <p className="text-xs text-slate-400 leading-relaxed">
-                                ارفع صورة منيو برجر كينج وسيقوم النظام باستخراج الأصناف وتحديث قائمة العميل تلقائياً.
+                                ارفع صورة منيو كامل وسيقوم النظام بالتعرف على الأصناف والأسعار تلقائياً.
                             </p>
                             <label className="cursor-pointer block">
                                 <input type="file" accept="image/*" onChange={handleAIExtract} className="hidden" />
                                 <div className="w-full py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-xl text-center text-xs shadow-lg hover:opacity-95 transition-all">
-                                    <i className="fa-solid fa-cloud-arrow-up ml-1"></i> رفع صورة المنيو
+                                    <i className="fa-solid fa-cloud-arrow-up ml-1"></i> رفع صورة المنيو الكبيرة
                                 </div>
                             </label>
                         </div>
 
-                        {/* Items List */}
+                        {/* 2. قسم إضافة صنف يدوي ورسمي */}
+                        <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+                            <h3 className="font-bold text-slate-200 text-sm flex items-center gap-2 border-b border-slate-800 pb-2">
+                                <i className="fa-solid fa-circle-plus text-cyan-400"></i> 2. إضافة صنف يدوي بالصورة
+                            </h3>
+                            <form onSubmit={handleAddManualItem} className="space-y-3">
+                                <div>
+                                    <label className="text-[11px] text-slate-400 mb-1 block">اسم الصنف</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="مثال: كلاسيك برجر دبل" 
+                                        value={newItem.name} 
+                                        onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-cyan-400 focus:outline-none" 
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-[11px] text-slate-400 mb-1 block">السعر (ج.م)</label>
+                                        <input 
+                                            type="number" 
+                                            placeholder="150" 
+                                            value={newItem.price} 
+                                            onChange={(e) => setNewItem({...newItem, price: e.target.value})}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-cyan-400 focus:outline-none" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[11px] text-slate-400 mb-1 block">القسم</label>
+                                        <select 
+                                            value={newItem.category} 
+                                            onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                                        >
+                                            <option value="البرجر 🍔">البرجر 🍔</option>
+                                            <option value="البيتزا 🍕">البيتزا 🍕</option>
+                                            <option value="الأسماك 🐟">الأسماك 🐟</option>
+                                            <option value="المشروبات 🥤">المشروبات 🥤</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] text-slate-400 mb-1 block">السعرات (اختياري)</label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="مثال: 550" 
+                                        value={newItem.calories} 
+                                        onChange={(e) => setNewItem({...newItem, calories: e.target.value})}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-cyan-400 focus:outline-none" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] text-slate-400 mb-1 block">صورة الصنف</label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={handleImageUpload}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-400 focus:outline-none" 
+                                    />
+                                </div>
+                                {newItem.image && (
+                                    <img src={newItem.image} alt="Preview" className="w-16 h-16 object-cover rounded-xl border border-slate-700 mx-auto mt-2" />
+                                )}
+                                <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg transition-all">
+                                    <i className="fa-solid fa-check ml-1"></i> حفظ وإضافة للمنيو
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* 3. قسم إنشاء QR Code للترابيزات */}
+                        <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+                            <h3 className="font-bold text-slate-200 text-sm flex items-center gap-2 border-b border-slate-800 pb-2">
+                                <i className="fa-solid fa-qrcode text-purple-400"></i> 3. إنشاء أكواد QR للترابيزات
+                            </h3>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="number" 
+                                    min="1" 
+                                    max="50" 
+                                    value={tablesCount} 
+                                    onChange={(e) => setTablesCount(Number(e.target.value))}
+                                    className="w-24 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-center text-xs text-white font-bold" 
+                                />
+                                <span className="text-xs text-slate-400">عدد الترابيزات</span>
+                                <button 
+                                    onClick={handleGenerateQRs}
+                                    className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition-all"
+                                >
+                                    توليد أرقام الترابيزات 🚀
+                                </button>
+                            </div>
+
+                            {generatedQRs.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3 pt-2 max-h-[300px] overflow-y-auto">
+                                    {generatedQRs.map(qr => (
+                                        <div key={qr.table} className="bg-slate-900 p-3 rounded-xl border border-slate-800 text-center space-y-2">
+                                            <span className="font-bold text-xs text-purple-300 block">ترابيزة رقم {qr.table}</span>
+                                            <img src={qr.qrImg} alt={`Table ${qr.table}`} className="w-24 h-24 mx-auto rounded-lg border border-slate-700" />
+                                            <a 
+                                                href={qr.qrImg} 
+                                                target="_blank" 
+                                                download={`Table_${qr.table}_QR.png`}
+                                                className="block text-[10px] text-cyan-400 bg-cyan-500/10 py-1 rounded border border-cyan-500/20 font-bold"
+                                            >
+                                                تحميل الـ QR 📥
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 4. قائمة الأصناف الحالية */}
                         <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
                             <h3 className="font-bold text-slate-200 text-sm flex items-center justify-between">
                                 <span>الأصناف الحالية ({menuItems.length})</span>
@@ -213,7 +381,7 @@
                         </div>
                     </div>
 
-                    {/* Modern Modal / Toast */}
+                    {/* Modal / Toast */}
                     {modal.isOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
                             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
