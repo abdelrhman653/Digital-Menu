@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS - نظام المنيو والطلبات الذكي</title>
+    <title>المنيو الرقمي الذكي</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -35,34 +35,6 @@
             padding: 15px;
             padding-bottom: 100px;
             min-height: 100vh;
-        }
-
-        /* زر التنقل التجريبي بين شاشة العميل والمطبخ */
-        .dev-nav {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            background: rgba(255,255,255,0.05);
-            padding: 6px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .dev-btn {
-            flex: 1;
-            padding: 8px;
-            background: transparent;
-            border: none;
-            color: var(--text-sub);
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .dev-btn.active {
-            background: var(--accent-neon);
-            color: #000;
         }
 
         /* الهيدر */
@@ -125,7 +97,7 @@
             border-color: transparent;
         }
 
-        /* شبكة الأصناف */
+        /* الأصناف */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -201,7 +173,7 @@
             cursor: pointer;
         }
 
-        /* السلة العائمة */
+        /* السلة */
         .cart-bar {
             position: fixed;
             bottom: 15px;
@@ -233,181 +205,75 @@
             cursor: pointer;
         }
 
-        /* شاشة الكاشير والمطبخ */
-        .kitchen-view { display: none; }
-        .orders-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 15px;
-        }
-
-        .order-card {
-            background: var(--card-glass);
-            border: 1px solid var(--accent-purple);
-            border-radius: 18px;
-            padding: 15px;
-            box-shadow: 0 0 15px rgba(121, 40, 202, 0.2);
-        }
-
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-        }
-
-        .order-table { font-weight: 900; color: var(--accent-neon); font-size: 1.1rem; }
-        .order-time { font-size: 0.8rem; color: var(--text-sub); }
-
-        .order-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-        }
-
-        .order-done-btn {
-            width: 100%;
-            margin-top: 12px;
-            background: var(--green-glow);
-            color: #000;
-            border: none;
-            padding: 8px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* 🔥 النوافذ المنبثقة المخصصة (Custom Futuristic Popup) 🔥 */
+        /* النافذة المنبثقة الشيك */
         .custom-popup-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; pointer-events: none;
             transition: opacity 0.3s ease;
         }
 
-        .custom-popup-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
+        .custom-popup-overlay.active { opacity: 1; pointer-events: all; }
 
         .custom-popup {
             background: #0f172a;
             border: 1px solid var(--accent-neon);
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
-            border-radius: 24px;
-            padding: 25px;
-            width: 85%;
-            max-width: 360px;
-            text-align: center;
+            border-radius: 24px; padding: 25px;
+            width: 85%; max-width: 360px; text-align: center;
             transform: scale(0.8);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .custom-popup-overlay.active .custom-popup {
-            transform: scale(1);
-        }
-
-        .popup-icon {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .popup-title {
-            font-weight: 900;
-            font-size: 1.2rem;
-            color: #fff;
-            margin-bottom: 8px;
-        }
-
-        .popup-msg {
-            color: var(--text-sub);
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-            line-height: 1.4;
-        }
-
+        .custom-popup-overlay.active .custom-popup { transform: scale(1); }
+        .popup-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .popup-title { font-weight: 900; font-size: 1.2rem; color: #fff; margin-bottom: 8px; }
+        .popup-msg { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4; }
         .popup-btn {
             background: linear-gradient(135deg, var(--accent-neon), #0072ff);
-            color: #000;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 12px;
-            font-weight: 900;
-            cursor: pointer;
-            width: 100%;
+            color: #000; border: none; padding: 10px 25px;
+            border-radius: 12px; font-weight: 900; cursor: pointer; width: 100%;
         }
     </style>
 </head>
 <body>
 
-    <!-- زر تبديل الشاشات للتجربة -->
-    <div class="dev-nav">
-        <button class="dev-btn active" onclick="switchView('client')">📱 شاشة العميل (المنيو)</button>
-        <button class="dev-btn" onclick="switchView('kitchen')">👨‍🍳 شاشة المطبخ (<span id="liveOrderCount">0</span>)</button>
+    <header>
+        <div class="brand-logo">NEXUS MENU ⚡</div>
+        <div class="table-badge" id="tableDisplay">ترابيزة رقم --</div>
+    </header>
+
+    <div class="categories">
+        <button class="cat-btn active">🔥 الأكثر طلباً</button>
+        <button class="cat-btn">🍔 البرجر</button>
+        <button class="cat-btn">🍕 البيتزا</button>
+        <button class="cat-btn">🥤 المشروبات</button>
     </div>
 
-    <!-- ===== 1. شاشة العميل ===== -->
-    <div id="clientView">
-        <header>
-            <div class="brand-logo">NEXUS MENU ⚡</div>
-            <div class="table-badge" id="tableDisplay">ترابيزة رقم 1</div>
-        </header>
+    <div class="menu-grid" id="menuGrid"></div>
 
-        <div class="categories">
-            <button class="cat-btn active">🔥 الأكثر طلباً</button>
-            <button class="cat-btn">🍔 البرجر</button>
-            <button class="cat-btn">🍕 البيتزا</button>
-            <button class="cat-btn">🥤 المشروبات</button>
+    <div class="cart-bar">
+        <div>
+            <span class="cart-count" id="cartCount">0 أصناف مختارة</span>
+            <span class="cart-total" id="cartTotal">0 ج.م</span>
         </div>
-
-        <div class="menu-grid" id="menuGrid"></div>
-
-        <div class="cart-bar">
-            <div>
-                <span class="cart-count" id="cartCount">0 أصناف مختارة</span>
-                <span class="cart-total" id="cartTotal">0 ج.م</span>
-            </div>
-            <button class="send-order-btn" onclick="sendOrder()">إرسال الطلب 🚀</button>
-        </div>
+        <button class="send-order-btn" onclick="sendOrder()">إرسال الطلب 🚀</button>
     </div>
 
-    <!-- ===== 2. شاشة المطبخ والكاشير ===== -->
-    <div id="kitchenView" class="kitchen-view">
-        <header>
-            <div class="brand-logo">شاشة المطبخ اللحظية 🔔</div>
-            <div class="table-badge" style="border-color: var(--green-glow); color: var(--green-glow);">متصل بالخدمة ✅</div>
-        </header>
-
-        <h3 style="margin-bottom: 15px; color: var(--text-sub);">الطلبات الواردة فورياً:</h3>
-        <div class="orders-grid" id="ordersGrid">
-            <p id="noOrdersMsg" style="color: var(--text-sub); grid-column: span 2;">لا توجد طلبات معلقة حالياً...</p>
-        </div>
-    </div>
-
-    <!-- ===== 3. النافذة المنبثقة المستقبلية المخصصة (شيك جداً) ===== -->
+    <!-- نافذة التنبيه -->
     <div class="custom-popup-overlay" id="popupOverlay">
         <div class="custom-popup">
             <div class="popup-icon" id="popupIcon">🚀</div>
-            <div class="popup-title" id="popupTitle">تم بنجاح!</div>
-            <div class="popup-msg" id="popupMsg">رسالة التنبيه بتظهر هنا...</div>
-            <button class="popup-btn" onclick="closePopup()">حسناً فهمت</button>
+            <div class="popup-title" id="popupTitle">تنبيه</div>
+            <div class="popup-msg" id="popupMsg">...</div>
+            <button class="popup-btn" onclick="closePopup()">حسناً</button>
         </div>
     </div>
 
     <script>
-        // داتا المنيو
         const items = [
             { id: 1, name: "تربل زلازل برجر", price: 140, oldPrice: 180, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
             { id: 2, name: "بيتزا رانش دجاج", price: 110, oldPrice: 135, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400" },
@@ -416,14 +282,12 @@
         ];
 
         let cart = [];
-        let allOrders = [];
 
-        // قراءة رقم الترابيزة من الرابط
+        // قرائة الترابيزة من الرابط
         const urlParams = new URLSearchParams(window.location.search);
         const tableNumber = urlParams.get('table') || '1';
         document.getElementById('tableDisplay').innerText = `ترابيزة رقم ${tableNumber}`;
 
-        // دالة إظهار الـ Pop-up الشيك المستقبلي
         function showPopup(title, msg, icon = "✅") {
             document.getElementById('popupTitle').innerText = title;
             document.getElementById('popupMsg').innerText = msg;
@@ -435,7 +299,6 @@
             document.getElementById('popupOverlay').classList.remove('active');
         }
 
-        // عرض المنيو
         function renderMenu() {
             const grid = document.getElementById('menuGrid');
             grid.innerHTML = '';
@@ -478,10 +341,9 @@
             document.getElementById('cartTotal').innerText = `${total} ج.م`;
         }
 
-        // إرسال الطلب للمطبخ
         function sendOrder() {
             if(cart.length === 0) {
-                showPopup("السلة فارغة!", "من فضلك أضف بعض الأصناف الشهية إلى سلتك أولاً قبل التأكيد.", "⚠️");
+                showPopup("السلة فارغة!", "من فضلك أضف بعض الأصناف لسلتك أولاً.", "⚠️");
                 return;
             }
 
@@ -494,71 +356,19 @@
                 total: total
             };
 
-            allOrders.push(newOrder);
+            // حفظ الطلب للسيرفر / المطبخ
+            let orders = JSON.parse(localStorage.getItem('nexus_orders') || '[]');
+            orders.push(newOrder);
+            localStorage.setItem('nexus_orders', JSON.stringify(orders));
+
             cart = [];
             updateCartUI();
 
-            // إظهار الرسالة الجديدة الشيك
             showPopup(
                 "تم إرسال الطلب بنجاح! 🚀", 
-                `أوردرك من (ترابيزة ${tableNumber}) وصل شاشة المطبخ، وجاري التحضير الآن.`, 
+                `أوردرك من (ترابيزة ${tableNumber}) وصل للمطبخ وجاري التحضير الآن.`, 
                 "🎉"
             );
-
-            renderKitchenOrders();
-        }
-
-        // عرض الطلبات في المطبخ
-        function renderKitchenOrders() {
-            const grid = document.getElementById('ordersGrid');
-            document.getElementById('liveOrderCount').innerText = allOrders.length;
-
-            if(allOrders.length === 0) {
-                grid.innerHTML = `<p id="noOrdersMsg" style="color: var(--text-sub); grid-column: span 2;">لا توجد طلبات معلقة حالياً...</p>`;
-                return;
-            }
-
-            grid.innerHTML = '';
-            allOrders.forEach(order => {
-                let itemsList = '';
-                order.items.forEach(i => {
-                    itemsList += `<div class="order-item"><span>1x ${i.name}</span> <span>${i.price} ج.م</span></div>`;
-                });
-
-                const card = document.createElement('div');
-                card.className = 'order-card';
-                card.innerHTML = `
-                    <div class="order-header">
-                        <span class="order-table">ترابيزة رقم ${order.table}</span>
-                        <span class="order-time">⏰ ${order.time}</span>
-                    </div>
-                    ${itemsList}
-                    <div style="border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: bold;">
-                        <span>الإجمالي:</span>
-                        <span style="color: var(--green-glow);">${order.total} ج.م</span>
-                    </div>
-                    <button class="order-done-btn" onclick="completeOrder(${order.id})">تم التجهيز والتقديم ✅</button>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function completeOrder(orderId) {
-            allOrders = allOrders.filter(o => o.id !== orderId);
-            renderKitchenOrders();
-        }
-
-        function switchView(view) {
-            document.querySelectorAll('.dev-btn').forEach(b => b.classList.remove('active'));
-            if(view === 'client') {
-                document.getElementById('clientView').style.display = 'block';
-                document.getElementById('kitchenView').style.display = 'none';
-                event.target.classList.add('active');
-            } else {
-                document.getElementById('clientView').style.display = 'none';
-                document.getElementById('kitchenView').style.display = 'block';
-                event.target.classList.add('active');
-            }
         }
 
         renderMenu();
