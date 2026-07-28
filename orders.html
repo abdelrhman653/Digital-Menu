@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طلباتي و السجل</title>
+    <title>سجل طلباتي - Abdo Shop</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -16,137 +16,122 @@
     </script>
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #0b1320; color: #f8fafc; }
-        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
-<body class="min-h-screen pb-12">
+<body class="min-h-screen p-4 pb-12">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        function MyOrdersApp() {
+        function CustomerOrdersApp() {
             const [myOrders, setMyOrders] = useState([]);
-            const [customerPhone, setCustomerPhone] = useState(localStorage.getItem('nexus_customer_phone') || '');
+            const userPhone = localStorage.getItem('abdo_shop_cust_phone') || '';
 
             const loadOrders = () => {
-                const phone = localStorage.getItem('nexus_customer_phone');
                 const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                
-                if (phone) {
-                    const filtered = allOrders.filter(o => o.customerInfo && o.customerInfo.phone === phone);
-                    setMyOrders(filtered);
-                } else {
-                    setMyOrders([]);
-                }
+                // تصفية الطلبات الخاصة برقم تليفون العميل المسجل أو عرض الطلبات الأونلاين بشكل عام
+                const filtered = allOrders.filter(o => {
+                    if (o.customerInfo && o.customerInfo.phone) {
+                        return o.customerInfo.phone === userPhone;
+                    }
+                    return true; // عرض الكل لو لم يكن مسجلاً بديلفري خاص
+                });
+                setMyOrders(filtered);
             };
 
             useEffect(() => {
                 loadOrders();
-                const interval = setInterval(loadOrders, 1500);
+                const interval = setInterval(loadOrders, 2000);
                 return () => clearInterval(interval);
-            }, []);
+            }, [userPhone]);
 
+            // ميزة إلغاء الطلب إذا كان لا يزال قيد التحضير (pending) فقط
             const cancelOrder = (orderId) => {
-                const confirmCancel = window.confirm('هل أنت متأكد من إلغاء هذا الطلب؟');
-                if (!confirmCancel) return;
-
+                if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
                 const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                const updatedOrders = allOrders.map(o => {
+                const updated = allOrders.map(o => {
                     if (o.id === orderId) {
+                        if (o.status !== 'pending') {
+                            alert('عذراً، لا يمكن إلغاء الطلب لأنه خرج من مرحلة التحضير.');
+                            return o;
+                        }
                         return { ...o, status: 'cancelled' };
                     }
                     return o;
                 });
-
-                localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updatedOrders));
+                localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updated));
                 loadOrders();
             };
 
-            const getStatusBadge = (status) => {
-                switch(status) {
-                    case 'pending':
-                        return <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-xl text-xs font-bold">⏳ قيد التحضير</span>;
-                    case 'ready':
-                        return <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-xl text-xs font-bold">🍳 جاهز</span>;
-                    case 'out_for_delivery':
-                        return <span className="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2.5 py-1 rounded-xl text-xs font-bold">🏃 خرج للتوصيل</span>;
-                    case 'delivered':
-                        return <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-xl text-xs font-bold">✅ تم التسليم</span>;
-                    case 'cancelled':
-                        return <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-xl text-xs font-bold">❌ ملغي</span>;
-                    default:
-                        return <span className="bg-slate-800 text-slate-400 px-2.5 py-1 rounded-xl text-xs font-bold">غير معروف</span>;
-                }
-            };
-
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-[#0b1320] flex flex-col p-4 shadow-2xl border-x border-slate-800">
+                <div className="max-w-md mx-auto min-h-screen flex flex-col space-y-4">
                     {/* Header */}
-                    <header className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
-                        <div className="flex items-center gap-3">
-                            <a href="index.html" className="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-300 transition-all">
-                                <i className="fa-solid fa-arrow-right"></i>
-                            </a>
-                            <h1 className="font-extrabold text-base text-slate-100">سجل طلباتي 📋</h1>
+                    <header className="flex items-center justify-between pb-3 border-b border-slate-800">
+                        <div className="flex items-center gap-2">
+                            <div className="w-9 h-9 bg-pink-500/20 text-pink-400 rounded-xl flex items-center justify-center font-bold">
+                                <i className="fa-solid fa-receipt"></i>
+                            </div>
+                            <div>
+                                <h1 className="font-extrabold text-sm text-slate-100">سجل طلباتي السابقة 📄</h1>
+                                <p className="text-[10px] text-slate-400">متابعة حالة الطلبات وإمكانية الإلغاء</p>
+                            </div>
                         </div>
-                        {customerPhone && (
-                            <span className="text-[11px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-xl font-mono">
-                                📞 {customerPhone}
-                            </span>
-                        )}
+                        <a href="index.html" className="text-xs bg-slate-900 border border-slate-800 text-cyan-400 px-3 py-1.5 rounded-xl font-bold">
+                            العودة للمنيو 🔙
+                        </a>
                     </header>
 
-                    {!customerPhone ? (
-                        <div className="text-center py-16 glass-card rounded-2xl p-6 space-y-3">
-                            <i className="fa-solid fa-user-slash text-4xl text-slate-600"></i>
-                            <h3 className="font-bold text-slate-300 text-sm">لم تقم بتسجيل طلبات بعد</h3>
-                            <p className="text-xs text-slate-500">قم بعمل أول طلب أونلاين لربط رقمك وعرض سجل الطلبات هنا.</p>
-                            <a href="index.html" className="inline-block px-5 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs rounded-xl mt-2">
-                                الذهاب للمنيو
-                            </a>
+                    {userPhone && (
+                        <div className="bg-slate-900/80 border border-slate-800 p-2.5 rounded-xl text-xs text-slate-300 flex justify-between items-center font-mono">
+                            <span>📱 الهاتف المسجل: {userPhone}</span>
+                            <span className="text-emerald-400 text-[10px]">محفوظ تلقائياً</span>
                         </div>
-                    ) : myOrders.length === 0 ? (
-                        <div className="text-center py-16 glass-card rounded-2xl p-6 space-y-3">
-                            <i className="fa-solid fa-receipt text-4xl text-slate-600"></i>
-                            <h3 className="font-bold text-slate-300 text-sm">لا توجد طلبات مسجلة برقمك</h3>
-                            <a href="index.html" className="inline-block px-5 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs rounded-xl mt-2">
-                                اطلب الآن 🚀
-                            </a>
+                    )}
+
+                    {myOrders.length === 0 ? (
+                        <div className="text-center py-20 glass-card rounded-2xl p-6 space-y-3">
+                            <i className="fa-solid fa-box-open text-4xl text-slate-600"></i>
+                            <h3 className="font-bold text-slate-300 text-sm">لا توجد طلبات سابقة مسجلة</h3>
+                            <a href="index.html" className="inline-block px-4 py-2 bg-pink-500 text-white text-xs font-bold rounded-xl">اطلب الآن</a>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {myOrders.map((order) => {
-                                const canCancel = order.status === 'pending';
-
+                        <div className="space-y-3">
+                            {myOrders.map(order => {
+                                const isPending = order.status === 'pending';
                                 return (
-                                    <div key={order.id} className="glass-card rounded-2xl p-4 space-y-3 border border-slate-800/80 relative">
-                                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                                            <span className="text-xs font-bold text-slate-400 font-mono"># {order.id.slice(-6)}</span>
-                                            {getStatusBadge(order.status)}
+                                    <div key={order.id} className="glass-card p-3.5 rounded-2xl space-y-2.5 border border-slate-800">
+                                        <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                                            <div>
+                                                <span className="text-xs font-black text-pink-400 block">{order.tableNumber}</span>
+                                                <span className="text-[10px] text-slate-400 font-mono">📅 {order.date} | ⏰ {order.time}</span>
+                                            </div>
+                                            <div>
+                                                {order.status === 'pending' && <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold">⏳ قيد التحضير</span>}
+                                                {order.status === 'ready' && <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold">🍳 الطلب جاهز</span>}
+                                                {order.status === 'out_for_delivery' && <span className="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold">🏃 في الطريق</span>}
+                                                {order.status === 'delivered' && <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold">✅ تم التسليم</span>}
+                                                {order.status === 'cancelled' && <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold">❌ تم الإلغاء</span>}
+                                            </div>
                                         </div>
 
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-1 bg-slate-950/40 p-2.5 rounded-xl text-xs">
                                             {order.items.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between items-center text-xs">
-                                                    <span className="text-slate-200 font-semibold">{item.name} <strong className="text-pink-400">x{item.quantity}</strong></span>
-                                                    <span className="text-slate-400 font-mono">{item.price * item.quantity} ج.م</span>
+                                                <div key={idx} className="flex justify-between text-slate-200">
+                                                    <span>{item.name} (x{item.quantity})</span>
+                                                    <span className="font-mono text-cyan-400">{item.price * item.quantity} ج.م</span>
                                                 </div>
                                             ))}
                                         </div>
 
-                                        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                                            <div>
-                                                <span className="text-[10px] text-slate-500 block">{order.time}</span>
-                                                <span className="text-xs font-black text-cyan-400">الإجمالي: {order.totalPrice} ج.م</span>
-                                            </div>
-
-                                            {canCancel && (
-                                                <button 
-                                                    onClick={() => cancelOrder(order.id)}
-                                                    className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold text-xs rounded-xl transition-all flex items-center gap-1"
-                                                >
-                                                    <i className="fa-solid fa-ban"></i> إلغاء الطلب
+                                        <div className="flex justify-between items-center pt-1 text-xs">
+                                            <span className="font-black text-pink-400 font-mono">الإجمالي: {order.totalPrice} ج.م</span>
+                                            
+                                            {/* زر إلغاء الطلب يظهر فقط لو كان الطلب قيد التحضير ولم يتم تسليمه */}
+                                            {isPending && (
+                                                <button onClick={() => cancelOrder(order.id)} className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-xl text-[11px] font-bold">
+                                                    <i className="fa-solid fa-ban ml-1"></i> إلغاء الطلب
                                                 </button>
                                             )}
                                         </div>
@@ -159,8 +144,7 @@
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<MyOrdersApp />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<CustomerOrdersApp />);
     </script>
 </body>
 </html>
-
