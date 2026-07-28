@@ -21,18 +21,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 120px; }
 
-        /* شريط رئيسي لاسم المطعم في أعلى الصفحات */
-        .restaurant-brand-bar {
-            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-            border-bottom: 2px solid var(--primary);
-            padding: 10px 15px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 900;
-            color: var(--white);
-            letter-spacing: 0.5px;
-        }
-
         header {
             background: var(--dark-card);
             border-bottom: 1px solid var(--border);
@@ -42,36 +30,9 @@
             align-items: center;
         }
         header h1 { font-size: 15px; font-weight: 700; }
+        #headerRestaurantTitle { color: var(--warning); font-size: 14px; }
 
         .container { max-width: 480px; margin: 12px auto; padding: 0 10px; }
-
-        /* شريط التصنيفات (الكل، الوجبات، المشروبات، المقبلات، الحلويات) */
-        .categories-row {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-            scrollbar-width: none;
-        }
-        .categories-row::-webkit-scrollbar { display: none; }
-        .cat-btn {
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            color: var(--gray);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: 0.2s;
-        }
-        .cat-btn.active {
-            background: var(--primary);
-            color: var(--white);
-            border-color: var(--primary);
-        }
 
         #authModal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -136,6 +97,31 @@
             font-weight: 700;
         }
 
+        /* تصنيفات المنيو */
+        .categories-row {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+        }
+        .cat-btn {
+            background: var(--dark-card);
+            color: var(--gray);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .cat-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -177,12 +163,28 @@
             padding: 2px 6px;
         }
         .qty-btn {
-            background: none; border: none; color: var(--white); cursor: pointer; font-size: 12px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+            background: none;
+            border: none;
+            color: var(--white);
+            cursor: pointer;
+            font-size: 12px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .qty-num { font-size: 13px; font-weight: 700; min-width: 15px; text-align: center; }
 
         .add-initial-btn {
-            background: var(--primary); color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 700;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 700;
         }
 
         #historyModal {
@@ -214,23 +216,38 @@
         }
 
         .cart-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
             background: var(--dark-card);
             border-top: 1px solid var(--border);
             padding: 12px 15px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
             z-index: 990;
         }
-        .cart-details { font-size: 11px; color: var(--gray); margin-bottom: 6px; }
-        .cart-main-row { display: flex; justify-content: space-between; align-items: center; }
-        .btn-submit { background: var(--secondary); color: #000; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+        .cart-details {
+            font-size: 11px;
+            color: var(--gray);
+            margin-bottom: 6px;
+        }
+        .cart-main-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-submit {
+            background: var(--secondary);
+            color: #000;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+        }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-
-    <!-- بار اسم المطعم الثابت في أعلى الصفحات -->
-    <div class="restaurant-brand-bar" id="restaurantBrandBar">مطعم: جاري التحميل...</div>
 
     <div id="authModal">
         <div class="auth-box">
@@ -254,7 +271,7 @@
     </div>
 
     <header>
-        <h1>المنيو والطلب</h1>
+        <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
     </header>
 
     <div class="container">
@@ -266,13 +283,13 @@
             <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> طلباتي السابقة</button>
         </div>
 
-        <!-- تَبويبات الفلترة والتصنيفات -->
+        <!-- تصفية التصنيفات -->
         <div class="categories-row">
             <button class="cat-btn active" onclick="filterCategory('الكل', this)">الكل</button>
-            <button class="cat-btn" onclick="filterCategory('وجبات', this)">الوجبات</button>
-            <button class="cat-btn" onclick="filterCategory('مشروبات', this)">المشروبات</button>
-            <button class="cat-btn" onclick="filterCategory('مقبلات', this)">المقبلات</button>
-            <button class="cat-btn" onclick="filterCategory('حلويات', this)">الحلويات</button>
+            <button class="cat-btn" onclick="filterCategory('وجبات', this)">وجبات</button>
+            <button class="cat-btn" onclick="filterCategory('مشروبات', this)">مشروبات</button>
+            <button class="cat-btn" onclick="filterCategory('مقبلات', this)">مقبلات</button>
+            <button class="cat-btn" onclick="filterCategory('حلويات', this)">حلويات</button>
         </div>
 
         <div id="customerMenuGrid" class="menu-grid"></div>
@@ -292,11 +309,10 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const restaurant = urlParams.get('restaurant') || 'default';
+        document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
+
         const table = urlParams.get('table');
         const isOnline = !table || table === 'online';
-
-        // عرض اسم المطعم في البาร์ العلوي لجميع الصفحات
-        document.getElementById('restaurantBrandBar').innerText = `مطعم: ${restaurant.toUpperCase()}`;
 
         let orderType = isOnline ? 'أونلاين' : 'صالة';
         document.getElementById('orderTypeBadge').innerText = `نوع الطلب: ${orderType}`;
@@ -306,8 +322,6 @@
         if (currentUser) {
             document.getElementById('authModal').classList.add('hidden');
         }
-
-        let selectedCategory = 'الكل';
 
         function saveClientData() {
             let name = document.getElementById('clientName').value.trim();
@@ -339,13 +353,6 @@
             }
         }
 
-        function filterCategory(cat, btn) {
-            selectedCategory = cat;
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            loadMenu();
-        }
-
         function renderClientHistory() {
             let container = document.getElementById('historyListContainer');
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
@@ -361,7 +368,8 @@
                 let itemsStr = ord.items.map(i => `${i.name} (x${i.qty})`).join('، ');
                 let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
                 let cancelBtnHtml = canCancel ? 
-                    `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : '';
+                    `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : 
+                    ``;
 
                 html += `
                     <div class="history-item-row">
@@ -384,7 +392,6 @@
             container.innerHTML = html;
         }
 
-        // تزامن إلغاء الطلب لحظياً مع شاشة المطبخ
         function cancelOrder(orderId) {
             if(!confirm('هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟')) return;
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
@@ -394,7 +401,7 @@
                     order.status = 'ملغي';
                     localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
                     renderClientHistory();
-                    alert('تم إلغاء الطلب بنجاح وتحديثه في المطبخ.');
+                    alert('تم إلغاء الطلب وتحديث الحالة فوراً.');
                 } else {
                     alert('عذراً، لا يمكن إلغاء الطلب لتخطيه مرحلة التحضير.');
                 }
@@ -402,14 +409,22 @@
         }
 
         let cart = {};
+        let selectedCategory = 'الكل';
+
+        function filterCategory(cat, btn) {
+            selectedCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadMenu();
+        }
 
         function loadMenu() {
             let items = JSON.parse(localStorage.getItem(`menu_items_${restaurant}`)) || [
-                { id: 1, name: "برجر كلاسيك سينجل", category: "وجبات", price: 120, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" }
+                { id: 1, name: "برجر كلاسيك سينجل", price: 120, category: "وجبات", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" }
             ];
 
             if (selectedCategory !== 'الكل') {
-                items = items.filter(i => (i.category || 'وجبات') === selectedCategory);
+                items = items.filter(i => i.category === selectedCategory);
             }
 
             let grid = document.getElementById('customerMenuGrid');
@@ -509,4 +524,3 @@
     </script>
 </body>
 </html>
-
