@@ -9,87 +9,140 @@
     <style>
         :root {
             --primary: #FF4757;
+            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
             --secondary: #2ED573;
-            --dark: #2F3542;
-            --light: #F1F2F6;
+            --dark-card: #151B22;
+            --dark-bg: #0D1117;
             --white: #FFFFFF;
-            --gray: #A4B0BE;
-            --shadow: 0 10px 30px rgba(0,0,0,0.08);
-            --radius: 16px;
+            --gray: #8B949E;
+            --border: #30363D;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        body { background-color: #F8F9FA; color: var(--dark); padding-bottom: 80px; }
+        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 90px; }
+
         header {
-            background: linear-gradient(135deg, var(--dark), #1E272E);
-            color: var(--white);
-            padding: 20px;
+            background: var(--dark-card);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 20px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+        header h1 { font-size: 18px; font-weight: 700; }
+
+        .container { max-width: 600px; margin: 15px auto; padding: 0 10px; }
+
         .table-badge {
-            background: #FFE5E8;
+            background: rgba(255, 71, 87, 0.15);
             color: var(--primary);
-            padding: 8px 16px;
+            border: 1px solid var(--primary);
+            padding: 6px 15px;
             border-radius: 20px;
+            font-size: 13px;
             font-weight: 700;
             display: inline-block;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
+
+        .categories {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .category-btn {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            color: var(--white);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.3s;
+        }
+        .category-btn.active {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            font-weight: 700;
+        }
+
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
-        .food-card {
-            background: var(--white);
-            border-radius: var(--radius);
+        @media(max-width: 400px) { .menu-grid { grid-template-columns: 1fr; } }
+
+        .menu-card {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-        }
-        .food-card img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-        }
-        .food-body {
-            padding: 20px;
-            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
-        .food-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-        .price-area { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .old-price { text-decoration: line-through; color: var(--gray); font-size: 14px; }
-        .new-price { color: var(--secondary); font-size: 18px; font-weight: 900; }
-        .btn {
-            background: var(--primary);
-            color: var(--white);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-weight: 700;
-            cursor: pointer;
+        .menu-card img {
             width: 100%;
-            transition: 0.3s;
+            height: 120px;
+            object-fit: cover;
         }
-        .btn:hover { opacity: 0.9; }
-        .btn-success { background: var(--secondary); }
+        .menu-content {
+            padding: 10px;
+        }
+        .menu-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .menu-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px 10px 10px;
+        }
+        .menu-price {
+            color: var(--secondary);
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .add-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* شريط السلة السفلي */
         .cart-bar {
             position: fixed;
             bottom: 0;
             left: 0;
-            width: 100%;
-            background: var(--dark);
-            color: var(--white);
-            padding: 15px 25px;
+            right: 0;
+            background: var(--dark-card);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.4);
+        }
+        .btn-submit {
+            background: var(--secondary);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
         }
         .hidden { display: none !important; }
     </style>
@@ -97,127 +150,118 @@
 <body>
 
     <header>
-        <h1 id="restaurantTitleName">منيو المطعم</h1>
+        <h1>منيو المطعم - طلبات العملاء</h1>
     </header>
 
     <div class="container">
-        <div id="tableInfoArea" class="hidden">
-            <span class="table-badge" id="tableNumBadge">الترابيزة رقم: --</span>
+        <div style="text-align: center;">
+            <div id="tableDisplayBadge" class="table-badge">الترابيزة رقم: 1</div>
         </div>
 
-        <div class="menu-grid" id="customerMenuGrid">
-            <!-- Items loaded dynamically -->
+        <div class="categories">
+            <button class="category-btn active">الكل</button>
+            <button class="category-btn">🍔 البرجر</button>
+            <button class="category-btn">🐟 الأسماك</button>
+            <button class="category-btn">🥤 المشروبات</button>
+        </div>
+
+        <div id="customerMenuGrid" class="menu-grid">
+            <!-- سيتم تحميل الأصناف ديناميكياً هنا -->
         </div>
     </div>
 
+    <!-- شريط السلة السفلي -->
     <div id="cartBar" class="cart-bar hidden">
         <div>
-            <span style="font-weight: 700;">أصناف السلة: <span id="cartCount">0</span></span> | 
-            <span style="font-weight: 700; color: var(--secondary);">الإجمالي: <span id="cartTotal">0</span> ج.م</span>
+            <div style="font-size: 13px; color: var(--gray);">أصناف السلة: <span id="cartCount">0</span></div>
+            <div style="font-weight: 700; color: var(--secondary); font-size: 15px;" id="cartTotal">0.0 ج.م</div>
         </div>
-        <button class="btn btn-success" style="width: auto;" onclick="submitOrder()">إرسال الطلب للمطبخ <i class="fa-solid fa-check"></i></button>
+        <button class="btn-submit" onclick="submitOrder()">إرسال الطلب للمطبخ <i class="fa-solid fa-paper-plane"></i></button>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const restaurantSlug = urlParams.get('restaurant');
-        const tableNumber = urlParams.get('table');
+        const restaurant = urlParams.get('restaurant') || 'default';
+        const table = urlParams.get('table') || '1';
+
+        document.getElementById('tableDisplayBadge').innerText = `الترابيزة رقم: ${table}`;
 
         let cart = [];
 
-        window.onload = function() {
-            if(!restaurantSlug) {
-                document.body.innerHTML = '<h2 style="text-align:center; margin-top:50px; color:var(--primary);">عذراً، رابط المطعم غير صحيح!</h2>';
-                return;
-            }
-
-            // Load restaurant name
-            let restaurants = JSON.parse(localStorage.getItem('all_restaurants') || '{}');
-            if(restaurants[restaurantSlug]) {
-                document.getElementById('restaurantTitleName').innerText = `منيو: ${restaurants[restaurantSlug].name}`;
-            }
-
-            if(tableNumber) {
-                document.getElementById('tableInfoArea').classList.remove('hidden');
-                document.getElementById('tableNumBadge').innerText = `الترابيزة رقم: ${tableNumber}`;
-            }
-
-            loadCustomerMenu();
-        }
-
         function loadCustomerMenu() {
-            let items = JSON.parse(localStorage.getItem(`menu_items_${restaurantSlug}`) || '[]');
-            let grid = document.getElementById('customerMenuGrid');
-            grid.innerHTML = '';
+            let items = JSON.parse(localStorage.getItem(`menu_items_${restaurant}`)) || [
+                { id: 1, name: "Chicken Royale", price: 160, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" },
+                { id: 2, name: "Chicken Whopper", price: 175, img: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500" }
+            ];
 
-            if(items.length === 0) {
-                grid.innerHTML = '<p style="text-align:center; color:var(--gray); grid-column: 1/-1;">عذراً، لا توجد أصناف متاحة في المنيو حالياً.</p>';
+            let grid = document.getElementById('customerMenuGrid');
+            if (items.length === 0) {
+                grid.innerHTML = `<p style="color: var(--gray); text-align: center; grid-column: span 2; padding: 30px;">عذراً، لا توجد أصناف متاحة في المنيو حالياً.</p>`;
                 return;
             }
 
-            items.forEach((item, index) => {
-                let finalPrice = item.price;
-                let priceHtml = `<span class="new-price">${item.price} ج.م</span>`;
-                if(item.discount && item.discount > 0) {
-                    finalPrice = item.price - (item.price * item.discount / 100);
-                    priceHtml = `
-                        <span class="old-price">${item.price} ج.م</span>
-                        <span class="new-price">${finalPrice.toFixed(1)} ج.م</span>
-                    `;
-                }
-
-                grid.innerHTML += `
-                    <div class="food-card">
-                        <img src="${item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'}" alt="">
-                        <div class="food-body">
-                            <div>
-                                <div class="food-title">${item.name}</div>
-                                <div class="price-area">${priceHtml}</div>
-                            </div>
-                            <button class="btn" onclick="addToCart('${item.name}', ${finalPrice})"><i class="fa-solid fa-cart-plus"></i> إضافة للسلة</button>
+            let html = '';
+            items.forEach(item => {
+                html += `
+                    <div class="menu-card">
+                        <img src="${item.img}" alt="${item.name}">
+                        <div class="menu-content">
+                            <div class="menu-title">${item.name}</div>
+                        </div>
+                        <div class="menu-footer">
+                            <div class="menu-price">${item.price} ج.م</div>
+                            <button class="add-btn" onclick="addToCart(${item.id}, '${item.name}', ${item.price})"><i class="fa-solid fa-plus"></i></button>
                         </div>
                     </div>
                 `;
             });
+            grid.innerHTML = html;
         }
 
-        function addToCart(name, price) {
-            cart.push({ name, price });
-            updateCartUI();
+        function addToCart(id, name, price) {
+            let existing = cart.find(i => i.id === id);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ id, name, price, qty: 1 });
+            }
+            updateCartBar();
         }
 
-        function updateCartUI() {
-            document.getElementById('cartCount').innerText = cart.length;
-            let total = cart.reduce((sum, item) => sum + item.price, 0);
-            document.getElementById('cartTotal').innerText = total.toFixed(1);
+        function updateCartBar() {
+            let totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            let totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
-            if(cart.length > 0) {
+            if (totalCount > 0) {
                 document.getElementById('cartBar').classList.remove('hidden');
+                document.getElementById('cartCount').innerText = totalCount;
+                document.getElementById('cartTotal').innerText = `${totalPrice} ج.م`;
             } else {
                 document.getElementById('cartBar').classList.add('hidden');
             }
         }
 
         function submitOrder() {
-            if(cart.length === 0) return;
+            if (cart.length === 0) return;
 
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurantSlug}`) || '[]');
+            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
             let newOrder = {
-                id: Date.now(),
-                table: tableNumber || 'سفري / صالة',
+                id: Math.floor(100000 + Math.random() * 900000),
+                table: table,
                 items: cart,
-                total: cart.reduce((sum, item) => sum + item.price, 0),
                 time: new Date().toLocaleTimeString('ar-EG'),
-                status: 'pending'
+                status: 'قيد التحضير'
             };
 
             orders.push(newOrder);
-            localStorage.setItem(`orders_${restaurantSlug}`, JSON.stringify(orders));
+            localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
 
-            alert('تم إرسال طلبك بنجاح إلى المطبخ! بالعافية.');
+            alert('تم إرسال طلبك بنجاح! بالعافية.');
             cart = [];
-            updateCartUI();
+            updateCartBar();
         }
+
+        window.onload = loadCustomerMenu;
     </script>
 </body>
 </html>
