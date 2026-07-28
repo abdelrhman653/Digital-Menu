@@ -80,7 +80,6 @@
 
             const fetchMyOrders = (phoneToUse) => {
                 const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                // تصفية الطلبات بحيث تظهر فقط الخاصة برقم هاتف العميل الحالي المسجل
                 const userOrders = allOrders.filter(o => o.customerInfo && o.customerInfo.phone === phoneToUse);
                 setMyOrders(userOrders);
 
@@ -178,7 +177,20 @@
                 });
             };
 
-            const removeFromCart = (id) => setCart(prev => prev.filter(x => x.id !== id));
+            const decreaseQuantity = (productId) => {
+                setCart(prev => {
+                    const exist = prev.find(x => x.id === productId);
+                    if (exist && exist.quantity > 1) {
+                        return prev.map(x => x.id === productId ? { ...x, quantity: x.quantity - 1 } : x);
+                    }
+                    return prev.filter(x => x.id !== productId);
+                });
+            };
+
+            const getItemQuantityInCart = (id) => {
+                const item = cart.find(x => x.id === id);
+                return item ? item.quantity : 0;
+            };
 
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const extraFee = orderType === 'delivery' ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
@@ -215,7 +227,6 @@
                 setTimeout(() => setSuccessMsg(false), 4000);
             };
 
-            // شاشة تسجيل الدخول الإجبارية أول ما يفتح الرابط
             if (!isLoggedIn) {
                 return (
                     <div className="max-w-md mx-auto min-h-screen flex items-center justify-center p-4">
@@ -263,7 +274,6 @@
             return (
                 <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
                     
-                    {/* رأس الصفحة مع زرار سجل طلباتي */}
                     <div className="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-3 rounded-2xl mb-4">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-extrabold text-brand-pink">
@@ -278,7 +288,6 @@
                         </button>
                     </div>
 
-                    {/* شريط حالة الطلب الحالي (يظهر فقط لأحدث طلب يخص هذا الرقم) */}
                     {activeOrder && (
                         <div className="glass-card p-3.5 rounded-2xl mb-4 border border-brand-cyan/30 space-y-2.5 animate-fadeIn">
                             <div className="flex justify-between items-center text-xs">
@@ -303,7 +312,6 @@
                         </div>
                     )}
 
-                    {/* بيانات التوصيل */}
                     {orderType === 'delivery' && (
                         <div className="glass-card p-3.5 rounded-2xl mb-4 space-y-2.5">
                             <h3 className="text-xs font-black text-brand-cyan">🛵 بيانات التوصيل:</h3>
@@ -334,7 +342,6 @@
                         </div>
                     )}
 
-                    {/* التصنيفات */}
                     <div className="flex gap-2 overflow-x-auto pb-3 mb-2">
                         {categories.map((cat, i) => (
                             <button key={i} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap ${selectedCategory === cat ? 'bg-brand-pink text-white shadow-lg' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>
@@ -343,31 +350,45 @@
                         ))}
                     </div>
 
-                    {/* عرض الأصناف */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
-                        {filteredItems.map(item => (
-                            <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
-                                <div className="relative h-28 bg-slate-900">
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                    {item.calories && <span className="absolute top-2 left-2 bg-slate-950/80 text-[9px] font-mono font-bold text-amber-400 px-2 py-0.5 rounded-full">{item.calories}</span>}
-                                </div>
-                                <div className="p-2.5 flex-1 flex flex-col justify-between space-y-2">
-                                    <div>
-                                        <h4 className="text-xs font-bold text-slate-100 line-clamp-1">{item.name}</h4>
-                                        <p className="text-[10px] text-slate-400">{item.category}</p>
+                        {filteredItems.map(item => {
+                            const qty = getItemQuantityInCart(item.id);
+                            return (
+                                <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
+                                    <div className="relative h-28 bg-slate-900">
+                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                        {item.calories && <span className="absolute top-2 left-2 bg-slate-950/80 text-[9px] font-mono font-bold text-amber-400 px-2 py-0.5 rounded-full">{item.calories}</span>}
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-black text-brand-cyan font-mono">{item.price} ج.م</span>
-                                        <button onClick={() => addToCart(item)} className="w-7 h-7 bg-brand-pink text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-md active:scale-95">
-                                            <i className="fa-solid fa-plus"></i>
-                                        </button>
+                                    <div className="p-2.5 flex-1 flex flex-col justify-between space-y-2">
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-100 line-clamp-1">{item.name}</h4>
+                                            <p className="text-[10px] text-slate-400">{item.category}</p>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black text-brand-cyan font-mono">{item.price} ج.م</span>
+                                            
+                                            {qty === 0 ? (
+                                                <button onClick={() => addToCart(item)} className="w-7 h-7 bg-brand-pink text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-md active:scale-95">
+                                                    <i className="fa-solid fa-plus"></i>
+                                                </button>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-xl border border-slate-800">
+                                                    <button onClick={() => decreaseQuantity(item.id)} className="text-rose-400 text-xs w-5 h-5 flex items-center justify-center font-bold">
+                                                        <i className="fa-solid fa-minus"></i>
+                                                    </button>
+                                                    <span className="text-xs font-bold text-slate-100 font-mono">{qty}</span>
+                                                    <button onClick={() => addToCart(item)} className="text-emerald-400 text-xs w-5 h-5 flex items-center justify-center font-bold">
+                                                        <i className="fa-solid fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
-                    {/* نافذة سجل طلباتي الخاصة بالعميل فقط مع زر تسجيل الخروج */}
                     {showOrdersModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="glass-card w-full max-w-sm rounded-2xl p-4 border border-slate-700 max-h-[85vh] flex flex-col">
@@ -399,8 +420,12 @@
                                                         </div>
                                                     ))}
                                                 </div>
-                                                <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-xs font-bold">
-                                                    <span className="text-slate-300">الإجمالي: <span className="text-brand-pink font-mono">{ord.totalPrice} ج.م</span></span>
+                                                <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] text-amber-400">
+                                                    <span>رسوم التوصيل:</span>
+                                                    <span className="font-mono">{ord.extraFee} ج.م</span>
+                                                </div>
+                                                <div className="flex justify-between items-center pt-1 border-t border-slate-800/60 text-xs font-bold">
+                                                    <span className="text-slate-300">الإجمالي: <span className="text-brand-pink font-mono">{ord.totalPrice} ج.م</span> <span className="text-[9px] text-slate-400 font-normal">(شامل رسوم التوصيل)</span></span>
                                                     <span className={`px-2 py-0.5 rounded-lg text-[10px] ${
                                                         ord.status === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                                                         ord.status === 'ready' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
@@ -416,7 +441,6 @@
                                 </div>
 
                                 <div className="pt-3 border-t border-slate-800 space-y-2">
-                                    {/* زر تسجيل الخروج */}
                                     <button onClick={handleLogout} className="w-full py-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-500/30 flex items-center justify-center gap-1.5">
                                         <i className="fa-solid fa-right-from-bracket"></i>
                                         <span>تسجيل خروج (الدخول برقم آخر)</span>
@@ -429,7 +453,6 @@
                         </div>
                     )}
 
-                    {/* سلة الطلبات */}
                     {cart.length > 0 && (
                         <div className="fixed bottom-3 left-4 right-4 max-w-md mx-auto glass-card p-3 rounded-2xl border border-brand-pink/40 shadow-2xl space-y-2 z-40">
                             <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1 border-b border-slate-800 pb-2">
@@ -438,7 +461,11 @@
                                         <span className="text-slate-200 font-semibold">{i.name} (x{i.quantity})</span>
                                         <div className="flex items-center gap-2">
                                             <span className="text-brand-cyan font-mono">{i.price * i.quantity} ج.م</span>
-                                            <button onClick={() => removeFromCart(i.id)} className="text-rose-400 text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                            <div className="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded-lg border border-slate-800">
+                                                <button onClick={() => decreaseQuantity(i.id)} className="text-rose-400 text-[10px] px-1"><i className="fa-solid fa-minus"></i></button>
+                                                <span className="text-[11px] font-bold font-mono text-slate-100">{i.quantity}</span>
+                                                <button onClick={() => addToCart(i)} className="text-emerald-400 text-[10px] px-1"><i className="fa-solid fa-plus"></i></button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -449,7 +476,7 @@
                             </div>
                             <div className="flex items-center justify-between pt-1">
                                 <div>
-                                    <span className="text-[10px] text-slate-400 block">الإجمالي الكلي:</span>
+                                    <span className="text-[10px] text-slate-400 block">الإجمالي الكلي <span className="text-slate-500">(شامل رسوم التوصيل)</span>:</span>
                                     <span className="text-sm font-black text-brand-pink font-mono">{grandTotal} ج.م</span>
                                 </div>
                                 <button onClick={submitOrder} className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 flex items-center gap-1.5">
