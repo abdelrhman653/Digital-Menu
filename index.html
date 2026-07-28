@@ -3,23 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنيو الرقمي - طلبات أونلاين والمطعم</title>
-    <!-- Tailwind CSS CDN -->
+    <title>المنيو الرقمي - متابعة الطلب</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Google Fonts (Cairo) -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
-        tailwind.config = {
-            theme: { extend: { fontFamily: { cairo: ['Cairo', 'sans-serif'] } } }
-        }
+        tailwind.config = { theme: { extend: { fontFamily: { cairo: ['Cairo', 'sans-serif'] } } } }
     </script>
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #0b1320; color: #f8fafc; }
@@ -38,28 +31,31 @@
             const [tableNumber, setTableNumber] = useState(null);
             const [selectedCategory, setSelectedCategory] = useState('الكل');
             
-            // بيانات التوصيل للطلب الأونلاين
             const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-            const [customerInfo, setCustomerInfo] = useState({
-                name: '',
-                phone: '',
-                address: ''
-            });
+            const [activeOrder, setActiveOrder] = useState(null);
+            const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', address: '' });
 
             useEffect(() => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const tableFromUrl = urlParams.get('table');
-
-                if (tableFromUrl) {
-                    setTableNumber(tableFromUrl);
-                } else {
-                    setTableNumber(null);
-                }
+                if (tableFromUrl) setTableNumber(tableFromUrl);
 
                 const savedItems = localStorage.getItem('nexus_menu_items');
-                if (savedItems) {
-                    setMenuItems(JSON.parse(savedItems));
-                }
+                if (savedItems) setMenuItems(JSON.parse(savedItems));
+
+                // فحص حالة الطلب من المطبخ كل ثانية لتأكيد المتابعة اللحظية
+                const interval = setInterval(() => {
+                    const myOrderId = localStorage.getItem('nexus_current_order_id');
+                    if (myOrderId) {
+                        const allOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                        const found = allOrders.find(o => o.id === myOrderId);
+                        if (found) {
+                            setActiveOrder(found);
+                        }
+                    }
+                }, 1000);
+
+                return () => clearInterval(interval);
             }, []);
 
             const addToCart = (item) => {
@@ -73,12 +69,9 @@
 
             const handleOrderClick = () => {
                 if (cart.length === 0) return;
-
-                // لو أونلاين: نفتح النافذة لإدخال البيانات
                 if (!tableNumber) {
                     setShowCheckoutModal(true);
                 } else {
-                    // لو ترابيزة: نرسل فوراً
                     submitOrder();
                 }
             };
@@ -87,11 +80,12 @@
                 if (e) e.preventDefault();
 
                 const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                
+                const newOrderId = Date.now().toString();
+
                 const newOrder = {
-                    id: Date.now().toString(),
+                    id: newOrderId,
                     tableNumber: tableNumber ? `ترابيزة ${tableNumber}` : 'طلب أونلاين 🛵',
-                    customerInfo: !tableNumber ? customerInfo : null, // إضافة بيانات العميل لو أونلاين
+                    customerInfo: !tableNumber ? customerInfo : null,
                     items: cart,
                     totalPrice: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
                     status: 'pending',
@@ -99,43 +93,124 @@
                 };
 
                 localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existingOrders]));
+                localStorage.setItem('nexus_current_order_id', newOrderId);
 
-                alert(tableNumber ? `تم إرسال طلبك للمطبخ لترابيزة رقم ${tableNumber} بنجاح! 🍕` : 'تم إرسال طلبك الأونلاين بنجاح! 🛵');
+                setActiveOrder(newOrder);
                 setCart([]);
                 setShowCheckoutModal(false);
-                setCustomerInfo({ name: '', phone: '', address: '' });
             };
 
             const categories = ['الكل', ...new Set(menuItems.map(item => item.category))];
-            const filteredItems = selectedCategory === 'الكل' 
-                ? menuItems 
-                : menuItems.filter(item => item.category === selectedCategory);
-
+            const filteredItems = selectedCategory === 'الكل' ? menuItems : menuItems.filter(item => item.category === selectedCategory);
             const totalCartPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+            // تحديد المرحلة الحالية من الـ 4 مراحل بناءً على تحديد المطبخ
+            const getStatusStep = (status) => {
+                if (status === 'pending') return 1;
+                if (status === 'ready') return 2;
+                if (status === 'out_for_delivery') return 3;
+                if (status === 'delivered') return 4;
+                return 1;
+            };
+
+            const currentStep = activeOrder ? getStatusStep(activeOrder.status) : 0;
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-[#0b1320] flex flex-col p-4 shadow-2xl border-x border-slate-800">
                     {/* Header */}
                     <header className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full font-bold">
-                                ✨ تحديث لحظي من المطبخ
-                            </span>
-                        </div>
+                        <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full font-bold">
+                            ✨ تتبع مباشر للطلب
+                        </span>
 
                         {tableNumber ? (
-                            <div className="bg-purple-600/30 border border-purple-500/50 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                                <span>📍</span>
-                                <span>ترابيزة رقم {tableNumber}</span>
+                            <div className="bg-purple-600/30 border border-purple-500/50 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold">
+                                📍 ترابيزة رقم {tableNumber}
                             </div>
                         ) : (
-                            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                                <span>🛵</span>
-                                <span>طلب أونلاين / دليفري</span>
+                            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-xl text-xs font-bold">
+                                🛵 طلب أونلاين / دليفري
                             </div>
                         )}
                     </header>
+
+                    {/* شريط تتبع حالة الطلب في 4 خطوات وظيفية */}
+                    {activeOrder && (
+                        <div className="mb-5 bg-slate-900 border border-cyan-500/40 p-4 rounded-2xl space-y-3 shadow-2xl">
+                            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <h4 className="font-bold text-xs text-cyan-400 flex items-center gap-1.5">
+                                    <i className="fa-solid fa-signal text-emerald-400"></i> حالة الطلب (تحكم المطبخ)
+                                </h4>
+                                <span className="text-[10px] text-slate-400">{activeOrder.time}</span>
+                            </div>
+
+                            {/* شريط الـ 4 خطوات */}
+                            <div className="grid grid-cols-4 text-center pt-2 gap-1 relative">
+                                
+                                {/* 1. قيد التحضير */}
+                                <div className="space-y-1">
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                                        currentStep >= 1 ? 'bg-amber-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'
+                                    }`}>
+                                        ⏳
+                                    </div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 1 ? 'text-amber-400' : 'text-slate-500'}`}>
+                                        قيد التحضير
+                                    </span>
+                                </div>
+
+                                {/* 2. جاهز */}
+                                <div className="space-y-1">
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                                        currentStep >= 2 ? 'bg-cyan-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'
+                                    }`}>
+                                        🍳
+                                    </div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 2 ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                        جاهز
+                                    </span>
+                                </div>
+
+                                {/* 3. خرج للتوصيل / نازل للترابيزة */}
+                                <div className="space-y-1">
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                                        currentStep >= 3 ? 'bg-purple-500 text-white font-black scale-110 shadow-lg animate-pulse' : 'bg-slate-800 text-slate-500'
+                                    }`}>
+                                        🏃
+                                    </div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>
+                                        خرج للتوصيل
+                                    </span>
+                                </div>
+
+                                {/* 4. تم التسليم */}
+                                <div className="space-y-1">
+                                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                                        currentStep >= 4 ? 'bg-emerald-500 text-slate-950 font-black scale-110 shadow-lg' : 'bg-slate-800 text-slate-500'
+                                    }`}>
+                                        ✅
+                                    </div>
+                                    <span className={`text-[9px] block font-bold ${currentStep >= 4 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                        تم التسليم
+                                    </span>
+                                </div>
+
+                            </div>
+
+                            {currentStep === 4 && (
+                                <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-center text-xs py-2 rounded-xl font-bold mt-2">
+                                    🎉 تم تسليم الأكل بنجاح، بالهناء والشفاء!
+                                </div>
+                            )}
+
+                            <button 
+                                onClick={() => { localStorage.removeItem('nexus_current_order_id'); setActiveOrder(null); }}
+                                className="w-full text-[10px] text-slate-500 hover:text-slate-300 pt-1 text-center block"
+                            >
+                                إخفاء الشريط / عمل طلب جديد
+                            </button>
+                        </div>
+                    )}
 
                     {/* التصنيفات */}
                     <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-none">
@@ -144,9 +219,7 @@
                                 key={cat}
                                 onClick={() => setSelectedCategory(cat)}
                                 className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                                    selectedCategory === cat 
-                                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md' 
-                                    : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
+                                    selectedCategory === cat ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md' : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
                                 }`}
                             >
                                 {cat}
@@ -157,111 +230,49 @@
                     {/* قائمة الأصناف */}
                     <div className="grid grid-cols-2 gap-3 flex-1">
                         {filteredItems.map((item) => (
-                            <div key={item.id} className="glass-card rounded-2xl p-2.5 flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all">
+                            <div key={item.id} className="glass-card rounded-2xl p-2.5 flex flex-col justify-between border border-slate-800/80">
                                 <div className="relative mb-2">
                                     <img src={item.image} alt={item.name} className="w-full h-28 object-cover rounded-xl" />
-                                    {item.calories && (
-                                        <span className="absolute top-1.5 left-1.5 bg-slate-950/80 backdrop-blur-md text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-800">
-                                            Cal {item.calories.replace('Cal','')}
-                                        </span>
-                                    )}
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-xs text-slate-100 line-clamp-1">{item.name}</h3>
-                                    <p className="text-[10px] text-slate-400 mb-2">{item.category}</p>
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between mt-2">
                                         <span className="font-extrabold text-cyan-400 text-xs">{item.price} ج.م</span>
-                                        <button 
-                                            onClick={() => addToCart(item)}
-                                            className="w-7 h-7 bg-pink-500 hover:bg-pink-600 text-white rounded-lg flex items-center justify-center text-xs font-bold shadow-md active:scale-95 transition-all"
-                                        >
-                                            +
-                                        </button>
+                                        <button onClick={() => addToCart(item)} className="w-7 h-7 bg-pink-500 text-white rounded-lg font-bold text-xs">+</button>
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* شريط السلة السفلي */}
+                    {/* السلة */}
                     {cart.length > 0 && (
-                        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 max-w-md w-[92%] bg-slate-900/95 border border-cyan-500/40 backdrop-blur-md p-3 rounded-2xl shadow-2xl flex items-center justify-between z-40">
+                        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 max-w-md w-[92%] bg-slate-900/95 border border-cyan-500/40 p-3 rounded-2xl shadow-2xl flex items-center justify-between z-40">
                             <div className="flex items-center gap-3">
-                                <div className="relative">
-                                    <div className="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-xl flex items-center justify-center font-bold">
-                                        <i className="fa-solid fa-basket-shopping"></i>
-                                    </div>
-                                    <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                                        {totalCartCount}
-                                    </span>
+                                <div className="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-xl flex items-center justify-center font-bold">
+                                    <i className="fa-solid fa-basket-shopping"></i>
                                 </div>
                                 <div>
                                     <span className="text-[10px] text-slate-400 block">الإجمالي</span>
                                     <span className="font-extrabold text-sm text-cyan-400">{totalCartPrice} ج.م</span>
                                 </div>
                             </div>
-
-                            <button 
-                                onClick={handleOrderClick}
-                                className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
-                            >
+                            <button onClick={handleOrderClick} className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs rounded-xl">
                                 إرسال الطلب 🚀
                             </button>
                         </div>
                     )}
 
-                    {/* نافذة إدخال بيانات التوصيل للطلبات الأونلاين */}
+                    {/* نافذة أونلاين */}
                     {showCheckoutModal && (
                         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-xs space-y-4 shadow-2xl">
-                                <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                                    <h3 className="font-bold text-sm text-slate-100">بيانات التوصيل 🛵</h3>
-                                    <button onClick={() => setShowCheckoutModal(false)} className="text-slate-400 hover:text-white">
-                                        <i className="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-xs space-y-3">
+                                <h3 className="font-bold text-sm text-slate-100 pb-2 border-b border-slate-800">بيانات التوصيل 🛵</h3>
                                 <form onSubmit={submitOrder} className="space-y-3">
-                                    <div>
-                                        <label className="text-[11px] text-slate-400 block mb-1">الاسم بالكامل</label>
-                                        <input 
-                                            type="text" 
-                                            required
-                                            placeholder="أدخل اسمك" 
-                                            value={customerInfo.name}
-                                            onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] text-slate-400 block mb-1">رقم التليفون</label>
-                                        <input 
-                                            type="tel" 
-                                            required
-                                            placeholder="01xxxxxxxx" 
-                                            value={customerInfo.phone}
-                                            onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] text-slate-400 block mb-1">العنوان بالتفصيل</label>
-                                        <textarea 
-                                            required
-                                            rows="2"
-                                            placeholder="اسم الشارع، رقم العمارة، الشقة..." 
-                                            value={customerInfo.address}
-                                            onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
-                                        ></textarea>
-                                    </div>
-
-                                    <button 
-                                        type="submit"
-                                        className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg mt-2"
-                                    >
-                                        تأكيد وإرسال الطلب
-                                    </button>
+                                    <input type="text" required placeholder="الاسم بالكامل" value={customerInfo.name} onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                                    <input type="tel" required placeholder="رقم التليفون" value={customerInfo.phone} onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+                                    <textarea required rows="2" placeholder="العنوان بالتفصيل" value={customerInfo.address} onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white resize-none"></textarea>
+                                    <button type="submit" className="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">تأكيد وإرسال الطلب</button>
                                 </form>
                             </div>
                         </div>
