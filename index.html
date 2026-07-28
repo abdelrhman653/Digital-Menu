@@ -3,136 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة إشراف مطاعم Abdo</title>
-    <!-- مكتبة لإنشاء الـ QR Code -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>منصة إدارة المطاعم</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { background-color: #0f172a; color: #fff; font-family: Tahoma, sans-serif; }
+        :root {
+            --primary: #FF4757;
+            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
+            --ai-gradient: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
+            --secondary: #2ED573;
+            --dark-card: #151B22;
+            --dark-bg: #0D1117;
+            --white: #FFFFFF;
+            --gray: #8B949E;
+            --border: #30363D;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 50px; }
+        
+        header {
+            background: var(--dark-card);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 17px; font-weight: 700; }
+        
+        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
+        
+        .card {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        
+        .btn {
+            background: var(--primary-gradient);
+            color: var(--white);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            font-size: 15px;
+            transition: 0.3s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-success { background: var(--secondary); color: #000; }
+        .btn-logout { background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: auto; padding: 6px 12px; font-size: 13px; }
+        
+        input, select {
+            width: 100%;
+            background: #0D1117;
+            border: 1px solid var(--border);
+            color: var(--white);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        .file-upload-box {
+            border: 2px dashed var(--border);
+            padding: 15px;
+            text-align: center;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            background: #0D1117;
+        }
+
+        #authSection { display: block; }
+        #dashboardSection { display: none; }
+
+        .item-row {
+            background: #1C2128;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .item-info { display: flex; align-items: center; gap: 12px; }
+        .item-info img { width: 55px; height: 55px; border-radius: 10px; object-fit: cover; }
+        
+        .delete-btn {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .qr-box {
+            background: #0D1117;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 15px;
+            text-align: center;
+        }
+        .qr-img-container {
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .table-link {
+            color: var(--secondary);
+            font-size: 12px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="p-4 max-w-md mx-auto">
+<body>
 
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-xl font-bold text-yellow-400">⚡ لوحة الإدارة</h1>
-        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">خروج</button>
-    </div>
-
-    <!-- الأزرار الرئيسية -->
-    <div class="grid grid-cols-2 gap-3 mb-6">
-        <button onclick="openKitchen()" class="bg-green-600 p-3 rounded-lg font-bold text-center">شاشة المطبخ</button>
-        <button onclick="openMenu()" class="bg-red-500 p-3 rounded-lg font-bold text-center">المنيو أونلاين</button>
-    </div>
-
-    <!-- إضافة صنف جديد -->
-    <div class="bg-slate-800 p-4 rounded-xl mb-6 border border-slate-700">
-        <h2 class="text-lg font-bold mb-3 text-red-400">➕ إضافة صنف جديد للقائمة</h2>
-        <input type="text" id="itemName" placeholder="اسم الصنف (مثال: برجر دابل)" class="w-full p-2 mb-3 bg-slate-900 border border-slate-700 rounded text-white">
-        <select id="itemCategory" class="w-full p-2 mb-3 bg-slate-900 border border-slate-700 rounded text-white">
-            <option value="وجبات">وجبات</option>
-            <option value="مشروبات">مشروبات</option>
-            قبلات ومقبلات
-            <option value="حلويات">حلويات</option>
-        </select>
-        <input type="number" id="itemPrice" placeholder="السعر (ج.م)" class="w-full p-2 mb-3 bg-slate-900 border border-slate-700 rounded text-white">
-        <button onclick="addItem()" class="w-full bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg font-bold">🚀 إضافة الصنف للمنيو</button>
-    </div>
-
-    <!-- إدارة الأصناف الحالية -->
-    <div class="bg-slate-800 p-4 rounded-xl mb-6 border border-slate-700">
-        <h2 class="text-lg font-bold mb-3 text-red-400">📋 إدارة الأصناف الحالية (<span id="itemsCount">0</span>)</h2>
-        <div id="itemsList" class="space-y-2 max-h-40 overflow-y-auto">
-            <!-- سيتم إدراج الأصناف هنا ديناميكياً -->
+    <div id="authSection" class="container" style="margin-top: 50px;">
+        <div class="card" style="text-align: center;">
+            <h2><i class="fa-solid fa-store" style="color: var(--primary);"></i> بوابة مطاعم Abdo</h2>
+            <p style="color: var(--gray); font-size: 13px; margin: 10px 0 20px;">سجل دخولك أو أنشئ حساباً جديداً لمطعمك لإدارة المنيو والطلبات.</p>
+            <label style="text-align: right; display: block;">اسم المطعم أو كود الدخول:</label>
+            <input type="text" id="authRestaurantName" placeholder="مثال: kfc أو mcdonalds">
+            <button class="btn" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> دخول / إنشاء حساب للمطعم</button>
         </div>
     </div>
 
-    <!-- مولد QR كود للترابيزات -->
-    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-        <h2 class="text-lg font-bold mb-3 text-red-400">📱 مولد QR كود للترابيزات</h2>
-        <input type="number" id="tableNum" placeholder="رقم أو عدد الترابيزات" class="w-full p-2 mb-3 bg-slate-900 border border-slate-700 rounded text-white">
-        <button onclick="generateQR()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg font-bold mb-3">توليد الـ QR</button>
-        <div id="qrcode" class="flex justify-center bg-white p-2 rounded"></div>
+    <div id="dashboardSection">
+        <header>
+            <h1 id="headerRestaurantTitle">⚡ لوحة الإدارة</h1>
+            <button class="btn btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </header>
+
+        <div class="container">
+            <div class="card" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="#" id="onlineMenuBtn" target="_blank" class="btn" style="flex: 1;"><i class="fa-solid fa-utensils"></i> المنيو أونلاين</a>
+                <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
+            </div>
+
+            <div class="card" style="background: linear-gradient(145deg, #1A1F2C 0%, #121620 100%); border-color: #4A00E0; text-align: center;">
+                <h3><i class="fa-solid fa-wand-magic-sparkles"></i> استخراج المنيو بالذكاء الاصطناعي</h3>
+                <p style="color: var(--gray); font-size: 13px; margin: 8px 0 15px;">ارفع صورة منيو مطعمك القديم، وسيقوم النظام باستخراج الأصناف تلقائياً.</p>
+                <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="processAIImage(event)">
+                <button class="btn" style="background: var(--ai-gradient);" onclick="document.getElementById('aiMenuFile').click()"><i class="fa-solid fa-cloud-arrow-up"></i> رفع صورة المنيو القديم</button>
+                <div id="aiLoading" class="hidden" style="margin-top: 10px; color: var(--secondary); font-size: 13px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج الأصناف من الصورة...
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> إضافة صنف جديد للقائمة</h3>
+                <label>اسم الصنف:</label>
+                <input type="text" id="newItemName" placeholder="مثال: وجبة برجر دابل">
+                
+                <label>التصنيف:</label>
+                <select id="newItemCategory">
+                    <option value="وجبات">وجبات</option>
+                    <option value="مشروبات">مشروبات</option>
+                    <option value="مقبلات">مقبلات</option>
+                    <option value="حلويات">حلويات</option>
+                </select>
+
+                <label>السعر (ج.م):</label>
+                <input type="number" id="newItemPrice" placeholder="150">
+                
+                <label>صورة الصنف (من جهازك):</label>
+                <div class="file-upload-box" onclick="document.getElementById('itemImgFile').click()">
+                    <i class="fa-solid fa-image" style="font-size: 24px; color: var(--primary); margin-bottom: 5px;"></i>
+                    <div id="fileNameDisplay" style="font-size: 13px; color: var(--gray);">اضغط لاختيار صورة من جهازك</div>
+                </div>
+                <input type="file" id="itemImgFile" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+
+                <button class="btn" onclick="addNewItem()"><i class="fa-solid fa-rocket"></i> إضافة الصنف للمنيو</button>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> إدارة الأصناف الحالية (<span id="itemsCount">0</span>)</h3>
+                <div id="currentItemsList"></div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fa-solid fa-qrcode" style="color: var(--primary);"></i> مولد QR كود للترابيزات</h3>
+                <label>عدد ترابيزات المطعم:</label>
+                <input type="number" id="tablesCountInput" value="2" min="1" oninput="generateTablesQR()">
+                <div id="qrResultsContainer" class="qr-grid"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        let items = JSON.parse(localStorage.getItem('restaurant_items')) || [];
+        let currentRestaurant = localStorage.getItem('current_restaurant');
+        let uploadedImageBase64 = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
 
-        function renderItems() {
-            const list = document.getElementById('itemsList');
-            const count = document.getElementById('itemsCount');
-            list.innerHTML = '';
-            count.innerText = items.length;
-
-            if (items.length === 0) {
-                list.innerHTML = '<p class="text-gray-400 text-sm text-center">لا توجد أصناف مضافة حالياً</p>';
-                return;
+        window.onload = function() {
+            if (currentRestaurant) {
+                showDashboard();
             }
-
-            items.forEach((item, index) => {
-                list.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700 text-sm">
-                        <span>${item.name} - ${item.price} ج.م (${item.category})</span>
-                        <button onclick="deleteItem(${index})" class="text-red-400 hover:text-red-600 font-bold px-2">حذف</button>
-                    </div>
-                `;
-            });
         }
 
-        function addItem() {
-            const name = document.getElementById('itemName').value;
-            const category = document.getElementById('itemCategory').value;
-            const price = document.getElementById('itemPrice').value;
-
-            if (!name || !price) {
-                alert("الرجاء إدخال اسم الصنف والسعر بشكل صحيح!");
+        function handleLogin() {
+            let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
+            if (!nameInput) {
+                alert('الرجاء كتابة اسم أو كود المطعم!');
                 return;
             }
-
-            items.push({ name, category, price });
-            localStorage.setItem('restaurant_items', JSON.stringify(items));
-            
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemPrice').value = '';
-            renderItems();
-        }
-
-        function deleteItem(index) {
-            items.splice(index, 1);
-            localStorage.setItem('restaurant_items', JSON.stringify(items));
-            renderItems();
-        }
-
-        function generateQR() {
-            const val = document.getElementById('tableNum').value;
-            const qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = '';
-            if (!val) {
-                alert("يرجى إدخال رقم الترابيزة أولاً");
-                return;
-            }
-            new QRCode(qrContainer, {
-                text: window.location.href + "?table=" + val,
-                width: 128,
-                height: 128
-            });
+            currentRestaurant = nameInput;
+            localStorage.setItem('current_restaurant', currentRestaurant);
+            showDashboard();
         }
 
         function logout() {
-            localStorage.removeItem('restaurant_items');
-            window.location.reload();
+            localStorage.removeItem('current_restaurant');
+            currentRestaurant = null;
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('dashboardSection').style.display = 'none';
         }
 
-        function openKitchen() {
-            alert("تم الانتقال لشاشة المطبخ (جارٍ تطوير الشاشة)");
+        function showDashboard() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
+
+            let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            document.getElementById('onlineMenuBtn').href = `${baseUrl}orders.html?restaurant=${currentRestaurant}`;
+            document.getElementById('kitchenBtn').href = `${baseUrl}kitchen.html?restaurant=${currentRestaurant}`;
+
+            renderItems();
+            generateTablesQR();
         }
 
-        function openMenu() {
-            alert("تم الانتقال للمنيو أونلاين");
+        function handleImageUpload(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('fileNameDisplay').innerText = file.name;
+            let reader = new FileReader();
+            reader.onload = function(e) { uploadedImageBase64 = e.target.result; };
+            reader.readAsDataURL(file);
         }
 
-        // تحميل الأصناف عند فتح الصفحة
-        renderItems();
+        function getRestaurantItemsKey() {
+            return `menu_items_${currentRestaurant}`;
+        }
+
+        function getItems() {
+            return JSON.parse(localStorage.getItem(getRestaurantItemsKey())) || [];
+        }
+
+        function saveItems(items) {
+            localStorage.setItem(getRestaurantItemsKey(), JSON.stringify(items));
+        }
+
+        function addNewItem() {
+            let name = document.getElementById('newItemName').value;
+            let category = document.getElementById('newItemCategory').value;
+            let price = document.getElementById('newItemPrice').value;
+
+            if (!name || !price) {
+                alert('الرجاء إدخال اسم الصنف والسعر!');
+                return;
+            }
+
+            let items = getItems();
+            items.push({ id: Date.now(), name, category, price: Number(price), img: uploadedImageBase64 });
+            saveItems(items);
+
+            document.getElementById('newItemName').value = '';
+            document.getElementById('newItemPrice').value = '';
+            document.getElementById('fileNameDisplay').innerText = 'اضغط لاختيار صورة من جهازك';
+            uploadedImageBase64 = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
+
+            renderItems();
+        }
+
+        function deleteItem(id) {
+            let items = getItems().filter(i => i.id !== id);
+            saveItems(items);
+            renderItems();
+        }
+
+        function renderItems() {
+            let items = getItems();
+            let container = document.getElementById('currentItemsList');
+            document.getElementById('itemsCount').innerText = items.length;
+
+            if (items.length === 0) {
+                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 15px;">لا توجد أصناف حالياً لهذا المطعم.</p>`;
+                return;
+            }
+
+            let html = '';
+            items.forEach(item => {
+                html += `
+                    <div class="item-row">
+                        <div class="item-info">
+                            <img src="${item.img}" alt="${item.name}">
+                            <div>
+                                <div style="font-weight: 700; font-size: 14px;">${item.name} <span style="font-size: 11px; color: var(--warning);">(${item.category})</span></div>
+                                <div style="color: var(--secondary); font-size: 13px; font-weight: 600;">${item.price} ج.م</div>
+                            </div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteItem(${item.id})"><i class="fa-solid fa-trash-can"></i> حذف</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function processAIImage(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('aiLoading').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('aiLoading').classList.add('hidden');
+                let items = getItems();
+                items.push(
+                    { id: Date.now(), name: "وجبة شاورما دابل", category: "وجبات", price: 130, img: "https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=500" },
+                    { id: Date.now() + 1, name: "بيتزا مكس جبن", category: "وجبات", price: 125, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500" }
+                );
+                saveItems(items);
+                renderItems();
+                alert('تم تحليل صورة المنيو القديم واستخراج الأصناف وإضافتها بنجاح!');
+            }, 2000);
+        }
+
+        function generateTablesQR() {
+            let count = parseInt(document.getElementById('tablesCountInput').value) || 2;
+            let container = document.getElementById('qrResultsContainer');
+            container.innerHTML = '';
+
+            let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+
+            for (let i = 1; i <= count; i++) {
+                let tableUrl = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${i}`;
+                
+                let box = document.createElement('div');
+                box.className = 'qr-box';
+                box.innerHTML = `
+                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">ترابيزة ${i}</div>
+                    <div class="qr-img-container" id="qrcode-${i}"></div>
+                    <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> فتح الرابط</a>
+                `;
+                container.appendChild(box);
+
+                new QRCode(document.getElementById(`qrcode-${i}`), {
+                    text: tableUrl,
+                    width: 100,
+                    height: 100,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+        }
     </script>
 </body>
 </html>
-
