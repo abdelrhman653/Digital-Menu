@@ -3,136 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شاشة المطبخ - إدارة الطلبات</title>
+    <title>شاشة المطبخ وإدارة الطلبات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #FF4757;
+            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
             --secondary: #2ED573;
-            --dark: #2F3542;
-            --light: #F1F2F6;
+            --warning: #FFA502;
+            --dark-card: #151B22;
+            --dark-bg: #0D1117;
             --white: #FFFFFF;
-            --gray: #A4B0BE;
-            --shadow: 0 10px 30px rgba(0,0,0,0.08);
-            --radius: 16px;
+            --gray: #8B949E;
+            --border: #30363D;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        body { background-color: #F8F9FA; color: var(--dark); padding: 20px; }
+        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 50px; }
+
         header {
-            background: var(--dark);
-            color: var(--white);
-            padding: 20px;
-            border-radius: var(--radius);
+            background: var(--dark-card);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 20px;
             text-align: center;
-            margin-bottom: 30px;
         }
-        .orders-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+        header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .container { max-width: 600px; margin: 15px auto; padding: 0 10px; }
+
+        .stats-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
         }
+        .stat-card {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 15px;
+            min-width: 120px;
+            text-align: center;
+        }
+        .stat-card.active { border-color: var(--warning); background: rgba(255, 165, 2, 0.1); }
+        .stat-number { font-size: 18px; font-weight: 900; color: var(--warning); }
+        .stat-label { font-size: 12px; color: var(--gray); }
+
         .order-card {
-            background: var(--white);
-            border-radius: var(--radius);
-            padding: 20px;
-            box-shadow: var(--shadow);
-            border-top: 5px solid var(--primary);
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
         .order-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #E4E7EB;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 10px;
+            margin-bottom: 10px;
         }
-        .order-items { list-style: none; margin-bottom: 15px; }
-        .order-items li {
-            padding: 8px 0;
-            border-bottom: 1px dashed #E4E7EB;
-            font-weight: 700;
+        .table-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+        .order-meta { font-size: 12px; color: var(--gray); }
+
+        .customer-info {
+            background: #0D1117;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
         }
-        .btn {
-            background: var(--secondary);
-            color: var(--white);
+
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 14px;
+        }
+
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .total-price { font-weight: 700; color: var(--secondary); font-size: 15px; }
+
+        .status-btn {
+            background: var(--warning);
+            color: #000;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 10px;
             font-weight: 700;
             cursor: pointer;
-            width: 100%;
+            font-size: 13px;
         }
+        .status-btn.ready { background: var(--secondary); }
     </style>
 </head>
 <body>
 
     <header>
-        <h1><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ الحية</h1>
+        <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> شاشة المطبخ وإدارة الطلبات</h1>
     </header>
 
     <div class="container">
-        <div class="orders-grid" id="kitchenOrdersGrid">
-            <!-- Orders loaded dynamically -->
+        <!-- إحصائيات سريعة -->
+        <div class="stats-bar">
+            <div class="stat-card active">
+                <div class="stat-number" id="activeOrdersCount">0</div>
+                <div class="stat-label">نشطة / قيد التحضير</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalOrdersCount">0</div>
+                <div class="stat-label">إجمالي الطلبات</div>
+            </div>
+        </div>
+
+        <!-- قائمة الطلبات الواردة -->
+        <div id="kitchenOrdersList">
+            <!-- سيتم تحميل الطلبات هنا ديناميكياً -->
         </div>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const restaurantSlug = urlParams.get('restaurant');
-
-        window.onload = function() {
-            if(!restaurantSlug) {
-                alert('رقم المطعم غير موجود!');
-                return;
-            }
-            loadKitchenOrders();
-            // Refresh every 5 seconds for live updates
-            setInterval(loadKitchenOrders, 5000);
-        }
+        const restaurant = urlParams.get('restaurant') || 'default';
 
         function loadKitchenOrders() {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurantSlug}`) || '[]');
-            let grid = document.getElementById('kitchenOrdersGrid');
-            grid.innerHTML = '';
+            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let container = document.getElementById('kitchenOrdersList');
+            
+            document.getElementById('totalOrdersCount').innerText = orders.length;
+            let activeOrders = orders.filter(o => o.status === 'قيد التحضير');
+            document.getElementById('activeOrdersCount').innerText = activeOrders.length;
 
-            let pendingOrders = orders.filter(o => o.status === 'pending');
-
-            if(pendingOrders.length === 0) {
-                grid.innerHTML = '<p style="text-align:center; color:var(--gray); grid-column:1/-1;">لا توجد طلبات جديدة حالياً في المطبخ.</p>';
+            if (orders.length === 0) {
+                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 40px;">لا توجد طلبات جديدة حالياً في المطبخ.</p>`;
                 return;
             }
 
-            pendingOrders.forEach((order) => {
+            let html = '';
+            // ترتيب الطلبات من الأحدث للأقدم
+            orders.slice().reverse().forEach(order => {
                 let itemsHtml = '';
-                order.items.forEach(i => {
-                    itemsHtml += `<li><i class="fa-solid fa-utensils" style="color:var(--primary); margin-left:8px;"></i> ${i.name}</li>`;
+                let totalPrice = 0;
+
+                order.items.forEach(item => {
+                    let itemTotal = item.price * item.qty;
+                    totalPrice += itemTotal;
+                    itemsHtml += `
+                        <div class="order-item-row">
+                            <span>x ${item.qty} ${item.name}</span>
+                            <span style="color: var(--secondary);">${itemTotal} ج.م</span>
+                        </div>
+                    `;
                 });
 
-                grid.innerHTML += `
+                let isReady = order.status === 'جاهز';
+
+                html += `
                     <div class="order-card">
                         <div class="order-header">
-                            <span style="font-weight:900; font-size:18px;">ترابيزة: ${order.table}</span>
-                            <span style="color:var(--gray); font-size:14px;">${order.time}</span>
+                            <div class="table-title">ترابيزة رقم: ${order.table}</div>
+                            <div class="order-meta"><i class="fa-regular fa-clock"></i> ${order.time} | #${order.id}</div>
                         </div>
-                        <ul class="order-items">
+                        
+                        <div class="customer-info">
+                            <div><i class="fa-solid fa-user" style="color: var(--primary);"></i> عميل صالة / ترابيزة ${order.table}</div>
+                        </div>
+
+                        <div>
                             ${itemsHtml}
-                        </ul>
-                        <button class="btn" onclick="completeOrder(${order.id})"><i class="fa-solid fa-check"></i> تم التجهيز</button>
+                        </div>
+
+                        <div class="order-footer">
+                            <div class="total-price">الإجمالي: ${totalPrice} ج.م</div>
+                            <button class="status-btn ${isReady ? 'ready' : ''}" onclick="toggleOrderStatus(${order.id})">
+                                ${isReady ? '<i class="fa-solid fa-check"></i> جاهز للتسليم' : '<i class="fa-solid fa-hourglass-half"></i> قيد التحضير'}
+                            </button>
+                        </div>
                     </div>
                 `;
             });
+
+            container.innerHTML = html;
         }
 
-        function completeOrder(orderId) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurantSlug}`) || '[]');
-            orders = orders.map(o => {
-                if(o.id === orderId) o.status = 'completed';
-                return o;
-            });
-            localStorage.setItem(`orders_${restaurantSlug}`, JSON.stringify(orders));
-            loadKitchenOrders();
+        function toggleOrderStatus(orderId) {
+            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = order.status === 'قيد التحضير' ? 'جاهز' : 'قيد التحضير';
+                localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
+                loadKitchenOrders();
+            }
         }
+
+        // تحديث تلقائي للمطبخ كل ثواني لضمان ظهور الطلبات الجديدة فور إرسالها من العملاء
+        setInterval(loadKitchenOrders, 2000);
+        window.onload = loadKitchenOrders;
     </script>
 </body>
 </html>
