@@ -18,11 +18,7 @@
 
     <script>
         tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { cairo: ['Cairo', 'sans-serif'] },
-                }
-            }
+            theme: { extend: { fontFamily: { cairo: ['Cairo', 'sans-serif'] } } }
         }
     </script>
     <style>
@@ -36,12 +32,14 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // كلمة السر الخاصة بمدير المطعم
+        const ADMIN_PIN = "1234";
+
         const INITIAL_MENU = [
             { id: '1', name: 'تريبل زلازل برجر', category: 'البرجر 🍔', price: 140, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80', calories: '850 Cal' },
             { id: '2', name: 'بيتزا رانش دجاج', category: 'البيتزا 🍕', price: 110, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80', calories: '620 Cal' }
         ];
 
-        // أصناف برجر كينج الحقيقية المستخرجة بدقة
         const BURGER_KING_EXTRACTED_ITEMS = [
             { name: 'Chicken Royale', category: 'البرجر 🍔', price: 160, calories: '440 Cal', image: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400&q=80' },
             { name: 'Chicken Whopper', category: 'البرجر 🍔', price: 175, calories: '430 Cal', image: 'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=400&q=80' },
@@ -53,10 +51,19 @@
         ];
 
         function AdminApp() {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [inputPin, setInputPin] = useState("");
+            const [errorMsg, setErrorMsg] = useState("");
             const [menuItems, setMenuItems] = useState([]);
             const [modal, setModal] = useState({ isOpen: false, type: 'loading', title: '', message: '' });
 
             useEffect(() => {
+                // التحقق مما إذا كان الادمن سجل دخوله مسبقاً في هذه الجلسة
+                const sessionAuth = sessionStorage.getItem('admin_authenticated');
+                if (sessionAuth === 'true') {
+                    setIsAuthenticated(true);
+                }
+
                 const saved = localStorage.getItem('nexus_menu_items');
                 if (saved) {
                     setMenuItems(JSON.parse(saved));
@@ -65,6 +72,17 @@
                     localStorage.setItem('nexus_menu_items', JSON.stringify(INITIAL_MENU));
                 }
             }, []);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (inputPin === ADMIN_PIN) {
+                    setIsAuthenticated(true);
+                    sessionStorage.setItem('admin_authenticated', 'true');
+                    setErrorMsg("");
+                } else {
+                    setErrorMsg("رمز المرور غير صحيح! حاول مرة أخرى.");
+                }
+            };
 
             const updateMenu = (newItems) => {
                 setMenuItems(newItems);
@@ -105,6 +123,37 @@
                 updateMenu(updated);
             };
 
+            // شاشة تسجيل الدخول لو لم يكن مسجلاً
+            if (!isAuthenticated) {
+                return (
+                    <div className="max-w-md mx-auto min-h-screen bg-[#0b1320] flex items-center justify-center p-4">
+                        <div className="glass-panel p-6 rounded-2xl w-full border border-slate-800 space-y-5 text-center shadow-2xl">
+                            <div className="w-16 h-16 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl mx-auto flex items-center justify-center text-cyan-400 text-2xl">
+                                <i className="fa-solid fa-lock"></i>
+                            </div>
+                            <div>
+                                <h2 className="font-extrabold text-xl text-slate-100">لوحة الإدارة محمية 🔒</h2>
+                                <p className="text-xs text-slate-400 mt-1">برجاء إدخال رمز المرور للوصول للوحة التحكم</p>
+                            </div>
+
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <input 
+                                    type="password"
+                                    placeholder="أدخل الرقم السري (الافتراضي 1234)"
+                                    value={inputPin}
+                                    onChange={(e) => setInputPin(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-sm font-bold text-white focus:outline-none focus:border-cyan-500 transition-all"
+                                />
+                                {errorMsg && <p className="text-xs text-rose-400 font-bold">{errorMsg}</p>}
+                                <button type="submit" className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 font-bold text-white text-xs rounded-xl shadow-lg hover:opacity-90 transition-all">
+                                    دخول اللوحة
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-[#0b1320] text-slate-100 flex flex-col p-4 shadow-2xl border-x border-slate-800">
                     <header className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
@@ -114,9 +163,14 @@
                                 لوحة الإدارة (Admin)
                             </h1>
                         </div>
-                        <a href="index.html" className="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 px-3 py-1.5 rounded-lg border border-slate-700 transition-all font-bold">
-                            <i className="fa-solid fa-utensils ml-1"></i> عرض قائمة العميل
-                        </a>
+                        <div className="flex gap-2">
+                            <a href="index.html" target="_blank" className="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 px-3 py-1.5 rounded-lg border border-slate-700 transition-all font-bold">
+                                <i className="fa-solid fa-eye ml-1"></i> معااينة المنيو
+                            </a>
+                            <button onClick={() => { sessionStorage.removeItem('admin_authenticated'); setIsAuthenticated(false); }} className="text-xs bg-rose-500/20 text-rose-400 px-2 py-1.5 rounded-lg border border-rose-500/30">
+                                <i className="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
                     </header>
 
                     <div className="space-y-6">
