@@ -25,10 +25,10 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const DELIVERY_FEE = 40; // رسوم التوصيل
-        const SERVICE_RATE = 0.12; // نسبة خدمة الصالة 12%
+        const DELIVERY_FEE = 40; // خدمة التوصيل للديليفري
+        const SERVICE_RATE = 0.12; // خدمة الصالة 12%
 
-        // قائمة الأصناف والمنيو
+        // قائمة الأصناف
         const INITIAL_MENU = [
             { id: 1, name: "برجر كلاسيك سينجل", price: 120, category: "برجر", image: "🍔", description: "شريحة لحم بقر مشوي مع صوص كلاسيك وخس وطماطم" },
             { id: 2, name: "برجر دبل تشيز", price: 175, category: "برجر", image: "🧀", description: "شريحتين لحم مع طبقات جبنة شيدر صريحة" },
@@ -39,18 +39,19 @@
 
         function App() {
             const [cart, setCart] = useState([]);
-            const [orderType, setOrderType] = useState('hall'); // 'hall' أو 'delivery'
-            const [tableNum, setTableNum] = useState('');
+            const [tableNum, setTableNum] = useState(null); // رقم الترابيزة من الرابط إن وجد
             const [customerName, setCustomerName] = useState('');
             const [customerPhone, setCustomerPhone] = useState('');
             const [customerAddress, setCustomerAddress] = useState('');
             const [currentOrder, setCurrentOrder] = useState(null);
 
-            // جلب الأوردر القائم إن وجد
+            // تحديد نوع الطلب تلقائياً حسب الرابط
             useEffect(() => {
                 const queryParams = new URLSearchParams(window.location.search);
                 const table = queryParams.get('table');
-                if (table) setTableNum(table);
+                if (table) {
+                    setTableNum(table); // العميل داخل من QR code ترابيزة
+                }
 
                 const activeOrder = JSON.parse(localStorage.getItem('nexus_active_order') || 'null');
                 if (activeOrder) {
@@ -90,36 +91,31 @@
                 }
             };
 
-            // الحسابات
+            const isDelivery = !tableNum; // لو مفيش رقم ترابيزة يبقى أونلاين ديليفري
             const itemsSubtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-            const extraFee = orderType === 'delivery' ? DELIVERY_FEE : Math.round(itemsSubtotal * SERVICE_RATE);
+            const extraFee = isDelivery ? DELIVERY_FEE : Math.round(itemsSubtotal * SERVICE_RATE);
             const grandTotal = itemsSubtotal + extraFee;
 
             const handleSendOrder = () => {
                 if (cart.length === 0) return alert('السلة فارغة!');
 
-                if (orderType === 'hall' && !tableNum) {
-                    return alert('يرجى تحديد رقم الطاولة!');
-                }
-
-                if (orderType === 'delivery' && (!customerName || !customerPhone || !customerAddress)) {
+                if (isDelivery && (!customerName || !customerPhone || !customerAddress)) {
                     return alert('يرجى كتابة الاسم ورقم الهاتف والعنوان بالكامل لاستلام الديليفري!');
                 }
 
                 const newOrder = {
                     id: Date.now(),
-                    tableNumber: orderType === 'hall' ? `طاولة ${tableNum}` : 'طلب توصيل (ديليفري)',
-                    customerInfo: orderType === 'delivery' ? { name: customerName, phone: customerPhone, address: customerAddress } : null,
+                    tableNumber: isDelivery ? 'طلب توصيل (ديليفري)' : `طاولة ${tableNum}`,
+                    customerInfo: isDelivery ? { name: customerName, phone: customerPhone, address: customerAddress } : null,
                     items: cart,
                     subtotal: itemsSubtotal,
                     extraFee: extraFee,
-                    feeType: orderType === 'delivery' ? 'خدمة توصيل' : 'خدمة صالة (12%)',
+                    feeType: isDelivery ? 'خدمة توصيل' : 'خدمة صالة (12%)',
                     totalPrice: grandTotal,
                     status: 'pending',
                     time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
                 };
 
-                // حفظ الأوردر للمطبخ
                 const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
                 localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existingOrders]));
 
@@ -147,14 +143,14 @@
                             <h1 className="text-lg font-black text-slate-100 flex items-center gap-2">
                                 <span>Abdo Shop</span> 🍔
                             </h1>
-                            <p className="text-[10px] text-slate-400">أطيبي المأكولات وأسرع خدمة</p>
+                            <p className="text-[10px] text-slate-400">أطيب المأكولات وأسرع خدمة</p>
                         </div>
-                        <span className="text-xs px-2.5 py-1 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 font-bold">
-                            {orderType === 'hall' ? (tableNum ? `طاولة #${tableNum}` : 'صالة') : 'ديليفري 🏃'}
+                        <span className="text-xs px-3 py-1.5 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 font-bold">
+                            {tableNum ? `🍽️ طاولة #${tableNum}` : '🛵 طلب أونلاين'}
                         </span>
                     </header>
 
-                    {/* متابعة أوردر مباشر لو موجود */}
+                    {/* متابعة الأوردر المباشر */}
                     {currentOrder && (
                         <div className="glass-card rounded-2xl p-4 space-y-3 border border-pink-500/30 bg-pink-500/5">
                             <div className="flex justify-between items-center border-b border-slate-800 pb-2">
@@ -178,37 +174,12 @@
                         </div>
                     )}
 
-                    {/* نوع الطلب */}
-                    <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
-                        <button 
-                            onClick={() => setOrderType('hall')} 
-                            className={`py-2 rounded-xl text-xs font-bold transition-all ${orderType === 'hall' ? 'bg-pink-500 text-white' : 'text-slate-400'}`}
-                        >
-                            🍽️ أكل بالصالة (خدمة 12%)
-                        </button>
-                        <button 
-                            onClick={() => setOrderType('delivery')} 
-                            className={`py-2 rounded-xl text-xs font-bold transition-all ${orderType === 'delivery' ? 'bg-pink-500 text-white' : 'text-slate-400'}`}
-                        >
-                            🛵 توصيل أونلاين (40 ج)
-                        </button>
-                    </div>
-
-                    {/* أدخال البيانات حسب نوع الطلب */}
-                    {orderType === 'hall' ? (
-                        <div className="bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 space-y-1">
-                            <label className="text-[11px] text-slate-400">رقم الطاولة / الترابيزة:</label>
-                            <input 
-                                type="text" 
-                                value={tableNum} 
-                                onChange={(e) => setTableNum(e.target.value)} 
-                                placeholder="اكتب رقم ترابيزتك هنا..." 
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500"
-                            />
-                        </div>
-                    ) : (
-                        <div className="bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 space-y-2">
-                            <p className="text-xs font-bold text-pink-400">بيانات التوصيل للديليفري:</p>
+                    {/* طلب بيانات العميل فقط إذا كان أونلاين ديليفري */}
+                    {isDelivery ? (
+                        <div className="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800/80 space-y-2">
+                            <p className="text-xs font-bold text-pink-400 flex items-center gap-1.5">
+                                <i className="fa-solid fa-truck-fast"></i> بيانات التوصيل للديليفري:
+                            </p>
                             <input 
                                 type="text" 
                                 value={customerName} 
@@ -226,15 +197,20 @@
                             <textarea 
                                 value={customerAddress} 
                                 onChange={(e) => setCustomerAddress(e.target.value)} 
-                                placeholder="العنوان بالتفصيل (الشارع، الدور، شقة)..." 
+                                placeholder="العنوان بالتفصيل (الشارع، الدور، رقم الشقة)..." 
                                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500 h-16 resize-none"
                             ></textarea>
                         </div>
+                    ) : (
+                        <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-2xl text-center">
+                            <p className="text-xs font-bold text-emerald-400">أهلاً بك! أنت تجلس حالياً على طاولة رقم #{tableNum}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">اطلب مباشرة وسيصل الطلب لطاولتك فور تحضيره</p>
+                        </div>
                     )}
 
-                    {/* قائمه المنيو */}
+                    {/* المنيو */}
                     <div className="space-y-3">
-                        <h2 className="text-sm font-extrabold text-slate-200">المنيو الأصناف 📜</h2>
+                        <h2 className="text-sm font-extrabold text-slate-200">المنيو 📜</h2>
                         <div className="space-y-2.5">
                             {INITIAL_MENU.map((item) => (
                                 <div key={item.id} className="glass-card rounded-2xl p-3 flex items-center justify-between gap-3">
@@ -274,27 +250,27 @@
                                 ))}
                             </div>
 
-                            {/* تفاصيل الحساب والرسوم التوضيحية */}
+                            {/* حساب الرسوم بناءً على رابط الدخول */}
                             <div className="pt-2 border-t border-slate-800 text-xs space-y-1.5">
                                 <div className="flex justify-between text-slate-400">
                                     <span>مجموع الأصناف:</span>
                                     <span>{itemsSubtotal} ج.م</span>
                                 </div>
 
-                                {orderType === 'delivery' ? (
+                                {isDelivery ? (
                                     <div className="flex justify-between text-amber-400 font-bold">
-                                        <span>🛵 خدمة التوصيل (ثابت):</span>
+                                        <span>🛵 مصاريف توصيل (ديليفري):</span>
                                         <span>+{DELIVERY_FEE} ج.م</span>
                                     </div>
                                 ) : (
                                     <div className="flex justify-between text-amber-400 font-bold">
-                                        <span>🍽️ خدمة الصالة (12%):</span>
+                                        <span>🍽️ خدمة صالة (12%):</span>
                                         <span>+{extraFee} ج.م</span>
                                     </div>
                                 )}
 
                                 <div className="flex justify-between text-sm font-black text-cyan-400 pt-1 border-t border-slate-800/80">
-                                    <span>الإجمالي النهائى:</span>
+                                    <span>الإجمالي النهائي:</span>
                                     <span>{grandTotal} ج.م</span>
                                 </div>
                             </div>
@@ -315,4 +291,3 @@
     </script>
 </body>
 </html>
-
