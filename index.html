@@ -3,225 +3,540 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">المنيو الرقمي</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>منصة إدارة المطاعم - Abdo Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FF4757;
+            --primary-dark: #FF6B81;
+            --secondary: #2ED573;
+            --dark: #2F3542;
+            --light: #F1F2F6;
+            --white: #FFFFFF;
+            --gray: #A4B0BE;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --radius: 16px;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+        body {
+            background-color: #F8F9FA;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, var(--dark), #1E272E);
+            color: var(--white);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-area i {
+            font-size: 32px;
+            color: var(--primary);
+        }
+        .logo-area h1 {
+            font-size: 24px;
+            font-weight: 900;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        .btn {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .btn-success { background: var(--secondary); }
+        .btn-dark { background: var(--dark); }
+        
+        /* Auth Screens */
+        .auth-container {
+            max-width: 450px;
+            margin: 60px auto;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E4E7EB;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+        
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-box {
+            background: var(--white);
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .stat-box i {
+            font-size: 40px;
+            color: var(--primary);
+            background: #FFE5E8;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .stat-box.green i {
+            color: var(--secondary);
+            background: #E8F8F0;
+        }
+        
+        /* Menu Management Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 15px;
+            text-align: right;
+            border-bottom: 1px solid #E4E7EB;
+        }
+        th {
+            background: #F8F9FA;
+            color: var(--dark);
+            font-weight: 700;
+        }
+        img.item-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+        
+        .badge {
+            background: #E8F8F0;
+            color: var(--secondary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .badge-discount {
+            background: #FFE5E8;
+            color: var(--primary);
+        }
+
+        .hidden { display: none !important; }
+        
+        .footer-credit {
+            text-align: center;
+            padding: 30px;
+            color: var(--gray);
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <i class="fa-solid fa-utensils"></i>
+            <h1 id="headerTitle">منصة المطاعم الذكية</h1>
+        </div>
+        <div id="headerActions" class="hidden">
+            <span id="welcomeRestaurantName" style="font-weight: 700; margin-left: 15px;"></span>
+            <button class="btn btn-dark" onclick="logoutRestaurant()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- Login / Register Portal -->
+        <div id="authScreen" class="card auth-container">
+            <h2 style="margin-bottom: 25px; color: var(--dark);"><i class="fa-solid fa-store" style="color:var(--primary);"></i> بوابة إدارة المطاعم</h2>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                <button class="btn" style="flex:1; justify-content:center;" id="tabLoginBtn" onclick="switchAuthTab('login')">تسجيل دخول</button>
+                <button class="btn btn-dark" style="flex:1; justify-content:center;" id="tabRegBtn" onclick="switchAuthTab('register')">إنشاء مطعم جديد</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>معرّف المطعم (Slug / Username)</label>
+                    <input type="text" id="loginSlug" class="form-control" required placeholder="مثال: abdo_grill">
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="loginPass" class="form-control" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn" style="width: 100%; justify-content: center;">دخول لوحة التحكم <i class="fa-solid fa-arrow-left"></i></button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>اسم المطعم بالعربي</label>
+                    <input type="text" id="regName" class="form-control" required placeholder="مطعم الشيف عبده">
+                </div>
+                <div class="form-group">
+                    <label>معرّف المطعم بالإنجليزية (بدون مسافات)</label>
+                    <input type="text" id="regSlug" class="form-control" required placeholder="abdo_grill">
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور الخاصة بلوحة التحكم</label>
+                    <input type="password" id="regPass" class="form-control" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%; justify-content: center;">إنشاء المطعم وتفعيل النظام <i class="fa-solid fa-check"></i></button>
+            </form>
+        </div>
+
+        <!-- Restaurant Admin Dashboard -->
+        <div id="dashboardScreen" class="hidden">
+            
+            <div class="dashboard-grid">
+                <div class="stat-box">
+                    <i class="fa-solid fa-burger"></i>
+                    <div>
+                        <h3 id="statTotalItems">0</h3>
+                        <p style="color:var(--gray);">أصناف المنيو</p>
+                    </div>
+                </div>
+                <div class="stat-box green">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <div>
+                        <h3>إدارة QR</h3>
+                        <p style="color:var(--gray);">الترابيزات والصالة</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links Card -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-link" style="color:var(--primary);"></i> روابط مطعمك السريعة</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn" onclick="openCustomerMenu()"><i class="fa-solid fa-utensils"></i> فتح المنيو أونلاين للعملاء</button>
+                    <button class="btn btn-success" onclick="openKitchenScreen()"><i class="fa-solid fa-fire-burner"></i> فتح شاشة المطبخ</button>
+                    <button class="btn btn-dark" onclick="openQRGenerator()"><i class="fa-solid fa-qrcode"></i> مولد أكواد QR للترابيزات</button>
+                </div>
+            </div>
+
+            <!-- Menu Items Management Card -->
+            <div class="card">
+                <div style="display: justify; justify-content: space-between; align-items: center; margin-bottom: 20px; display: flex;">
+                    <h3><i class="fa-solid fa-utensils" style="color:var(--primary);"></i> إدارة قائمة الطعام (المنيو)</h3>
+                    <button class="btn" onclick="openAddItemModal()"><i class="fa-solid fa-plus"></i> إضافة صنف جديد</button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الصورة</th>
+                                <th>اسم الصنف</th>
+                                <th>السعر الأساسي</th>
+                                <th>السعر بعد الخصم</th>
+                                <th>الخصم</th>
+                                <th>التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="menuTableBody">
+                            <!-- Items populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Add Item Modal -->
+    <div id="addItemModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        <div class="card" style="width: 100%; max-width: 500px; margin: 20px;">
+            <h3>إضافة صنف جديد للقائمة</h3>
+            <form onsubmit="saveMenuItem(event)" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label>اسم الصنف</label>
+                    <input type="text" id="itemName" class="form-control" required placeholder="برجر دجاج سبايسي">
+                </div>
+                <div class="form-group">
+                    <label>السعر الأساسي (ج.م)</label>
+                    <input type="number" id="itemPrice" class="form-control" required placeholder="120">
+                </div>
+                <div class="form-group">
+                    <label>نسبة الخصم % (اختياري)</label>
+                    <input type="number" id="itemDiscount" class="form-control" placeholder="مثال: 15">
+                </div>
+                <div class="form-group">
+                    <label>صورة الصنف (رابط الصورة أو رفع ملف)</label>
+                    <input type="text" id="itemImage" class="form-control" placeholder="https://images.unsplash.com/... أو اختر صورة">
+                    <input type="file" id="itemImageFile" class="form-control" style="margin-top: 10px;" accept="image/*" onchange="encodeImageFileAsURL(this)">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn" style="flex:1; justify-content: center;">حفظ الصنف</button>
+                    <button type="button" class="btn btn-dark" style="flex:1; justify-content: center;" onclick="closeAddItemModal()">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qrModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        <div class="card" style="width: 100%; max-width: 500px; margin: 20px; text-align: center;">
+            <h3>مولد أكواد QR للترابيزات</h3>
+            <p style="color:var(--gray); margin: 10px 0;">أدخل رقم الترابيزة لتوليد كود الـ QR الخاص بها:</p>
+            <div class="form-group">
+                <input type="number" id="tableNumber" class="form-control" placeholder="رقم الترابيزة (مثال: 1)">
+            </div>
+            <button class="btn" onclick="generateQRForTable()">توليد ورؤية الرابط</button>
+            <div id="qrResultArea" style="margin-top: 20px;"></div>
+            <button type="button" class="btn btn-dark" style="margin-top: 20px;" onclick="closeQRModal()">إغلاق</button>
+        </div>
+    </div>
+
+    <div class="footer-credit">
+        تطوير Abdelrhman Mohamed | Web Developer &copy; 2026
+    </div>
 
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { cairo: ['Cairo', 'sans-serif'] },
-                    colors: { brand: { dark: '#0b1320', card: '#1e293b', pink: '#ec4899', cyan: '#06b6d4', amber: '#f59e0b' } }
+        let currentRestaurant = localStorage.getItem('current_restaurant_slug') || null;
+        let base64ImageTemp = '';
+
+        function switchAuthTab(tab) {
+            if(tab === 'login') {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('tabLoginBtn').classList.remove('btn-dark');
+                document.getElementById('tabRegBtn').classList.add('btn-dark');
+            } else {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('tabLoginBtn').classList.add('btn-dark');
+                document.getElementById('tabRegBtn').classList.remove('btn-dark');
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const slug = document.getElementById('regSlug').value.trim().toLowerCase().replace(/\s+/g, '_');
+            const pass = document.getElementById('regPass').value;
+
+            let restaurants = JSON.parse(localStorage.getItem('all_restaurants') || '{}');
+            if(restaurants[slug]) {
+                alert('معرّف المطعم موجود مسبقاً، اختر معرّفاً آخر.');
+                return;
+            }
+
+            restaurants[slug] = { name, pass, created: Date.now() };
+            localStorage.setItem('all_restaurants', JSON.stringify(restaurants));
+            
+            loginRestaurantSession(slug, name);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const slug = document.getElementById('loginSlug').value.trim().toLowerCase();
+            const pass = document.getElementById('loginPass').value;
+
+            let restaurants = JSON.parse(localStorage.getItem('all_restaurants') || '{}');
+            if(!restaurants[slug] || restaurants[slug].pass !== pass) {
+                alert('بيانات الدخول غير صحيحة أو المعرّف غير مسجل!');
+                return;
+            }
+
+            loginRestaurantSession(slug, restaurants[slug].name);
+        }
+
+        function loginRestaurantSession(slug, name) {
+            localStorage.setItem('current_restaurant_slug', slug);
+            currentRestaurant = slug;
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            document.getElementById('headerActions').classList.remove('hidden');
+            document.getElementById('welcomeRestaurantName').innerText = `مطعم: ${name}`;
+            document.getElementById('headerTitle').innerText = `لوحة تحكم: ${name}`;
+            loadDashboardData();
+        }
+
+        function logoutRestaurant() {
+            localStorage.removeItem('current_restaurant_slug');
+            location.reload();
+        }
+
+        window.onload = function() {
+            if(currentRestaurant) {
+                let restaurants = JSON.parse(localStorage.getItem('all_restaurants') || '{}');
+                if(restaurants[currentRestaurant]) {
+                    loginRestaurantSession(currentRestaurant, restaurants[currentRestaurant].name);
                 }
             }
         }
-    </script>
-    <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #0b1320; color: #f8fafc; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    </style>
-</head>
-<body class="min-h-screen pb-24">
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+        function loadDashboardData() {
+            let items = JSON.parse(localStorage.getItem(`menu_items_${currentRestaurant}`) || '[]');
+            document.getElementById('statTotalItems').innerText = items.length;
+            
+            let tbody = document.getElementById('menuTableBody');
+            tbody.innerHTML = '';
+            
+            if(items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--gray);">لا توجد أصناف مضافة حتى الآن. قم بإضافة أصناف جديدة لمنيو مطعمك!</td></tr>`;
+                return;
+            }
 
-        function MenuApp() {
-            const [restaurantName, setRestaurantName] = useState('Abdo Shop');
-            const [menuItems, setMenuItems] = useState([]);
-            const [cart, setCart] = useState([]);
-            const [activeCategory, setActiveCategory] = useState('الكل');
-            const [tableNumber, setTableNumber] = useState('1');
-            const [isCartOpen, setIsCartOpen] = useState(false);
-            const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', address: '' });
-            const [orderSuccess, setOrderSuccess] = useState(false);
-
-            useEffect(() => {
-                const savedName = localStorage.getItem('nexus_restaurant_name');
-                if (savedName) setRestaurantName(savedName);
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const table = urlParams.get('table');
-                if (table) setTableNumber(table);
-
-                const savedMenu = localStorage.getItem('nexus_menu_items');
-                if (savedMenu) {
-                    setMenuItems(JSON.parse(savedMenu));
-                } else {
-                    setMenuItems([
-                        { id: '1', name: 'تريبل زلازل برجر', category: 'البرجر 🍔', price: 140, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80', calories: '850 Cal' },
-                        { id: '2', name: 'بيتزا رانش دجاج', category: 'البيتزا 🍕', price: 110, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80', calories: '620 Cal' }
-                    ]);
+            items.forEach((item, index) => {
+                let finalPrice = item.price;
+                let discountBadge = '<span style="color:var(--gray);">-</span>';
+                if(item.discount && item.discount > 0) {
+                    finalPrice = item.price - (item.price * item.discount / 100);
+                    discountBadge = `<span class="badge badge-discount">${item.discount}% خصم</span>`;
                 }
-            }, []);
 
-            const categories = ['الكل', ...new Set(menuItems.map(item => item.category))];
-            const filteredItems = activeCategory === 'الكل' ? menuItems : menuItems.filter(i => i.category === activeCategory);
-
-            const addToCart = (item) => {
-                const existing = cart.find(c => c.id === item.id);
-                if (existing) {
-                    setCart(cart.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c));
-                } else {
-                    setCart([...cart, { ...item, quantity: 1 }]);
-                }
-            };
-
-            const updateQuantity = (id, delta) => {
-                setCart(cart.map(c => {
-                    if (c.id === id) {
-                        const newQ = c.quantity + delta;
-                        return newQ > 0 ? { ...c, quantity: newQ } : null;
-                    }
-                    return c;
-                }).filter(Boolean));
-            };
-
-            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-            const handleCheckout = (e) => {
-                e.preventDefault();
-                if (cart.length === 0) return;
-
-                const newOrder = {
-                    id: Date.now(),
-                    tableNumber: `ترابيزة رقم ${tableNumber}`,
-                    items: cart,
-                    totalPrice: totalPrice,
-                    customerInfo: customerInfo,
-                    status: 'pending',
-                    date: new Date().toLocaleDateString('ar-EG'),
-                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-                };
-
-                const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existingOrders]));
-
-                setCart([]);
-                setOrderSuccess(true);
-                setIsCartOpen(false);
-                setTimeout(() => setOrderSuccess(false), 5000);
-            };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
-                    <header className="glass-card p-4 rounded-2xl flex justify-between items-center mb-4">
-                        <div>
-                            <h1 className="text-base font-black text-brand-cyan flex items-center gap-2">
-                                <i className="fa-solid fa-store"></i> <span>{restaurantName}</span>
-                            </h1>
-                            <p className="text-[11px] text-slate-400">ترابيزة رقم: <strong className="text-brand-pink">{tableNumber}</strong></p>
-                        </div>
-                        <div className="flex gap-2">
-                            <a href="kitchen.html" target="_blank" className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-brand-cyan font-bold">
-                                <i className="fa-solid fa-fire ml-1"></i> المطبخ
-                            </a>
-                            <button onClick={() => setIsCartOpen(true)} className="relative bg-brand-pink text-white px-3 py-1.5 rounded-xl text-xs font-bold">
-                                <i className="fa-solid fa-cart-shopping"></i>
-                                {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-amber-500 text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.reduce((a,b)=>a+b.quantity,0)}</span>}
-                            </button>
-                        </div>
-                    </header>
-
-                    {orderSuccess && (
-                        <div className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 p-3 rounded-xl text-xs text-center font-bold mb-4 animate-bounce">
-                            🎉 تم إرسال طلبك بنجاح إلى المطبخ!
-                        </div>
-                    )}
-
-                    <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
-                        {categories.map(cat => (
-                            <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-brand-pink text-white shadow-lg shadow-pink-500/20' : 'glass-card text-slate-300'}`}>
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 flex-1">
-                        {filteredItems.map(item => (
-                            <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
-                                <img src={item.image} alt={item.name} className="w-full h-28 object-cover" />
-                                <div className="p-3 space-y-1">
-                                    <h3 className="font-bold text-xs truncate text-slate-100">{item.name}</h3>
-                                    {item.calories && <span className="text-[10px] text-slate-400 block">{item.calories}</span>}
-                                    <div className="flex justify-between items-center pt-2">
-                                        <span className="text-brand-cyan font-black text-xs">{item.price} ج.م</span>
-                                        <button onClick={() => addToCart(item)} className="bg-brand-pink/20 text-brand-pink border border-brand-pink/30 p-1.5 rounded-xl text-xs hover:bg-brand-pink hover:text-white transition-all">
-                                            <i className="fa-solid fa-plus"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* سلة المشتريات Modal */}
-                    {isCartOpen && (
-                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
-                            <div className="w-full max-w-sm bg-brand-dark h-full p-4 flex flex-col justify-between border-l border-slate-800">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                                        <h2 className="text-sm font-bold text-white"><i className="fa-solid fa-cart-shopping text-brand-pink ml-1"></i> سلة طلباتك</h2>
-                                        <button onClick={() => setIsCartOpen(false)} className="text-slate-400 hover:text-white text-sm"><i className="fa-solid fa-xmark"></i></button>
-                                    </div>
-
-                                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                                        {cart.length === 0 ? (
-                                            <p className="text-center text-xs text-slate-500 py-8">السلة فارغة حالياً</p>
-                                        ) : (
-                                            cart.map(item => (
-                                                <div key={item.id} className="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-xs">
-                                                    <div>
-                                                        <h4 className="font-bold text-slate-200">{item.name}</h4>
-                                                        <span className="text-brand-cyan">{item.price * item.quantity} ج.م</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <button onClick={() => updateQuantity(item.id, -1)} className="w-6 h-6 bg-slate-800 rounded-lg text-slate-300">-</button>
-                                                        <span className="font-bold">{item.quantity}</span>
-                                                        <button onClick={() => updateQuantity(item.id, 1)} className="w-6 h-6 bg-slate-800 rounded-lg text-slate-300">+</button>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-
-                                    {cart.length > 0 && (
-                                        <form onSubmit={handleCheckout} className="space-y-3 border-t border-slate-800 pt-3">
-                                            <h3 className="text-xs font-bold text-slate-300">بيانات العميل (اختياري)</h3>
-                                            <input type="text" placeholder="الاسم" value={customerInfo.name} onChange={(e)=>setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
-                                            <input type="text" placeholder="رقم الهاتف" value={customerInfo.phone} onChange={(e)=>setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
-                                        </form>
-                                    )}
-                                </div>
-
-                                {cart.length > 0 && (
-                                    <div className="space-y-3 border-t border-slate-800 pt-4">
-                                        <div className="flex justify-between text-xs font-bold">
-                                            <span>الإجمالي:</span>
-                                            <span className="text-brand-pink text-sm">{totalPrice} ج.م</span>
-                                        </div>
-                                        <button onClick={handleCheckout} className="w-full py-3 bg-brand-pink text-white rounded-xl text-xs font-bold shadow-lg shadow-pink-500/20">
-                                            إرسال الطلب للمطبخ 🚀
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    <footer className="mt-8 text-center text-[11px] text-slate-500 border-t border-slate-800/60 pt-4">
-                        تطوير Abdelrhman Mohamed | Web Developer
-                    </footer>
-                </div>
-            );
+                tbody.innerHTML += `
+                    <tr>
+                        <td><img src="${item.image || 'https://via.placeholder.com/60'}" class="item-thumb" alt=""></td>
+                        <td style="font-weight:700;">${item.name}</td>
+                        <td>${item.price} ج.م</td>
+                        <td style="color:var(--secondary); font-weight:700;">${finalPrice.toFixed(1)} ج.م</td>
+                        <td>${discountBadge}</td>
+                        <td>
+                            <button class="btn btn-dark" style="padding: 6px 12px; font-size:14px;" onclick="deleteItem(${index})"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
-        ReactDOM.createRoot(document.getElementById('root')).render(<MenuApp />);
+
+        function openAddItemModal() {
+            document.getElementById('addItemModal').classList.remove('hidden');
+        }
+        function closeAddItemModal() {
+            document.getElementById('addItemModal').classList.add('hidden');
+            base64ImageTemp = '';
+        }
+
+        function encodeImageFileAsURL(element) {
+            let file = element.files[0];
+            let reader = new FileReader();
+            reader.onloadend = function() {
+                base64ImageTemp = reader.result;
+            }
+            if(file) {
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveMenuItem(e) {
+            e.preventDefault();
+            let name = document.getElementById('itemName').value;
+            let price = parseFloat(document.getElementById('itemPrice').value);
+            let discount = parseFloat(document.getElementById('itemDiscount').value) || 0;
+            let image = base64ImageTemp || document.getElementById('itemImage').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+
+            let items = JSON.parse(localStorage.getItem(`menu_items_${currentRestaurant}`) || '[]');
+            items.push({ name, price, discount, image });
+            localStorage.setItem(`menu_items_${currentRestaurant}`, JSON.stringify(items));
+
+            closeAddItemModal();
+            loadDashboardData();
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemDiscount').value = '';
+            document.getElementById('itemImage').value = '';
+        }
+
+        function deleteItem(index) {
+            if(confirm('هل أنت متأكد من حذف هذا الصنف؟')) {
+                let items = JSON.parse(localStorage.getItem(`menu_items_${currentRestaurant}`) || '[]');
+                items.splice(index, 1);
+                localStorage.setItem(`menu_items_${currentRestaurant}`, JSON.stringify(items));
+                loadDashboardData();
+            }
+        }
+
+        function openCustomerMenu() {
+            alert(`رابط منيو العملاء الخاص بمطعمك:\nindex.html?restaurant=${currentRestaurant}\n(يمكنك نسخه ومشاركته مع زبائنك)`);
+        }
+
+        function openKitchenScreen() {
+            alert(`رابط شاشة المطبخ الخاص بمطعمك:\nkitchen.html?restaurant=${currentRestaurant}`);
+        }
+
+        function openQRGenerator() {
+            document.getElementById('qrModal').classList.remove('hidden');
+        }
+        function closeQRModal() {
+            document.getElementById('qrModal').classList.add('hidden');
+            document.getElementById('qrResultArea').innerHTML = '';
+        }
+
+        function generateQRForTable() {
+            let tableNum = document.getElementById('tableNumber').value;
+            if(!tableNum) {
+                alert('الرجاء إدخال رقم الترابيزة');
+                return;
+            }
+            let menuUrl = `${window.location.origin}${window.location.pathname}?restaurant=${currentRestaurant}&table=${tableNum}`;
+            document.getElementById('qrResultArea').innerHTML = `
+                <p style="font-weight:700; margin-bottom:10px;">رابط الترابيزة رقم ${tableNum}:</p>
+                <input type="text" class="form-control" value="${menuUrl}" readonly style="text-align:center; font-size:14px; margin-bottom:10px;">
+                <p style="color:var(--secondary); font-weight:700;"><i class="fa-solid fa-check-circle"></i> جاهز للاستخدام والطباعة!</p>
+            `;
+        }
     </script>
 </body>
 </html>
