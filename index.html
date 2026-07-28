@@ -51,11 +51,11 @@
             const [cart, setCart] = useState([]);
             const [selectedCategory, setSelectedCategory] = useState('الكل');
             
-            // تحديد نوع الطلب (صالة عبر QR أو أونلاين ديلفري)
-            const [orderType, setOrderType] = useState('table'); // 'table' | 'delivery'
-            const [tableNumber, setTableNumber] = useState('ترابيزة رقم 2');
+            // الحالة الافتراضية أونلاين (ديلفري) ما لم يتم تمرير رقم ترابيزة في الرابط
+            const [orderType, setOrderType] = useState('delivery'); 
+            const [tableNumber, setTableNumber] = useState('');
             
-            // بيانات الديلفري مع استرجاعها لمحفوظات التخزين المحلي لو عمل ريفرش
+            // بيانات الديلفري مع استرجاعها لمحفوظات التخزين المحلي
             const [customerInfo, setCustomerInfo] = useState({
                 name: localStorage.getItem('abdo_shop_cust_name') || '',
                 phone: localStorage.getItem('abdo_shop_cust_phone') || '',
@@ -65,7 +65,6 @@
             const [lastOrderStatus, setLastOrderStatus] = useState(null);
             const [successMsg, setSuccessMsg] = useState(false);
 
-            // قراءة المنيو من لوحة الأدمن الموحدة
             const loadMenu = () => {
                 const saved = localStorage.getItem('nexus_menu_items');
                 if (saved) {
@@ -77,12 +76,18 @@
 
             useEffect(() => {
                 loadMenu();
-                // قراءة رقم الترابيزة من الرابط لو وجد (مثل ?table=3)
+                
+                // قراءة رابط الصفحة للبحث عن رقم الترابيزة (مثال: ?table=3)
                 const params = new URLSearchParams(window.location.search);
                 const t = params.get('table');
-                if (t) setTableNumber(`ترابيزة رقم ${t}`);
+                if (t) {
+                    setTableNumber(`ترابيزة رقم ${t}`);
+                    setOrderType('table'); // تحويل تلقائي للصالة لو فتح من كيو آر ترابيزة
+                } else {
+                    setOrderType('delivery'); // الافتراضي أونلاين
+                }
 
-                // جلب آخر طلب للعميل لمتابعة حالته لحظياً
+                // جلب آخر طلب للعميل لمتابعة حالته
                 const orders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
                 if (orders.length > 0) setLastOrderStatus(orders[0]);
 
@@ -168,21 +173,22 @@
                         </a>
                     </div>
 
-                    {/* معلومات الطاولة أو نوع الطلب */}
-                    <div className="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-2.5 rounded-2xl mb-4">
+                    {/* معلومات النوع (يظهر تلقائياً ديلفري لو الرابط عادي، أو رقم الترابيزة لو جاي من QR) */}
+                    <div className="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-3 rounded-2xl mb-4">
                         <div className="flex items-center gap-2">
                             <span className="text-base">📍</span>
-                            <span className="text-xs font-extrabold text-brand-pink">{orderType === 'table' ? tableNumber : 'طلب ديلفري أونلاين'}</span>
+                            <span className="text-xs font-extrabold text-brand-pink">
+                                {orderType === 'table' ? tableNumber : 'طلب ديلفري أونلاين 🛵'}
+                            </span>
                         </div>
-                        <div className="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
-                            <button onClick={() => setOrderType('table')} className={`px-3 py-1 rounded-lg transition-all ${orderType === 'table' ? 'bg-brand-pink text-white' : 'text-slate-400'}`}>صالة (QR)</button>
-                            <button onClick={() => setOrderType('delivery')} className={`px-3 py-1 rounded-lg transition-all ${orderType === 'delivery' ? 'bg-brand-pink text-white' : 'text-slate-400'}`}>ديلفري</button>
-                        </div>
+                        <span className="text-[10px] bg-slate-950 px-2.5 py-1 rounded-xl text-slate-400 border border-slate-800">
+                            {orderType === 'table' ? 'طلب من الطاولة (QR)' : 'طلب أونلاين مباشر'}
+                        </span>
                     </div>
 
-                    {/* نموذج بيانات التوصيل في حال اختيار ديلفري (يتم حفظها تلقائياً) */}
+                    {/* نموذج بيانات التوصيل يظهر فقط في وضع الأونلاين/الديلفري */}
                     {orderType === 'delivery' && (
-                        <div className="glass-card p-3.5 rounded-2xl mb-4 space-y-2.5">
+                        <div className="glass-card p-3.5 rounded-2xl mb-4 space-y-2.5 animate-fadeIn">
                             <h3 className="text-xs font-black text-brand-cyan">🛵 بيانات التوصيل:</h3>
                             <input 
                                 type="text" placeholder="الاسم بالكامل" 
@@ -244,7 +250,7 @@
                         ))}
                     </div>
 
-                    {/* سلة الطلبات المثفلة أسفل الشاشة */}
+                    {/* سلة الطلبات المثبتة أسفل الشاشة */}
                     {cart.length > 0 && (
                         <div className="fixed bottom-3 left-4 right-4 max-w-md mx-auto glass-card p-3 rounded-2xl border border-brand-pink/40 shadow-2xl space-y-2 z-50">
                             <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1 border-b border-slate-800 pb-2">
