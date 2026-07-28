@@ -97,7 +97,18 @@
             font-weight: 700;
         }
 
-        /* تصنيفات المنيو */
+        /* شريط متابعة حالة الطلب الحالي النشط في الأعلى */
+        .live-order-tracker {
+            background: linear-gradient(135deg, #1f2937 11%, #111827 100%);
+            border: 1px solid var(--warning);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
         .categories-row {
             display: flex;
             gap: 6px;
@@ -244,16 +255,48 @@
             cursor: pointer;
             font-size: 13px;
         }
+
+        /* نافذة التنبيهات المخصصة */
+        #customAlertModal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(13, 17, 23, 0.85);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .custom-alert-box {
+            background: var(--dark-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
+    <div id="customAlertModal" class="hidden">
+        <div class="custom-alert-box">
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> تنبيه</h3>
+            <p id="customAlertMessage">رسالة التنبيه هنا</p>
+            <button class="auth-btn" onclick="closeCustomAlert()">حسناً</button>
+        </div>
+    </div>
+
+    <!-- نافذة تسجيل الدخول (تتغير حسب نوع الطلب ترابيزة أم أونلاين) -->
     <div id="authModal">
         <div class="auth-box">
-            <h3>تسجيل بيانات العميل للطلب</h3>
+            <h3 id="authModalTitle">تسجيل بيانات العميل للطلب</h3>
             <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد)">
             <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الموبايل (مثال: 01012345678)">
+            <!-- حقل العنوان يظهر للأونلاين فقط ويختفي للترابيزات -->
             <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل (مثال: شارع الهرم، عمارة 5)">
             <button class="auth-btn" onclick="saveClientData()">حفظ ودخول للمنيو <i class="fa-solid fa-arrow-left"></i></button>
         </div>
@@ -275,6 +318,9 @@
     </header>
 
     <div class="container">
+        <!-- شريط متابعة حالة الطلب المتزامن في المنيو -->
+        <div id="liveOrderTrackerContainer"></div>
+
         <div class="top-bar">
             <div>
                 <span id="orderTypeBadge" style="font-weight: 700; font-size: 12px;">نوع الطلب: أونلاين</span>
@@ -307,6 +353,14 @@
     </div>
 
     <script>
+        function showCustomAlert(msg) {
+            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
@@ -318,6 +372,12 @@
         document.getElementById('orderTypeBadge').innerText = `نوع الطلب: ${orderType}`;
         document.getElementById('tableDisplayBadge').innerText = isOnline ? 'توصيل دليفري' : `ترابيزة: ${table}`;
 
+        // ضبط واجهة التسجيل حسب نوع الطلب (ترابيزة أم أونلاين)
+        if (!isOnline) {
+            document.getElementById('authModalTitle').innerText = `تسجيل بيانات ترابيزة ${table}`;
+            document.getElementById('clientAddress').style.display = 'none'; // إخفاء العنوان للترابيزات
+        }
+
         let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`));
         if (currentUser) {
             document.getElementById('authModal').classList.add('hidden');
@@ -326,16 +386,17 @@
         function saveClientData() {
             let name = document.getElementById('clientName').value.trim();
             let phone = document.getElementById('clientPhone').value.trim();
-            let address = document.getElementById('clientAddress').value.trim();
+            let address = isOnline ? document.getElementById('clientAddress').value.trim() : 'صالة ترابيزة ' + table;
             
-            if(!name || phone.length < 10 || !address) {
-                alert('الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.');
+            if(!name || phone.length < 10 || (isOnline && !address)) {
+                showCustomAlert(isOnline ? 'الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.' : 'الرجاء إدخال الاسم ورقم الهاتف.');
                 return;
             }
             currentUser = { name, phone, address };
             localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
             document.getElementById('authModal').classList.add('hidden');
             loadMenu();
+            updateLiveTracker();
         }
 
         function logoutClient() {
@@ -393,7 +454,6 @@
         }
 
         function cancelOrder(orderId) {
-            if(!confirm('هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟')) return;
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
             let order = orders.find(o => o.id === orderId);
             if (order) {
@@ -401,11 +461,37 @@
                     order.status = 'ملغي';
                     localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
                     renderClientHistory();
-                    alert('تم إلغاء الطلب وتحديث الحالة فوراً.');
+                    updateLiveTracker();
+                    showCustomAlert('تم إلغاء الطلب وتحديث الحالة فوراً.');
                 } else {
-                    alert('عذراً، لا يمكن إلغاء الطلب لتخطيه مرحلة التحضير.');
+                    showCustomAlert('عذراً، لا يمكن إلغاء الطلب لتخطيه مرحلة التحضير.');
                 }
             }
+        }
+
+        // تحديث شريط متابعة الطلب الحالي في أعلى المنيو متزامناً مع المطبخ
+        function updateLiveTracker() {
+            let trackerContainer = document.getElementById('liveOrderTrackerContainer');
+            if (!currentUser) {
+                trackerContainer.innerHTML = '';
+                return;
+            }
+            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            // جلب أحدث طلب للعميل لم يتم تسليمه أو إلغاؤه
+            let activeOrder = orders.reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي');
+
+            if (!activeOrder) {
+                trackerContainer.innerHTML = '';
+                return;
+            }
+
+            trackerContainer.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> متابعة طلبك الحالي (#${activeOrder.id})</span>
+                    <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">الحالة: ${activeOrder.status}</span>
+                </div>
+                <div style="font-size: 11px; color: var(--gray);">الإجمالي: ${activeOrder.total} ج.م | الأصناف: ${activeOrder.items.length} أصناف</div>
+            `;
         }
 
         let cart = {};
@@ -454,6 +540,7 @@
                 `;
             });
             grid.innerHTML = html;
+            updateLiveTracker();
         }
 
         function changeQty(id, name, price, change) {
@@ -514,12 +601,14 @@
             orders.push(newOrder);
             localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
 
-            alert('تم إرسال طلبك بنجاح! سيتم تحضيره فوراً.');
+            showCustomAlert('تم إرسال طلبك بنجاح! سيتم تحضيره فوراً.');
             cart = {};
             updateCartBar();
             loadMenu();
+            updateLiveTracker();
         }
 
+        setInterval(updateLiveTracker, 2000); // تحديث دوري لحالة الطلب في المنيو
         window.onload = loadMenu;
     </script>
 </body>
