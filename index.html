@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abdo Shop | طلب الطعام</title>
+    <title>Abdo Shop - المنيو والطلب</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -12,282 +12,273 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
-        tailwind.config = { theme: { extend: { fontFamily: { cairo: ['Cairo', 'sans-serif'] } } } }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+                    colors: {
+                        brand: { dark: '#0b1320', card: '#1e293b', pink: '#ec4899', cyan: '#06b6d4', amber: '#f59e0b' }
+                    }
+                }
+            }
+        }
     </script>
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #0b1320; color: #f8fafc; }
-        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
-<body class="min-h-screen pb-24">
+<body class="min-h-screen pb-28">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const DELIVERY_FEE = 40; // خدمة التوصيل للديليفري
-        const SERVICE_RATE = 0.12; // خدمة الصالة 12%
-
-        // قائمة الأصناف
-        const INITIAL_MENU = [
-            { id: 1, name: "برجر كلاسيك سينجل", price: 120, category: "برجر", image: "🍔", description: "شريحة لحم بقر مشوي مع صوص كلاسيك وخس وطماطم" },
-            { id: 2, name: "برجر دبل تشيز", price: 175, category: "برجر", image: "🧀", description: "شريحتين لحم مع طبقات جبنة شيدر صريحة" },
-            { id: 3, name: "تيكن كريسبي ساندوتش", price: 110, category: "دجاج", image: "🍗", description: "صدر دجاج مقرمش مع صوص المايونيز والماسترد" },
-            { id: 4, name: "بطاطس فارم فريتس", price: 45, category: "مقبلات", image: "🍟", description: "بطاطس مقرمشة مبهرة" },
-            { id: 5, name: "كوكاكولا كانز", price: 25, category: "مشروبات", image: "🥤", description: "مشروب غازي منعش 330 مل" }
+        const DEFAULT_MENU = [
+            { id: 1, name: "Chicken Royale", price: 160, category: "البرجر", calories: "Cal 440", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" },
+            { id: 2, name: "Chicken Whopper", price: 175, category: "البرجر", calories: "Cal 430", image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500" },
+            { id: 3, name: "Chicken Burger", price: 120, category: "البرجر", calories: "Cal 390", image: "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=500" },
+            { id: 4, name: "Chicken Royale Steakhouse", price: 210, category: "البرجر", calories: "Cal 850", image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=500" },
+            { id: 5, name: "Crunchy Chicken", price: 170, category: "البرجر", calories: "Cal 670", image: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=500" },
+            { id: 6, name: "Big Fish Burger", price: 155, category: "الأسماك", calories: "Cal 515", image: "https://images.unsplash.com/photo-1521305916504-4a1121188589?w=500" }
         ];
 
-        function App() {
+        const DELIVERY_FEE = 40;
+        const SERVICE_PERCENTAGE = 0.12;
+
+        function MainApp() {
+            const [menuItems, setMenuItems] = useState([]);
             const [cart, setCart] = useState([]);
-            const [tableNum, setTableNum] = useState(null); // رقم الترابيزة من الرابط إن وجد
-            const [customerName, setCustomerName] = useState('');
-            const [customerPhone, setCustomerPhone] = useState('');
-            const [customerAddress, setCustomerAddress] = useState('');
-            const [currentOrder, setCurrentOrder] = useState(null);
+            const [selectedCategory, setSelectedCategory] = useState('الكل');
+            
+            // تحديد نوع الطلب (صالة عبر QR أو أونلاين ديلفري)
+            const [orderType, setOrderType] = useState('table'); // 'table' | 'delivery'
+            const [tableNumber, setTableNumber] = useState('ترابيزة رقم 2');
+            
+            // بيانات الديلفري مع استرجاعها لمحفوظات التخزين المحلي لو عمل ريفرش
+            const [customerInfo, setCustomerInfo] = useState({
+                name: localStorage.getItem('abdo_shop_cust_name') || '',
+                phone: localStorage.getItem('abdo_shop_cust_phone') || '',
+                address: localStorage.getItem('abdo_shop_cust_address') || ''
+            });
 
-            // تحديد نوع الطلب تلقائياً حسب الرابط
+            const [lastOrderStatus, setLastOrderStatus] = useState(null);
+            const [successMsg, setSuccessMsg] = useState(false);
+
+            // قراءة المنيو من لوحة الأدمن الموحدة
+            const loadMenu = () => {
+                const saved = localStorage.getItem('nexus_menu_items');
+                if (saved) {
+                    try { setMenuItems(JSON.parse(saved)); } catch(e) { setMenuItems(DEFAULT_MENU); }
+                } else {
+                    setMenuItems(DEFAULT_MENU);
+                }
+            };
+
             useEffect(() => {
-                const queryParams = new URLSearchParams(window.location.search);
-                const table = queryParams.get('table');
-                if (table) {
-                    setTableNum(table); // العميل داخل من QR code ترابيزة
-                }
+                loadMenu();
+                // قراءة رقم الترابيزة من الرابط لو وجد (مثل ?table=3)
+                const params = new URLSearchParams(window.location.search);
+                const t = params.get('table');
+                if (t) setTableNumber(`ترابيزة رقم ${t}`);
 
-                const activeOrder = JSON.parse(localStorage.getItem('nexus_active_order') || 'null');
-                if (activeOrder) {
-                    setCurrentOrder(activeOrder);
-                }
+                // جلب آخر طلب للعميل لمتابعة حالته لحظياً
+                const orders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                if (orders.length > 0) setLastOrderStatus(orders[0]);
+
+                const interval = setInterval(() => {
+                    loadMenu();
+                    const updatedOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                    if (updatedOrders.length > 0) setLastOrderStatus(updatedOrders[0]);
+                }, 2000);
+
+                return () => clearInterval(interval);
             }, []);
 
-            // المتابعة الحية لحالة الطلب
-            useEffect(() => {
-                if (!currentOrder) return;
-                const interval = setInterval(() => {
-                    const allKitchenOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                    const match = allKitchenOrders.find(o => o.id === currentOrder.id);
-                    if (match) {
-                        setCurrentOrder(match);
-                        localStorage.setItem('nexus_active_order', JSON.stringify(match));
-                    }
-                }, 1500);
-                return () => clearInterval(interval);
-            }, [currentOrder]);
+            const handleCustomerChange = (field, val) => {
+                const updated = { ...customerInfo, [field]: val };
+                setCustomerInfo(updated);
+                localStorage.setItem(`abdo_shop_cust_${field}`, val);
+            };
+
+            const categories = ['الكل', ...new Set(menuItems.map(item => item.category || 'عام'))];
+            const filteredItems = selectedCategory === 'الكل' ? menuItems : menuItems.filter(item => item.category === selectedCategory);
 
             const addToCart = (product) => {
-                const exist = cart.find(x => x.id === product.id);
-                if (exist) {
-                    setCart(cart.map(x => x.id === product.id ? { ...exist, quantity: exist.quantity + 1 } : x));
-                } else {
-                    setCart([...cart, { ...product, quantity: 1 }]);
-                }
+                setCart(prev => {
+                    const exist = prev.find(x => x.id === product.id);
+                    if (exist) return prev.map(x => x.id === product.id ? { ...x, quantity: x.quantity + 1 } : x);
+                    return [...prev, { ...product, quantity: 1 }];
+                });
             };
 
-            const removeFromCart = (productId) => {
-                const exist = cart.find(x => x.id === productId);
-                if (exist.quantity === 1) {
-                    setCart(cart.filter(x => x.id !== productId));
-                } else {
-                    setCart(cart.map(x => x.id === productId ? { ...exist, quantity: exist.quantity - 1 } : x));
-                }
-            };
+            const removeFromCart = (id) => setCart(prev => prev.filter(x => x.id !== id));
 
-            const isDelivery = !tableNum; // لو مفيش رقم ترابيزة يبقى أونلاين ديليفري
-            const itemsSubtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-            const extraFee = isDelivery ? DELIVERY_FEE : Math.round(itemsSubtotal * SERVICE_RATE);
-            const grandTotal = itemsSubtotal + extraFee;
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const extraFee = orderType === 'delivery' ? DELIVERY_FEE : Math.round(subtotal * SERVICE_PERCENTAGE);
+            const grandTotal = subtotal + (cart.length > 0 ? extraFee : 0);
 
-            const handleSendOrder = () => {
+            const submitOrder = () => {
                 if (cart.length === 0) return alert('السلة فارغة!');
-
-                if (isDelivery && (!customerName || !customerPhone || !customerAddress)) {
-                    return alert('يرجى كتابة الاسم ورقم الهاتف والعنوان بالكامل لاستلام الديليفري!');
+                if (orderType === 'delivery' && (!customerInfo.name || !customerInfo.phone || !customerInfo.address)) {
+                    return alert('الرجاء إدخال بيانات التوصيل كاملة (الاسم، الموبايل، العنوان)');
                 }
 
+                const now = new Date();
                 const newOrder = {
                     id: Date.now(),
-                    tableNumber: isDelivery ? 'طلب توصيل (ديليفري)' : `طاولة ${tableNum}`,
-                    customerInfo: isDelivery ? { name: customerName, phone: customerPhone, address: customerAddress } : null,
+                    tableNumber: orderType === 'delivery' ? 'طلب أونلاين 🛵' : tableNumber,
                     items: cart,
-                    subtotal: itemsSubtotal,
+                    subtotal: subtotal,
                     extraFee: extraFee,
-                    feeType: isDelivery ? 'خدمة توصيل' : 'خدمة صالة (12%)',
                     totalPrice: grandTotal,
                     status: 'pending',
-                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                    date: now.toISOString().split('T')[0],
+                    time: now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+                    customerInfo: orderType === 'delivery' ? customerInfo : null
                 };
 
-                const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existingOrders]));
+                const existing = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
+                localStorage.setItem('nexus_kitchen_orders', JSON.stringify([newOrder, ...existing]));
 
-                setCurrentOrder(newOrder);
-                localStorage.setItem('nexus_active_order', JSON.stringify(newOrder));
+                setLastOrderStatus(newOrder);
                 setCart([]);
-            };
-
-            const handleCancelOrder = () => {
-                if (!currentOrder) return;
-                const existingOrders = JSON.parse(localStorage.getItem('nexus_kitchen_orders') || '[]');
-                const updatedOrders = existingOrders.map(o => o.id === currentOrder.id ? { ...o, status: 'cancelled' } : o);
-                localStorage.setItem('nexus_kitchen_orders', JSON.stringify(updatedOrders));
-                
-                const cancelled = { ...currentOrder, status: 'cancelled' };
-                setCurrentOrder(cancelled);
-                localStorage.setItem('nexus_active_order', JSON.stringify(cancelled));
+                setSuccessMsg(true);
+                setTimeout(() => setSuccessMsg(false), 4000);
             };
 
             return (
-                <div className="max-w-md mx-auto p-4 space-y-6">
-                    {/* Header */}
-                    <header className="flex justify-between items-center bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-                        <div>
-                            <h1 className="text-lg font-black text-slate-100 flex items-center gap-2">
-                                <span>Abdo Shop</span> 🍔
-                            </h1>
-                            <p className="text-[10px] text-slate-400">أطيب المأكولات وأسرع خدمة</p>
+                <div className="max-w-md mx-auto min-h-screen flex flex-col p-4">
+                    
+                    {/* شريط حالة الطلب اللحظي العلوي */}
+                    <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-2xl mb-4 shadow-lg">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span className="text-xs font-bold text-slate-200">
+                                {lastOrderStatus ? `حالة طلبك الأخير: ${
+                                    lastOrderStatus.status === 'pending' ? '⏳ قيد التحضير في المطبخ' :
+                                    lastOrderStatus.status === 'ready' ? '🍳 الطلب جاهز!' :
+                                    lastOrderStatus.status === 'out_for_delivery' ? '🏃 الطلب في الطريق إليك' :
+                                    lastOrderStatus.status === 'delivered' ? '✅ تم التسليم' : '❌ ملغي'
+                                }` : '✨ مرحباً بك في Abdo Shop'}
+                            </span>
                         </div>
-                        <span className="text-xs px-3 py-1.5 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 font-bold">
-                            {tableNum ? `🍽️ طاولة #${tableNum}` : '🛵 طلب أونلاين'}
-                        </span>
-                    </header>
+                        <a href="orders.html" className="text-[11px] bg-brand-pink/20 text-brand-pink px-2.5 py-1 rounded-xl font-bold border border-brand-pink/30">
+                            سجل طلباتي 📄
+                        </a>
+                    </div>
 
-                    {/* متابعة الأوردر المباشر */}
-                    {currentOrder && (
-                        <div className="glass-card rounded-2xl p-4 space-y-3 border border-pink-500/30 bg-pink-500/5">
-                            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <span className="text-xs font-bold text-slate-200">حالة أوردرك الحالي</span>
-                                <span className="text-xs font-mono text-slate-400">#{String(currentOrder.id).slice(-6)}</span>
-                            </div>
-
-                            <div className="text-center py-2">
-                                {currentOrder.status === 'pending' && <p className="text-amber-400 font-bold text-sm">⏳ قيد التحضير في المطبخ...</p>}
-                                {currentOrder.status === 'ready' && <p className="text-cyan-400 font-bold text-sm">🍳 الأوردر جاهز الآن!</p>}
-                                {currentOrder.status === 'out_for_delivery' && <p className="text-purple-400 font-bold text-sm">🏃 الأوردر خرج مع الطيار للتوصيل!</p>}
-                                {currentOrder.status === 'delivered' && <p className="text-emerald-400 font-bold text-sm">✅ تم تسليم الأوردر.. وبالهناء والشفاء!</p>}
-                                {currentOrder.status === 'cancelled' && <p className="text-rose-400 font-bold text-sm">❌ تم إلغاء هذا الطلب</p>}
-                            </div>
-
-                            {currentOrder.status === 'pending' && (
-                                <button onClick={handleCancelOrder} className="w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition-all">
-                                    إلغاء الطلب
-                                </button>
-                            )}
+                    {/* معلومات الطاولة أو نوع الطلب */}
+                    <div className="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-2.5 rounded-2xl mb-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-base">📍</span>
+                            <span className="text-xs font-extrabold text-brand-pink">{orderType === 'table' ? tableNumber : 'طلب ديلفري أونلاين'}</span>
                         </div>
-                    )}
-
-                    {/* طلب بيانات العميل فقط إذا كان أونلاين ديليفري */}
-                    {isDelivery ? (
-                        <div className="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800/80 space-y-2">
-                            <p className="text-xs font-bold text-pink-400 flex items-center gap-1.5">
-                                <i className="fa-solid fa-truck-fast"></i> بيانات التوصيل للديليفري:
-                            </p>
-                            <input 
-                                type="text" 
-                                value={customerName} 
-                                onChange={(e) => setCustomerName(e.target.value)} 
-                                placeholder="الاسم بالكامل" 
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500"
-                            />
-                            <input 
-                                type="tel" 
-                                value={customerPhone} 
-                                onChange={(e) => setCustomerPhone(e.target.value)} 
-                                placeholder="رقم الموبايل" 
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500"
-                            />
-                            <textarea 
-                                value={customerAddress} 
-                                onChange={(e) => setCustomerAddress(e.target.value)} 
-                                placeholder="العنوان بالتفصيل (الشارع، الدور، رقم الشقة)..." 
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500 h-16 resize-none"
-                            ></textarea>
-                        </div>
-                    ) : (
-                        <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-2xl text-center">
-                            <p className="text-xs font-bold text-emerald-400">أهلاً بك! أنت تجلس حالياً على طاولة رقم #{tableNum}</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">اطلب مباشرة وسيصل الطلب لطاولتك فور تحضيره</p>
-                        </div>
-                    )}
-
-                    {/* المنيو */}
-                    <div className="space-y-3">
-                        <h2 className="text-sm font-extrabold text-slate-200">المنيو 📜</h2>
-                        <div className="space-y-2.5">
-                            {INITIAL_MENU.map((item) => (
-                                <div key={item.id} className="glass-card rounded-2xl p-3 flex items-center justify-between gap-3">
-                                    <div className="text-3xl bg-slate-800/60 p-2 rounded-xl">{item.image}</div>
-                                    <div className="flex-1">
-                                        <h3 className="text-xs font-bold text-slate-100">{item.name}</h3>
-                                        <p className="text-[10px] text-slate-400 line-clamp-1">{item.description}</p>
-                                        <span className="text-xs font-black text-pink-400 mt-1 block">{item.price} ج.م</span>
-                                    </div>
-                                    <button 
-                                        onClick={() => addToCart(item)}
-                                        className="w-8 h-8 rounded-xl bg-pink-500/20 text-pink-400 hover:bg-pink-500 hover:text-white font-bold flex items-center justify-center transition-all"
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                            ))}
+                        <div className="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
+                            <button onClick={() => setOrderType('table')} className={`px-3 py-1 rounded-lg transition-all ${orderType === 'table' ? 'bg-brand-pink text-white' : 'text-slate-400'}`}>صالة (QR)</button>
+                            <button onClick={() => setOrderType('delivery')} className={`px-3 py-1 rounded-lg transition-all ${orderType === 'delivery' ? 'bg-brand-pink text-white' : 'text-slate-400'}`}>ديلفري</button>
                         </div>
                     </div>
 
-                    {/* سلة المشتريات */}
+                    {/* نموذج بيانات التوصيل في حال اختيار ديلفري (يتم حفظها تلقائياً) */}
+                    {orderType === 'delivery' && (
+                        <div className="glass-card p-3.5 rounded-2xl mb-4 space-y-2.5">
+                            <h3 className="text-xs font-black text-brand-cyan">🛵 بيانات التوصيل:</h3>
+                            <input 
+                                type="text" placeholder="الاسم بالكامل" 
+                                value={customerInfo.name} 
+                                onChange={(e) => handleCustomerChange('name', e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
+                            />
+                            <input 
+                                type="tel" placeholder="رقم الموبايل (يتم حفظه تلقائياً)" 
+                                value={customerInfo.phone} 
+                                onChange={(e) => handleCustomerChange('phone', e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-brand-pink"
+                            />
+                            <textarea 
+                                rows="2" placeholder="العنوان بالتفصيل..." 
+                                value={customerInfo.address} 
+                                onChange={(e) => handleCustomerChange('address', e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-pink"
+                            ></textarea>
+                        </div>
+                    )}
+
+                    {successMsg && (
+                        <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 p-2.5 rounded-xl mb-4 text-center text-xs font-bold">
+                            🎉 تم إرسال طلبك بنجاح للمطبخ!
+                        </div>
+                    )}
+
+                    {/* الفئات */}
+                    <div className="flex gap-2 overflow-x-auto pb-3 mb-2">
+                        {categories.map((cat, i) => (
+                            <button key={i} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap ${selectedCategory === cat ? 'bg-brand-pink text-white shadow-lg' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* قائمة الأصناف والمنيو */}
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                        {filteredItems.map(item => (
+                            <div key={item.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800">
+                                <div className="relative h-28 bg-slate-900">
+                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                    {item.calories && <span className="absolute top-2 left-2 bg-slate-950/80 text-[9px] font-mono font-bold text-amber-400 px-2 py-0.5 rounded-full">{item.calories}</span>}
+                                </div>
+                                <div className="p-2.5 flex-1 flex flex-col justify-between space-y-2">
+                                    <div>
+                                        <h4 className="text-xs font-bold text-slate-100 line-clamp-1">{item.name}</h4>
+                                        <p className="text-[10px] text-slate-400">{item.category}</p>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-black text-brand-cyan font-mono">{item.price} ج.م</span>
+                                        <button onClick={() => addToCart(item)} className="w-7 h-7 bg-brand-pink text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-md active:scale-95">
+                                            <i className="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* سلة الطلبات المثفلة أسفل الشاشة */}
                     {cart.length > 0 && (
-                        <div className="glass-card rounded-2xl p-4 space-y-3 border border-pink-500/40">
-                            <h3 className="text-xs font-black text-slate-100 border-b border-slate-800 pb-2">سلة طلباتك 🛒</h3>
-                            
-                            <div className="space-y-2">
-                                {cart.map(item => (
-                                    <div key={item.id} className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-300 font-medium">{item.name}</span>
+                        <div className="fixed bottom-3 left-4 right-4 max-w-md mx-auto glass-card p-3 rounded-2xl border border-brand-pink/40 shadow-2xl space-y-2 z-50">
+                            <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1 border-b border-slate-800 pb-2">
+                                {cart.map(i => (
+                                    <div key={i.id} className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-200 font-semibold">{i.name} (x{i.quantity})</span>
                                         <div className="flex items-center gap-2">
-                                            <button onClick={() => removeFromCart(item.id)} className="w-5 h-5 bg-slate-800 rounded text-slate-300 font-bold">-</button>
-                                            <span className="font-bold text-pink-400">{item.quantity}</span>
-                                            <button onClick={() => addToCart(item)} className="w-5 h-5 bg-slate-800 rounded text-slate-300 font-bold">+</button>
-                                            <span className="w-12 text-left font-mono">{item.price * item.quantity} ج</span>
+                                            <span className="text-brand-cyan font-mono">{i.price * i.quantity} ج.م</span>
+                                            <button onClick={() => removeFromCart(i.id)} className="text-rose-400 text-[10px]"><i className="fa-solid fa-xmark"></i></button>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-
-                            {/* حساب الرسوم بناءً على رابط الدخول */}
-                            <div className="pt-2 border-t border-slate-800 text-xs space-y-1.5">
-                                <div className="flex justify-between text-slate-400">
-                                    <span>مجموع الأصناف:</span>
-                                    <span>{itemsSubtotal} ج.م</span>
-                                </div>
-
-                                {isDelivery ? (
-                                    <div className="flex justify-between text-amber-400 font-bold">
-                                        <span>🛵 مصاريف توصيل (ديليفري):</span>
-                                        <span>+{DELIVERY_FEE} ج.م</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex justify-between text-amber-400 font-bold">
-                                        <span>🍽️ خدمة صالة (12%):</span>
-                                        <span>+{extraFee} ج.م</span>
-                                    </div>
-                                )}
-
-                                <div className="flex justify-between text-sm font-black text-cyan-400 pt-1 border-t border-slate-800/80">
-                                    <span>الإجمالي النهائي:</span>
-                                    <span>{grandTotal} ج.م</span>
-                                </div>
+                            <div className="flex justify-between text-[11px] text-slate-400">
+                                <span>{orderType === 'delivery' ? 'رسوم التوصيل:' : 'خدمة صالة (12%):'}</span>
+                                <span className="font-mono text-amber-400">{extraFee} ج.م</span>
                             </div>
-
-                            <button 
-                                onClick={handleSendOrder}
-                                className="w-full py-3 bg-pink-500 hover:bg-pink-600 text-white font-black text-xs rounded-xl shadow-lg transition-all"
-                            >
-                                تأكيد وإرسال الطلب 🚀
-                            </button>
+                            <div className="flex items-center justify-between pt-1">
+                                <div>
+                                    <span className="text-[10px] text-slate-400 block">الإجمالي الكلي:</span>
+                                    <span className="text-sm font-black text-brand-pink font-mono">{grandTotal} ج.م</span>
+                                </div>
+                                <button onClick={submitOrder} className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 flex items-center gap-1.5">
+                                    <span>تأكيد الطلب</span>
+                                    <i className="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<MainApp />);
     </script>
 </body>
 </html>
