@@ -755,94 +755,65 @@
             }
 
             let printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showCustomAlert('الرجاء السماح بتشغيل النوافذ المنبثقة (Pop-ups) من إعدادات المتصفح.');
+                return;
+            }
+
             let printContent = `
                 <html dir="rtl">
                 <head>
-                    <title>طباعة كل الـ QR كود للطاولات</title>
+                    <title>طباعة كل الـ QR كود</title>
                     <style>
-                        * { box-sizing: border-box; margin: 0; padding: 0; }
-                        body { 
-                            text-align: center; 
-                            font-family: 'Cairo', sans-serif; 
-                            background: #fff;
-                        }
-                        .page-container {
-                            width: 100vw;
-                            height: 100vh;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            page-break-after: always;
-                            break-after: page;
-                        }
-                        .page-container:last-child {
-                            page-break-after: avoid;
-                            break-after: avoid;
-                        }
+                        body { font-family: 'Cairo', sans-serif; text-align: center; margin: 0; padding: 20px; background: #fff; }
                         .qr-print-card {
                             border: 3px solid #333;
                             border-radius: 20px;
-                            padding: 25px;
+                            padding: 20px;
                             background: #fff;
-                            width: 320px;
+                            width: 300px;
+                            margin: 0 auto;
                             text-align: center;
+                            page-break-after: always;
+                            break-after: page;
                         }
-                        h2 { margin: 0 0 5px 0; color: #111; font-size: 24px; font-weight: 900; }
-                        .table-title { font-size: 20px; color: #555; font-weight: 700; margin-bottom: 15px; }
-                        img { width: 220px; height: 220px; display: block; margin: 0 auto; }
-                        .footer-text { margin-top: 15px; font-size: 16px; color: #333; font-weight: 700; line-height: 1.5; }
+                        h2 { margin: 0 0 5px 0; color: #111; font-size: 22px; font-weight: 900; }
+                        .table-title { font-size: 18px; color: #555; font-weight: 700; margin-bottom: 12px; }
+                        img { width: 200px; height: 200px; display: block; margin: 0 auto; }
+                        .footer-text { margin-top: 12px; font-size: 14px; color: #333; font-weight: 700; line-height: 1.5; }
                     </style>
                 </head>
                 <body>
             `;
 
-            let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-
-            let tempContainer = document.createElement('div');
-            tempContainer.style.display = 'none';
-            document.body.appendChild(tempContainer);
-
-            let qrImagesData = [];
-
             for (let i = 1; i <= count; i++) {
-                let div = document.createElement('div');
-                tempContainer.appendChild(div);
-                let tableUrl = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${i}`;
+                let qrContainer = document.getElementById(`qrcode-${i}`);
+                if (!qrContainer) continue;
                 
-                let qr = new QRCode(div, {
-                    text: tableUrl, width: 220, height: 220, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
-                });
-                
-                let canvas = div.querySelector('canvas');
-                let img = div.querySelector('img');
-                let src = canvas ? canvas.toDataURL("image/png") : (img ? img.src : '');
-                qrImagesData.push({ tableNum: i, src: src });
-            }
+                let canvas = qrContainer.querySelector('canvas');
+                let img = qrContainer.querySelector('img');
+                let imgSrc = canvas ? canvas.toDataURL("image/png") : (img ? img.src : '');
 
-            document.body.removeChild(tempContainer);
-
-            qrImagesData.forEach((item) => {
-                printContent += `
-                    <div class="page-container">
+                if (imgSrc) {
+                    printContent += `
                         <div class="qr-print-card">
                             <h2>${currentRestaurant.toUpperCase()}</h2>
-                            <div class="table-title">Table ${item.tableNum}</div>
-                            <img src="${item.src}" />
+                            <div class="table-title">Table ${i}</div>
+                            <img src="${imgSrc}" />
                             <div class="footer-text">
                                 سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟
                             </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                }
+            }
 
             printContent += `
                     <script>
                         window.onload = function() {
                             setTimeout(function() {
                                 window.print();
-                                window.close();
-                            }, 500);
+                            }, 600);
                         }
                     <\/script>
                 </body>
