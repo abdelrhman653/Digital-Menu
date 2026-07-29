@@ -230,12 +230,12 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم استيراد المنيو الذكي (بدون مشاكل أمان ولا مفاتيح) -->
+            <!-- قسم استيراد المنيو الذكي -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (قراءة عربية واضحة)
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (قراءة عربية دقيقة)
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة منيو العسل أو أي منيو عربي، وسيتم التعرف على الأقسام وتوزيع الأصناف تحتها مباشرة بدون أي أخطاء.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو، وسيقوم النظام بالتعرف على التصنيفات (مثل مشروبات، أكلات) وتوزيع الأصناف تحتها مباشرة.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
@@ -266,7 +266,7 @@
                 <input type="hidden" id="editItemId" value="">
                 
                 <label>اسم الصنف:</label>
-                <input type="text" id="newItemName" placeholder="مثال: عسل سدر، شمع عسل...">
+                <input type="text" id="newItemName" placeholder="مثال: عسل سدر، عصير ليمون...">
                 
                 <label>التصنيف:</label>
                 <div style="display: flex; gap: 8px; margin-bottom: 15px;">
@@ -320,7 +320,7 @@
         let currentRestaurant = localStorage.getItem('current_restaurant');
         let uploadedImageBase64 = "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
         let aiMenuImageFile = null;
-        let defaultCategories = ["أنواع العسل", "منتجات إضافية", "مشروبات", "حلويات"];
+        let defaultCategories = ["مشروبات", "أكلات", "حلويات", "أنواع العسل"];
 
         window.onload = function() {
             if (currentRestaurant) {
@@ -353,9 +353,7 @@
                     phone: '01000000000',
                     primaryColor: '#FFB300',
                     categories: [...defaultCategories],
-                    items: [
-                        { id: 1, name: "عسل سدر", category: "أنواع العسل", price: 50, discount: 0, img: "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500" }
-                    ]
+                    items: []
                 };
                 saveAllRestaurants(db);
             }
@@ -554,13 +552,12 @@
 
         function getSmartFoodImage(itemName) {
             let name = itemName.toLowerCase();
-            if (name.includes('عسل') || name.includes('مانكا') || name.includes('أكاسيا') || name.includes('سدر')) return 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500';
-            if (name.includes('شمع') || name.includes('غذاء') || name.includes('لقاح')) return 'https://images.unsplash.com/photo-1471943311424-646960669fbc?w=500';
-            if (name.includes('زيت')) return 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500';
+            if (name.includes('عصير') || name.includes('مشروب') || name.includes('ليمون') || name.includes('برتقال')) return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=500';
+            if (name.includes('بيتزا') || name.includes('برجر') || name.includes('أكلات')) return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500';
             return 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500';
         }
 
-        // قراءة المنيو بالذكاء الاصطناعي المحلي (مكتبة Tesseract المطورة للغة العربية)
+        // قراءة المنيو الذكية: كشف الأقسام وتوزيع المنتجات أسفلها تلقائياً
         async function importArabicMenuOCR(replaceExisting = false) {
             if (!aiMenuImageFile) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
@@ -592,42 +589,45 @@
                 
                 let currentItems = replaceExisting ? [] : getItems();
                 let categories = getCategories();
-                let currentCategory = "أنواع العسل";
+                let currentCategory = "مشروبات"; // التصنيف الافتراضي الأول
                 let addedCount = 0;
 
                 lines.forEach((line, index) => {
                     let cleanLine = line.toLowerCase();
                     
-                    if (cleanLine.includes('قائمة') || cleanLine.includes('متجر') || cleanLine.includes('rishatabaa') || cleanLine.includes('السعودية') || cleanLine.length < 2) {
+                    // استبعاد الكلمات غير المرغوبة
+                    if (cleanLine.includes('قائمة') || cleanLine.includes('متجر') || cleanLine.length < 2) {
                         return;
                     }
 
-                    if (cleanLine.includes('انواع العسل') || cleanLine.includes('العسل')) {
-                        currentCategory = "أنواع العسل";
-                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
-                        return;
-                    }
-                    if (cleanLine.includes('منتجات إضافية') || cleanLine.includes('إضافية') || cleanLine.includes('منتجات')) {
-                        currentCategory = "منتجات إضافية";
-                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
-                        return;
+                    // التحقق مما إذا كان السطر عبارة عن "عنوان قسم/تصنيف" (لا يحتوي على أرقام/أسعار)
+                    let hasNumbers = /\d/.test(line);
+                    
+                    if (!hasNumbers && line.length >= 2 && line.length < 20) {
+                        // هذا السطر يعتبر تصنيف جديد تماماً
+                        currentCategory = line;
+                        if (!categories.includes(currentCategory)) {
+                            categories.push(currentCategory);
+                        }
+                        return; // ننتقل للسطر التالي
                     }
 
+                    // إذا كان السطر يحتوي على سعر ونص، فهو صنف تابع للتصنيف الحالي
                     let priceMatch = line.match(/(\d+)/g);
                     if (priceMatch && priceMatch.length > 0) {
                         let price = parseInt(priceMatch[priceMatch.length - 1]);
                         let name = line.replace(/(\d+)/g, '')
                                        .replace(/ريال/g, '')
-                                       .replace(/للكيلو/g, '')
+                                       .replace(/ج.م/g, '')
                                        .replace(/[\~\-\.\,\*\+\/]/g, '')
                                        .trim();
 
-                        if (name.length >= 2 && price > 0 && price < 1000) {
+                        if (name.length >= 2 && price > 0 && price < 10000) {
                             addedCount++;
                             currentItems.push({
                                 id: Date.now() + index + Math.random(),
                                 name: name,
-                                category: currentCategory,
+                                category: currentCategory, // بياخد التصنيف الحالي الصحيح
                                 price: price,
                                 discount: 0,
                                 img: getSmartFoodImage(name)
@@ -645,7 +645,7 @@
                 statusDiv.innerText = "";
                 btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕`;
                 btn.disabled = false;
-                showCustomAlert(`✨ تم استيراد أصناف المنيو وتوزيعها على التصنيفات العربية بنجاح (${addedCount} صنف)!`);
+                showCustomAlert(`✨ تم استيراد أصناف المنيو وتوزيعها على التصنيفات (${addedCount} صنف) بنجاح!`);
 
             } catch (err) {
                 console.error(err);
@@ -801,6 +801,7 @@
                     <div class="qr-img-container" id="qrcode-${i}"></div>
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> فتح الرابط</a>
                 `;
+                container.box = box;
                 container.appendChild(box);
 
                 new QRCode(document.getElementById(`qrcode-${i}`), {
