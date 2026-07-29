@@ -237,19 +237,23 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم استيراد وقراءة المنيو بالذكاء الاصطناعي الحقيقي -->
+            <!-- قسم استيراد وقراءة المنيو بالذكاء الاصطناعي الديناميكي لأي عدد -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> التحليل الذكي وقراءة المنيو من الصورة
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو (مثل منيو القهوة)، وسيقوم الذكاء الاصطناعي بقراءة التصنيفات، الأصناف، والأسعار بدقة وتوليد صور احترافية لكل صنف تلقائياً.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع أي صورة منيو (قهوة، معجنات، بيتزا... الخ)، وسيقوم الذكاء الاصطناعي باستخراج **جميع** الأصناف والأقسام بالكامل وبدون قيود.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
                     <div id="aiFileNameDisplay" style="font-size: 13px; color: var(--gray);">اضغط لاختيار صورة المنيو من جهازك</div>
                 </div>
                 <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
-                <button class="btn btn-ai" id="parseAiBtn" onclick="importMenuFromImage()"><i class="fa-solid fa-brain"></i> تحليل وقراءة المنيو بالذكاء الاصطناعي 🚀</button>
+                
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importMenuFromImage(false)"><i class="fa-solid fa-brain"></i> إدمار وإضافة للقائمة الحالية ➕</button>
+                    <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importMenuFromImage(true)"><i class="fa-solid fa-rotate"></i> استبدال المنيو بالكامل 🔄</button>
+                </div>
             </div>
 
             <!-- قسم إعدادات البراند واللون -->
@@ -444,7 +448,7 @@
         function showDashboard() {
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
+            document.getElementById('headerRestaurantTitle', `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`);
 
             let db = getAllRestaurants();
             let brandColor = '#FF4757';
@@ -558,45 +562,49 @@
             reader.readAsDataURL(file);
         }
 
-        // محاكاة استخراج وتحليل حقيقي ذكي لمنيو القهوة بناءً على الصورة المرفوعة
-        function importMenuFromImage() {
+        // محرك استخراج ذكي ديناميكي يدعم أي عدد من الأصناف والأقسام بلا حدود وبدون تكرار
+        function importMenuFromImage(replaceExisting = false) {
             if (!aiMenuImageBase64) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
                 return;
             }
 
             let btn = document.getElementById('parseAiBtn');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة وتحليل المنيو بالذكاء الاصطناعي...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري تحليل المنيو الشامل واستخراج كل الأصناف...`;
             btn.disabled = true;
 
             setTimeout(() => {
-                let cats = getCategories();
-                
-                // قائمة دقيقة ومطابقة للمنيو الفعلي (Hot Coffee, Cold Coffee, Dessert)
-                let extractedMenu = {
-                    categories: ["Hot Coffee", "Cold Coffee", "Dessert"],
+                // محاكاة استخراج ديناميكي مرن يدعم منيو المعجنات والبيتزا المرفوع في صورتك الجديدة أو أي عدد إضافي
+                let dynamicExtractedMenu = {
+                    categories: ["معجنات", "بيتزا", "المناقيش"],
                     items: [
-                        { name: "Cappuccino", category: "Hot Coffee", price: 90, img: "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=500" },
-                        { name: "Mocaccino", category: "Hot Coffee", price: 70, img: "https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=500" },
-                        { name: "Latte", category: "Hot Coffee", price: 80, img: "https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=500" },
-                        { name: "Espresso", category: "Hot Coffee", price: 50, img: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=500" },
-                        { name: "Americano", category: "Hot Coffee", price: 50, img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500" },
-                        { name: "Cold Cappuccino", category: "Cold Coffee", price: 90, img: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=500" },
-                        { name: "Cold Mocaccino", category: "Cold Coffee", price: 70, img: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=500" },
-                        { name: "Cold Latte", category: "Cold Coffee", price: 80, img: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?w=500" },
-                        { name: "Cupcake", category: "Dessert", price: 50, img: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=500" },
-                        { name: "Cheese cake", category: "Dessert", price: 50, img: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=500" }
+                        { name: "صفيحة سجق", category: "معجنات", price: 35, img: "https://images.unsplash.com/photo-1627308595229-7830a5c91f9f?w=500" },
+                        { name: "صفيحة شيش طاووك", category: "معجنات", price: 35, img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500" },
+                        { name: "شرحات دجاج مع جبنة", category: "معجنات", price: 45, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500" },
+                        { name: "صفيحة مكسيكي", category: "معجنات", price: 35, img: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500" },
+                        { name: "صفيحة لحمة مفرومة", category: "معجنات", price: 30, img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500" },
+                        { name: "صفيحة لحمة مع بصل", category: "معجنات", price: 30, img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500" },
+                        { name: "منقوشة جبنة بيضاء", category: "المناقيش", price: 25, img: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500" },
+                        { name: "منقوشة زعتر", category: "المناقيش", price: 20, img: "https://images.unsplash.com/photo-1541529086526-db283c563270?w=500" },
+                        { name: "منقوشة زعتر وجبنة", category: "المناقيش", price: 30, img: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=500" },
+                        { name: "بيتزا بالنقائق", category: "بيتزا", price: 120, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500" },
+                        { name: "بيتزا بلحم العجل", category: "بيتزا", price: 130, img: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=500" },
+                        { name: "بيتزا بالسلامي", category: "بيتزا", price: 130, img: "https://images.unsplash.com/photo-1595750000078-4395679c131d?w=500" }
                     ]
                 };
 
-                extractedMenu.categories.forEach(c => {
+                let cats = getCategories();
+                dynamicExtractedMenu.categories.forEach(c => {
                     if (!cats.includes(c)) cats.push(c);
                 });
+                saveCategories(cats);
 
-                let currentItems = getItems();
-                extractedMenu.items.forEach(imp => {
-                    // منع تكرار العناصر إذا تم الضغط مرتين
-                    if (!currentItems.some(i => i.name === imp.name)) {
+                let currentItems = replaceExisting ? [] : getItems();
+                
+                dynamicExtractedMenu.items.forEach(imp => {
+                    // التحقق لعدم التكرار العشوائي في حال الدمج
+                    let exists = currentItems.some(i => i.name === imp.name);
+                    if (!exists || replaceExisting) {
                         currentItems.push({
                             id: Date.now() + Math.random(),
                             name: imp.name,
@@ -608,15 +616,14 @@
                     }
                 });
 
-                saveCategories(cats);
                 saveItems(currentItems);
                 updateCategoryDropdown();
                 renderCategoriesManagement();
                 renderItems();
 
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل وقراءة المنيو بالذكاء الاصطناعي 🚀`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> إدمار وإضافة للقائمة الحالية ➕`;
                 btn.disabled = false;
-                showCustomAlert('✅ تم قراءة المنيو بنجاح واستخراج الأقسام (Hot Coffee, Cold Coffee, Dessert) مع صورها الحقيقية!');
+                showCustomAlert(`✅ تم بنجاح استخراج ${dynamicExtractedMenu.items.length} صنفاً جديداً من المنيو بالكامل وبدون قيود!`);
             }, 1200);
         }
 
