@@ -689,7 +689,6 @@
             }
         }
 
-        // تم تعديل هذه الدالة لحل المشكلة نهائياً وضمان فتح صفحة الطباعة والـ PDF بشكل سليم
         function printQRCode(element, tableNum) {
             let canvas = element.querySelector('canvas');
             let img = element.querySelector('img');
@@ -709,15 +708,30 @@
                 <head>
                     <title>طباعة QR كود - table ${tableNum}</title>
                     <style>
-                        body { text-align: center; font-family: 'Cairo', sans-serif; padding-top: 50px; }
-                        h2 { margin-bottom: 20px; color: #333; }
-                        img { width: 250px; height: 250px; border: 2px solid #ddd; padding: 10px; border-radius: 10px; }
+                        body { text-align: center; font-family: 'Cairo', sans-serif; padding-top: 30px; }
+                        .qr-print-card {
+                            display: inline-block;
+                            border: 3px solid #333;
+                            border-radius: 20px;
+                            padding: 25px 30px;
+                            background: #fff;
+                            max-width: 320px;
+                        }
+                        h2 { margin: 0 0 5px 0; color: #111; font-size: 22px; font-weight: 900; }
+                        .table-title { font-size: 18px; color: #555; font-weight: 700; margin-bottom: 15px; }
+                        img { width: 220px; height: 220px; display: block; margin: 0 auto; }
+                        .footer-text { margin-top: 15px; font-size: 15px; color: #333; font-weight: 700; line-height: 1.6; }
                     </style>
                 </head>
                 <body>
-                    <h2>${currentRestaurant.toUpperCase()} - table ${tableNum}</h2>
-                    <br>
-                    <img src="${imgSrc}" />
+                    <div class="qr-print-card">
+                        <h2>${currentRestaurant.toUpperCase()}</h2>
+                        <div class="table-title">Table ${tableNum}</div>
+                        <img src="${imgSrc}" />
+                        <div class="footer-text">
+                            سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟
+                        </div>
+                    </div>
                     <script>
                         window.onload = function() {
                             setTimeout(function() {
