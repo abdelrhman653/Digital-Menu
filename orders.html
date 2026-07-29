@@ -339,10 +339,10 @@
         const isOnline = !table || table === 'online';
         let orderType = isOnline ? 'أونلاين' : 'صالة';
         document.getElementById('orderTypeBadge').innerText = `نوع الطلب: ${orderType}`;
-        document.getElementById('tableDisplayBadge').innerText = isOnline ? 'توصيل دليفري' : `ترابيزة: ${table}`;
+        document.getElementById('tableDisplayBadge').innerText = isOnline ? 'توصيل دليفري' : `table: ${table}`;
 
         if (!isOnline) {
-            document.getElementById('authModalTitle').innerText = `تسجيل بيانات ترابيزة ${table}`;
+            document.getElementById('authModalTitle').innerText = `تسجيل بيانات table ${table}`;
             document.getElementById('clientAddress').style.display = 'none';
         }
 
@@ -354,7 +354,7 @@
         function saveClientData() {
             let name = document.getElementById('clientName').value.trim();
             let phone = document.getElementById('clientPhone').value.trim();
-            let address = isOnline ? document.getElementById('clientAddress').value.trim() : 'صالة ترابيزة ' + table;
+            let address = isOnline ? document.getElementById('clientAddress').value.trim() : 'صالة table ' + table;
             
             if(!name || phone.length < 10 || (isOnline && !address)) {
                 showCustomAlert('الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.');
