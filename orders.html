@@ -29,6 +29,8 @@
             justify-content: space-between;
             align-items: center;
         }
+        .header-brand { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); display: none; }
         header h1 { font-size: 15px; font-weight: 700; }
         #headerRestaurantTitle { color: var(--warning); font-size: 14px; }
 
@@ -287,7 +289,10 @@
     </div>
 
     <header>
-        <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
+        <div class="header-brand">
+            <img id="headerLogoImg" class="header-logo" src="" alt="الشعار">
+            <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
+        </div>
     </header>
 
     <div class="container">
@@ -332,8 +337,17 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        let customColor = localStorage.getItem(`primary_color_${restaurant}`) || '#FF4757';
+        let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+        let restData = db[restaurant] || {};
+
+        let customColor = restData.primaryColor || '#FF4757';
         document.documentElement.style.setProperty('--primary', customColor);
+
+        if (restData.logo) {
+            let logoImg = document.getElementById('headerLogoImg');
+            logoImg.src = restData.logo;
+            logoImg.style.display = 'block';
+        }
 
         const table = urlParams.get('table');
         const isOnline = !table || table === 'online';
@@ -391,7 +405,6 @@
 
             let html = '';
             myOrders.slice().reverse().forEach(ord => {
-                // تفصيل الأصناف والأسعار لكل صنف داخل الطلب في سجل الطلبات
                 let itemsDetailsHtml = '';
                 ord.items.forEach(i => {
                     itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
@@ -462,8 +475,7 @@
         let selectedCategory = 'All';
 
         function loadCategoriesBar() {
-            let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-            let cats = (db[restaurant] && db[restaurant].categories) ? db[restaurant].categories : ["وجبات", "مشروبات", "مقبلات", "حلويات"];
+            let cats = (restData && restData.categories) ? restData.categories : ["وجبات", "مشروبات", "مقبلات", "حلويات"];
             let container = document.getElementById('categoriesRowContainer');
             
             let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">الكل</button>`;
@@ -481,8 +493,7 @@
         }
 
         function loadMenu() {
-            let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-            let items = (db[restaurant] && db[restaurant].items) ? db[restaurant].items : [];
+            let items = (restData && restData.items) ? restData.items : [];
 
             if (selectedCategory !== 'All') {
                 items = items.filter(i => i.category === selectedCategory);
