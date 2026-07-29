@@ -65,6 +65,7 @@
         .btn-secondary-action { background: transparent; border: 1px solid var(--border); color: var(--gray); margin-top: 10px; }
         .btn-secondary-action:hover { border-color: var(--white); color: var(--white); }
         .btn-dev { background: linear-gradient(135deg, #00b09b, #96c93d); color: #000; margin-top: 10px; }
+        .btn-print-all { background: linear-gradient(135deg, #1E90FF 0%, #3742fa 100%); color: #fff; margin-top: 15px; }
         .btn-logout { background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: auto; padding: 6px 12px; font-size: 13px; }
         
         input, select {
@@ -293,10 +294,11 @@
 
             <div class="card">
                 <h3><i class="fa-solid fa-qrcode" style="color: var(--primary);"></i> مولد QR كود للـ table</h3>
-                <p style="font-size: 12px; color: var(--gray); margin-top: 5px; margin-bottom: 10px;">💡 اضغط على صورة الـ QR كود مباشرة لطباعته أو تحميله كملف PDF.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-top: 5px; margin-bottom: 10px;">💡 اضغط على صورة الـ QR كود مباشرة لطباعته أو تحميله كملف PDF، أو استخدم الزر أدناه لطباعة الكل دفعة واحدة.</p>
                 <label>عدد الـ table:</label>
                 <input type="number" id="tablesCountInput" value="2" min="1" oninput="generateTablesQR()">
                 <div id="qrResultsContainer" class="qr-grid"></div>
+                <button class="btn btn-print-all" onclick="printAllQRs()"><i class="fa-solid fa-print"></i> 🖨️ طباعة كل الـ QR كود (كل كود في ورقة منفصلة)</button>
             </div>
         </div>
     </div>
@@ -742,6 +744,104 @@
                 </body>
                 </html>
             `);
+            printWindow.document.close();
+        }
+
+        function printAllQRs() {
+            let count = parseInt(document.getElementById('tablesCountInput').value) || 0;
+            if (count <= 0) {
+                showCustomAlert('الرجاء تحديد عدد صحيح للطاولات!');
+                return;
+            }
+
+            let printWindow = window.open('', '_blank');
+            let printContent = `
+                <html dir="rtl">
+                <head>
+                    <title>طباعة كل الـ QR كود للطاولات</title>
+                    <style>
+                        body { text-align: center; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
+                        .page-break {
+                            page-break-after: always;
+                            break-after: page;
+                            height: 100vh;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        .qr-print-card {
+                            border: 3px solid #333;
+                            border-radius: 20px;
+                            padding: 30px;
+                            background: #fff;
+                            width: 340px;
+                            box-sizing: border-box;
+                        }
+                        h2 { margin: 0 0 5px 0; color: #111; font-size: 24px; font-weight: 900; }
+                        .table-title { font-size: 20px; color: #555; font-weight: 700; margin-bottom: 20px; }
+                        img { width: 240px; height: 240px; display: block; margin: 0 auto; }
+                        .footer-text { margin-top: 20px; font-size: 16px; color: #333; font-weight: 700; line-height: 1.6; }
+                    </style>
+                </head>
+                <body>
+            `;
+
+            let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+
+            // سنقوم بتوليد عناصر مؤقتة لسحب صور الـ QR منها بدقة
+            let tempContainer = document.createElement('div');
+            tempContainer.style.display = 'none';
+            document.body.appendChild(tempContainer);
+
+            let qrImagesData = [];
+
+            for (let i = 1; i <= count; i++) {
+                let div = document.createElement('div');
+                tempContainer.appendChild(div);
+                let tableUrl = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${i}`;
+                
+                let qr = new QRCode(div, {
+                    text: tableUrl, width: 240, height: 240, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                let canvas = div.querySelector('canvas');
+                let img = div.querySelector('img');
+                let src = canvas ? canvas.toDataURL("image/png") : (img ? img.src : '');
+                qrImagesData.push({ tableNum: i, src: src });
+            }
+
+            document.body.removeChild(tempContainer);
+
+            // بناء صفحات الطباعة المنفصلة
+            qrImagesData.forEach((item, index) => {
+                printContent += `
+                    <div class="page-break" style="${index === qrImagesData.length - 1 ? 'page-break-after: avoid; break-after: avoid;' : ''}">
+                        <div class="qr-print-card">
+                            <h2>${currentRestaurant.toUpperCase()}</h2>
+                            <div class="table-title">Table ${item.tableNum}</div>
+                            <img src="${item.src}" />
+                            <div class="footer-text">
+                                سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            printContent += `
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                            }, 500);
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `;
+
+            printWindow.document.write(printContent);
             printWindow.document.close();
         }
 
