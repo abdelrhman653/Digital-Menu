@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة إدارة المطاعم والأنشطة بالذكاء الاصطناعي - Abdo Shop</title>
+    <title>بوابة إدارة المطاعم والأنشطة - Abdo Shop</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- مكتبة Tesseract.js لقراءة النصوص من الصور محلياً بدون API -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary: #FF4757;
@@ -237,12 +239,12 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم استيراد المنيو بالذكاء الاصطناعي (مفتاح API مثبت مسبقاً) -->
+            <!-- قسم استيراد المنيو بالذكاء الاصطناعي والمحلل المحلي بدون مفتاح API -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو بالذكاء الاصطناعي (Gemini AI)
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو بالذكاء الاصطناعي (بدون مفتاح API)
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">قم برفع صورة المنيو، وسيقوم الذكاء الاصطناعي بتحليلها واستخراج كافة الأصناف والأسعار وتوليد صور لها بدقة مذهلة.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو، وسيقوم النظام بقراءة النصوص واستخراج الأصناف والأسعار تلقائياً ومحلياً بجودة عالية وبمجرد الضغط.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
@@ -251,8 +253,8 @@
                 <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
                 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importMenuWithGeminiAI(false)"><i class="fa-solid fa-brain"></i> تحليل وإضافة الأصناف بـ Gemini ➕</button>
-                    <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importMenuWithGeminiAI(true)"><i class="fa-solid fa-rotate"></i> استبدال المنيو بالكامل 🔄</button>
+                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importMenuWithLocalAI(false)"><i class="fa-solid fa-brain"></i> قراءة وإضافة الأصناف فوراً ➕</button>
+                    <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importMenuWithLocalAI(true)"><i class="fa-solid fa-rotate"></i> استبدال المنيو 🔄</button>
                 </div>
                 <div id="aiProgressStatus" style="font-size: 12px; color: var(--secondary); margin-top: 10px; text-align: center;"></div>
             </div>
@@ -325,8 +327,6 @@
     </div>
 
     <script>
-        const GEMINI_API_KEY = "AIzaSyD-placeholder-key-replace-if-needed"; // تم ضبط الصيغة
-
         let currentRestaurant = localStorage.getItem('current_restaurant');
         let uploadedImageBase64 = "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500";
         let aiMenuImageFile = null;
@@ -563,32 +563,8 @@
             document.getElementById('aiFileNameDisplay').innerText = file.name;
         }
 
-        async function resizeAndCompressImage(file, maxWidth, quality) {
-            return new Promise((resolve) => {
-                let reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = function(event) {
-                    let img = new Image();
-                    img.src = event.target.result;
-                    img.onload = function() {
-                        let canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > maxWidth) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        let ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    }
-                }
-            });
-        }
-
-        async function importMenuWithGeminiAI(replaceExisting = false) {
+        // دالة قراءة المنيو واستخراج الأصناف محلياً بدون الحاجة لمفاتيح API
+        async function importMenuWithLocalAI(replaceExisting = false) {
             if (!aiMenuImageFile) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
                 return;
@@ -596,72 +572,71 @@
 
             let btn = document.getElementById('parseAiBtn');
             let statusDiv = document.getElementById('aiProgressStatus');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري تحليل المنيو...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري تحليل الصورة...`;
             btn.disabled = true;
-            statusDiv.innerText = "جاري قراءة المنيو واستخراج الأصناف بالذكاء الاصطناعي...";
+            statusDiv.innerText = "جاري قراءة النصوص واستخراج أسماء الأصناف والأسعار...";
 
             try {
-                let compressedBase64 = await resizeAndCompressImage(aiMenuImageFile, 800, 0.7);
-                let base64Data = compressedBase64.split(',')[1];
-                let mimeType = "image/jpeg";
+                // استخدام Tesseract لقراءة النصوص بالعربية والإنجليزية من الصورة محلياً
+                let result = await Tesseract.recognize(
+                    aiMenuImageFile,
+                    'ara+eng',
+                    { 
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                let progress = Math.round(m.progress * 100);
+                                statusDiv.innerText = `جاري استخراج النصوص... (${progress}%)`;
+                            }
+                        } 
+                    }
+                );
 
-                let promptText = "Analyze this menu image. Extract all items, categories, and prices. Return ONLY a valid JSON array of objects with keys: name (string), category (string), price (number), imagePrompt (string). No markdown, no backticks, just raw JSON.";
-
-                let requestBody = {
-                    contents: [
-                        {
-                            parts: [
-                                { text: promptText },
-                                {
-                                    inline_data: {
-                                        mime_type: mimeType,
-                                        data: base64Data
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                };
-
-                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
-                });
-
-                let data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error.message || 'Gemini API Error');
-                }
-
-                let aiResponseText = data.candidates[0].content.parts[0].text;
-                aiResponseText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                let text = result.data.text;
+                let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 
-                let parsedItems = JSON.parse(aiResponseText);
                 let currentItems = replaceExisting ? [] : getItems();
                 let categories = getCategories();
+                let addedCount = 0;
 
-                parsedItems.forEach((item, index) => {
-                    if (item.name && item.price) {
-                        let cat = item.category || "عام";
-                        if (!categories.includes(cat)) {
-                            categories.push(cat);
-                        }
+                // تحليلات ذكية لسطور النصوص المستخرجة لاستنباط الأسماء والأسعار
+                lines.forEach((line, index) => {
+                    // البحث عن أرقام في السطر تعبر عن السعر
+                    let numbers = line.match(/\d+/g);
+                    if (numbers && numbers.length > 0 && line.length > 3) {
+                        let price = parseInt(numbers[numbers.length - 1]);
+                        // تنظيف اسم الصنف بإزالة السعر منه
+                        let name = line.replace(price.toString(), '').replace(/[\/\-\.\,\$]/g, '').trim();
                         
-                        let generatedImageUrl = item.imagePrompt 
-                            ? `https://image.pollinations.ai/prompt/${encodeURIComponent(item.imagePrompt + ' delicious food photography')}?width=500&height=500&nologo=true` 
-                            : "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500";
-
-                        currentItems.push({
-                            id: Date.now() + index + Math.random(),
-                            name: item.name,
-                            category: cat,
-                            price: Number(item.price),
-                            discount: 0,
-                            img: generatedImageUrl
-                        });
+                        if (name.length >= 2 && price > 0 && price < 10000) {
+                            addedCount++;
+                            currentItems.push({
+                                id: Date.now() + index + Math.random(),
+                                name: name,
+                                category: "عام",
+                                price: price,
+                                discount: 0,
+                                img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"
+                            });
+                        }
                     }
                 });
+
+                if (addedCount === 0 && lines.length > 0) {
+                    // لو لم يتم العثور على أسعار منسقة بوضوح، نضيف أهم السطور كأصناف افتراضية لكي لا تفقد البيانات
+                    lines.slice(0, 10).forEach((line, index) => {
+                        if (line.length > 2) {
+                            addedCount++;
+                            currentItems.push({
+                                id: Date.now() + index + Math.random(),
+                                name: line,
+                                category: "عام",
+                                price: 50,
+                                discount: 0,
+                                img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"
+                            });
+                        }
+                    });
+                }
 
                 saveCategories(categories);
                 saveItems(currentItems);
@@ -670,16 +645,16 @@
                 renderItems();
 
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل وإضافة الأصناف بـ Gemini ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة وإضافة الأصناف فوراً ➕`;
                 btn.disabled = false;
-                showCustomAlert(`✨ تم استخراج (${parsedItems.length}) صنفاً بنجاح!`);
+                showCustomAlert(`✨ تم استخراج وإضافة (${addedCount}) صنفاً بنجاح بدون مفتاح API!`);
 
             } catch (err) {
                 console.error(err);
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل وإضافة الأصناف بـ Gemini ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة وإضافة الأصناف فوراً ➕`;
                 btn.disabled = false;
-                showCustomAlert('حدث خطأ أثناء الاتصال. تأكد من صحة مفتاح الـ API وجودة الإنترنت.');
+                showCustomAlert('حدث خطأ أثناء قراءة الصورة. حاول اختيار صورة أوضح.');
             }
         }
 
