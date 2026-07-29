@@ -200,7 +200,6 @@
 
         .disabled-card { opacity: 0.85; }
 
-        /* نافذة التنبيهات المخصصة */
         #customAlertModal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(13, 17, 23, 0.85);
@@ -280,6 +279,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
+
+        // تطبيق لون البراند المخصص لهذا المطعم في شاشة المطبخ
+        let customColor = localStorage.getItem(`primary_color_${restaurant}`) || '#FF4757';
+        document.documentElement.style.setProperty('--primary', customColor);
 
         let currentTab = 'active';
 
