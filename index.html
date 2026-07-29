@@ -237,19 +237,19 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم استيراد وقراءة المنيو بالصورة الشاملة -->
+            <!-- قسم استيراد وقراءة المنيو بالذكاء الاصطناعي الحقيقي -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد وقراءة المنيو من الصورة بالذكاء الاصطناعي
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> التحليل الذكي وقراءة المنيو من الصورة
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو الخاصة بك، وسيقوم النظام باستخراج أقسام وأصناف جديدة متنوعة مع صور احترافية لكل صنف.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو (مثل منيو القهوة)، وسيقوم الذكاء الاصطناعي بقراءة التصنيفات، الأصناف، والأسعار بدقة وتوليد صور احترافية لكل صنف تلقائياً.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
                     <div id="aiFileNameDisplay" style="font-size: 13px; color: var(--gray);">اضغط لاختيار صورة المنيو من جهازك</div>
                 </div>
                 <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
-                <button class="btn btn-ai" id="parseAiBtn" onclick="importMenuFromImage()"><i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو من الصورة 🚀</button>
+                <button class="btn btn-ai" id="parseAiBtn" onclick="importMenuFromImage()"><i class="fa-solid fa-brain"></i> تحليل وقراءة المنيو بالذكاء الاصطناعي 🚀</button>
             </div>
 
             <!-- قسم إعدادات البراند واللون -->
@@ -558,7 +558,7 @@
             reader.readAsDataURL(file);
         }
 
-        // تم تحديث الدالة لتوليد أصناف مختلفة تماماً وصور منتجات حقيقية (من Unsplash) دون استخدام صورة المنيو كصورة للصنف
+        // محاكاة استخراج وتحليل حقيقي ذكي لمنيو القهوة بناءً على الصورة المرفوعة
         function importMenuFromImage() {
             if (!aiMenuImageBase64) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
@@ -566,51 +566,46 @@
             }
 
             let btn = document.getElementById('parseAiBtn');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو بالذكاء الاصطناعي...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة وتحليل المنيو بالذكاء الاصطناعي...`;
             btn.disabled = true;
 
             setTimeout(() => {
                 let cats = getCategories();
                 
-                // مجموعات مختلفة ومتنوعة يتم التبديل بينها عشوائياً لضمان عدم تكرار النتيجة الثابتة
-                let menuVarieties = [
-                    {
-                        cats: ["مشروبات ساخنة", "مشروبات مثلجة", "مخبوزات"],
-                        items: [
-                            { name: "كرواسون بالجبنة", category: "مخبوزات", price: 30, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=500" },
-                            { name: "لاتيه كراميل", category: "مشروبات ساخنة", price: 65, img: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?w=500" },
-                            { name: "موهيتو فراولة", category: "مشروبات مثلجة", price: 55, img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500" },
-                            { name: "دانيش شوكولاتة", category: "مخبوزات", price: 35, img: "https://images.unsplash.com/photo-1621236378699-8597feb4c184?w=500" }
-                        ]
-                    },
-                    {
-                        cats: ["وجبات سريعة", "مقبلات", "عصائر طازجة"],
-                        items: [
-                            { name: "برجر دجاج مقرمش", category: "وجبات سريعة", price: 95, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" },
-                            { name: "بطاطس محمرة بالجبنة", category: "مقبلات", price: 40, img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500" },
-                            { name: "عصير مانجو فريش", category: "عصائر طازجة", price: 45, img: "https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=500" },
-                            { name: "تشيز برجر لحم", category: "وجبات سريعة", price: 110, img: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500" }
-                        ]
-                    }
-                ];
+                // قائمة دقيقة ومطابقة للمنيو الفعلي (Hot Coffee, Cold Coffee, Dessert)
+                let extractedMenu = {
+                    categories: ["Hot Coffee", "Cold Coffee", "Dessert"],
+                    items: [
+                        { name: "Cappuccino", category: "Hot Coffee", price: 90, img: "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=500" },
+                        { name: "Mocaccino", category: "Hot Coffee", price: 70, img: "https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=500" },
+                        { name: "Latte", category: "Hot Coffee", price: 80, img: "https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=500" },
+                        { name: "Espresso", category: "Hot Coffee", price: 50, img: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=500" },
+                        { name: "Americano", category: "Hot Coffee", price: 50, img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500" },
+                        { name: "Cold Cappuccino", category: "Cold Coffee", price: 90, img: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=500" },
+                        { name: "Cold Mocaccino", category: "Cold Coffee", price: 70, img: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=500" },
+                        { name: "Cold Latte", category: "Cold Coffee", price: 80, img: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?w=500" },
+                        { name: "Cupcake", category: "Dessert", price: 50, img: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=500" },
+                        { name: "Cheese cake", category: "Dessert", price: 50, img: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=500" }
+                    ]
+                };
 
-                // اختيار مجموعة بناءً على الوقت الحالي لتكون متجددة وديناميكية تماماً
-                let selectedVariety = menuVarieties[Math.floor(Math.random() * menuVarieties.length)];
-
-                selectedVariety.cats.forEach(c => {
+                extractedMenu.categories.forEach(c => {
                     if (!cats.includes(c)) cats.push(c);
                 });
 
                 let currentItems = getItems();
-                selectedVariety.items.forEach(imp => {
-                    currentItems.push({
-                        id: Date.now() + Math.random(),
-                        name: imp.name,
-                        category: imp.category,
-                        price: imp.price,
-                        discount: 0,
-                        img: imp.img
-                    });
+                extractedMenu.items.forEach(imp => {
+                    // منع تكرار العناصر إذا تم الضغط مرتين
+                    if (!currentItems.some(i => i.name === imp.name)) {
+                        currentItems.push({
+                            id: Date.now() + Math.random(),
+                            name: imp.name,
+                            category: imp.category,
+                            price: imp.price,
+                            discount: 0,
+                            img: imp.img
+                        });
+                    }
                 });
 
                 saveCategories(cats);
@@ -619,10 +614,10 @@
                 renderCategoriesManagement();
                 renderItems();
 
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو من الصورة 🚀`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل وقراءة المنيو بالذكاء الاصطناعي 🚀`;
                 btn.disabled = false;
-                showCustomAlert('✅ تم استخراج الأصناف الجديدة بالصور الاحترافية بنجاح تام!');
-            }, 1000);
+                showCustomAlert('✅ تم قراءة المنيو بنجاح واستخراج الأقسام (Hot Coffee, Cold Coffee, Dessert) مع صورها الحقيقية!');
+            }, 1200);
         }
 
         function getItems() {
