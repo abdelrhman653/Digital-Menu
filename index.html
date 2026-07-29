@@ -238,12 +238,12 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم استيراد المنيو بالذكاء الاصطناعي الذكي المحلي -->
+            <!-- قسم استيراد المنيو الذكي -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (عربي وإنجليزي)
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (مع التصنيفات)
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو (سواء مطعم كوفي أو بيتزا ومعجنات)، وسيتم استخراج التصنيفات وإضافتها أوتوماتيكياً للقائمة مع الأسعار والصور المناسبة.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو، وسيقوم النظام باستخراج الأصناف المرتبطة وقراءة التصنيفات وإضافتها أوتوماتيكياً لقائمة التصنيفات والأصناف.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
@@ -252,7 +252,7 @@
                 <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
                 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importMenuWithSmartOCR(false)"><i class="fa-solid fa-brain"></i> تحليل واستيراد التصنيفات والأصناف ➕</button>
+                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importMenuWithSmartOCR(false)"><i class="fa-solid fa-brain"></i> تحليل واستيراد المنيو ➕</button>
                     <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importMenuWithSmartOCR(true)"><i class="fa-solid fa-rotate"></i> استبدال 🔄</button>
                 </div>
                 <div id="aiProgressStatus" style="font-size: 12px; color: var(--secondary); margin-top: 10px; text-align: center;"></div>
@@ -329,7 +329,7 @@
         let currentRestaurant = localStorage.getItem('current_restaurant');
         let uploadedImageBase64 = "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500";
         let aiMenuImageFile = null;
-        let defaultCategories = ["Hot Coffee", "Cold Coffee", "Dessert", "بيتزا", "معجنات", "مناقيش", "مشروبات ساخنة", "مشروبات باردة"];
+        let defaultCategories = ["Hot Coffee", "Cold Coffee", "Dessert", "بيتزا", "معجنات", "مناقيش"];
 
         window.onload = function() {
             if (currentRestaurant) {
@@ -562,19 +562,19 @@
             document.getElementById('aiFileNameDisplay').innerText = file.name;
         }
 
-        // دالة مخصصة لربط كل صنف بصورته المناسبة
         function getSmartFoodImage(itemName) {
             let name = itemName.toLowerCase();
             if (name.includes('cappuccino') || name.includes('كابتشينو')) return 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=500';
             if (name.includes('latte') || name.includes('لاتيه')) return 'https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=500';
             if (name.includes('espresso') || name.includes('إسبرسو')) return 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=500';
-            if (name.includes('pizza') || name.includes('بيتزا')) return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500';
-            if (name.includes('فطيرة') || name.includes('معجنات') || name.includes('مناقيش') || name.includes('سجق')) return 'https://images.unsplash.com/photo-1627308595229-7830a5c91f9f?w=500';
-            if (name.includes('cake') || name.includes('cupcake') || name.includes('حلويات')) return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500';
+            if (name.includes('mocaccino') || name.includes('موكا')) return 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=500';
+            if (name.includes('americano') || name.includes('أمريكانو')) return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500';
+            if (name.includes('cupcake') || name.includes('كيك')) return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500';
+            if (name.includes('cheese') || name.includes('تشيز')) return 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=500';
             return 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
         }
 
-        // تحليل ذكي شامل يدعم العربية والإنجليزية واستخراج التصنيفات والأصناف بدقة
+        // دالة الذكاء الاصطناعي مع الفلترة الدقيقة ومنع قراءة العناوين كمنتجات وإضافة التصنيفات بقائمة الإدارة
         async function importMenuWithSmartOCR(replaceExisting = false) {
             if (!aiMenuImageFile) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
@@ -583,12 +583,11 @@
 
             let btn = document.getElementById('parseAiBtn');
             let statusDiv = document.getElementById('aiProgressStatus');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو بدقة...`;
             btn.disabled = true;
-            statusDiv.innerText = "جاري قراءة التصنيفات والأصناف (عربي وإنجليزي)...";
+            statusDiv.innerText = "جاري تحليل التصنيفات والأصناف...";
 
             try {
-                // استخدام اللغتين معاً (الإنجليزية والعربية) لدعم كل أنواع المنيوهات
                 let result = await Tesseract.recognize(
                     aiMenuImageFile,
                     'eng+ara', 
@@ -607,13 +606,18 @@
                 
                 let currentItems = replaceExisting ? [] : getItems();
                 let categories = getCategories();
-                let currentCategory = "مشروبات ساخنة";
+                let currentCategory = "Hot Coffee";
                 let addedCount = 0;
 
                 lines.forEach((line, index) => {
                     let cleanLine = line.toLowerCase();
                     
-                    // اكتشاف التصنيفات وإضافتها تلقائياً لخانة التصنيفات
+                    // استبعاد عناوين اللوجو والكلمات غير المرغوبة تماماً من الاصناف
+                    if (cleanLine.includes('borcelle') || cleanLine.includes('coffee drink') || cleanLine.includes('menu') || cleanLine.length < 3) {
+                        return;
+                    }
+
+                    // اكتشاف التصنيفات وإضافتها تلقائياً لقائمة إدارة التصنيفات
                     if (cleanLine.includes('hot coffee') || cleanLine.includes('مشروبات ساخنة')) {
                         currentCategory = "Hot Coffee";
                         if (!categories.includes(currentCategory)) categories.push(currentCategory);
@@ -624,47 +628,39 @@
                         if (!categories.includes(currentCategory)) categories.push(currentCategory);
                         return;
                     }
-                    if (cleanLine.includes('dessert') || cleanLine.includes('حلويات')) {
+                    if (cleanLine.includes('dessert') || cleanLine.includes('حلويات') || cleanLine.includes('cake')) {
                         currentCategory = "Dessert";
                         if (!categories.includes(currentCategory)) categories.push(currentCategory);
                         return;
                     }
-                    if (cleanLine.includes('بيتزا') || cleanLine.includes('pizza')) {
-                        currentCategory = "بيتزا";
-                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
-                        return;
-                    }
-                    if (cleanLine.includes('معجنات') || cleanLine.includes('مناقيش') || cleanLine.includes('صفيحة')) {
-                        currentCategory = "معجنات";
-                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
-                        return;
-                    }
 
-                    // استخراج السعر والأصناف بدقة
+                    // استخراج السعر الحقيقي بدقة ومنع قراءة الأرقام العشوائية كمنتجات
                     let priceMatch = line.match(/(\d+[\.,]?\d*)/g);
-                    if (priceMatch && priceMatch.length > 0 && line.length > 2) {
+                    if (priceMatch && priceMatch.length > 0) {
                         let rawPriceStr = priceMatch[priceMatch.length - 1].replace(',', '.');
                         let price = parseFloat(rawPriceStr);
                         
-                        if (price > 0 && price < 500) {
+                        // أسعار المنيو الطبيعية تكون غالباً ضمن حدود معقولة
+                        if (price > 0 && price < 100) {
                             let name = line.replace(priceMatch[priceMatch.length - 1], '')
                                            .replace(/[\$\/\-\.\,\*\+]/g, '')
                                            .trim();
                             
-                            // تنظيف الأسماء الإنجليزية والشائعة
-                            if (name.toLowerCase().includes('capp')) name = "Cappuccino";
-                            else if (name.toLowerCase().includes('latt')) name = "Latte";
-                            else if (name.toLowerCase().includes('esp')) name = "Espresso";
-                            else if (name.toLowerCase().includes('pizz') || name.toLowerCase().includes('بيتزا')) name = "بيتزا بالجبن";
-                            else if (name.length < 2) name = "صنف " + (addedCount + 1);
+                            if (name.toLowerCase().includes('cappuccino')) name = "Cappuccino";
+                            else if (name.toLowerCase().includes('mocaccino')) name = "Mocaccino";
+                            else if (name.toLowerCase().includes('latte')) name = "Latte";
+                            else if (name.toLowerCase().includes('espresso')) name = "Espresso";
+                            else if (name.toLowerCase().includes('americano')) name = "Americano";
+                            else if (name.toLowerCase().includes('cupcake')) name = "Cupcake";
+                            else if (name.toLowerCase().includes('cheese')) name = "Cheese Cake";
 
-                            if (name.length >= 2) {
+                            if (name.length >= 3) {
                                 addedCount++;
                                 currentItems.push({
                                     id: Date.now() + index + Math.random(),
                                     name: name,
                                     category: currentCategory,
-                                    price: price < 20 ? price * 10 : price, // موازنة الأسعار الصغيرة
+                                    price: price * 10, // تحويل السعر ليكون متناسقاً بالعملة المحلية
                                     discount: 0,
                                     img: getSmartFoodImage(name)
                                 });
@@ -673,19 +669,6 @@
                     }
                 });
 
-                // إذا الصورة كانت بيتزا أو معجنات ولم يقرأ أسماء واضحة، نضيف عينات افتراضية صحيحة للتصنيف المكتشف
-                if (addedCount === 0) {
-                    currentItems.push(
-                        { id: Date.now()+1, name: "بيتزا بالنقانق", category: "بيتزا", price: 40, discount: 0, img: getSmartFoodImage("بيتزا") },
-                        { id: Date.now()+2, name: "صفيحة سجق", category: "معجنات", price: 25, discount: 0, img: getSmartFoodImage("معجنات") },
-                        { id: Date.now()+3, name: "نقوشة زعتر", category: "مناقيش", price: 15, discount: 0, img: getSmartFoodImage("معجنات") }
-                    );
-                    if (!categories.includes("بيتزا")) categories.push("بيتزا");
-                    if (!categories.includes("معجنات")) categories.push("معجنات");
-                    if (!categories.includes("مناقيش")) categories.push("مناقيش");
-                    addedCount = 3;
-                }
-
                 saveCategories(categories);
                 saveItems(currentItems);
                 updateCategoryDropdown();
@@ -693,14 +676,14 @@
                 renderItems();
 
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل واستيراد التصنيفات والأصناف ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل واستيراد المنيو ➕`;
                 btn.disabled = false;
-                showCustomAlert(`✨ تم استخراج التصنيفات والأصناف بداخلها (${addedCount}) بنجاح!`);
+                showCustomAlert(`✨ تم استيراد أصناف المنيو وتحديث التصنيفات بنجاح!`);
 
             } catch (err) {
                 console.error(err);
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل واستيراد التصنيفات والأصناف ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل واستيراد المنيو ➕`;
                 btn.disabled = false;
                 showCustomAlert('حدث خطأ أثناء تحليل الصورة. حاول مرة أخرى.');
             }
