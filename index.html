@@ -689,9 +689,18 @@
             }
         }
 
+        // تم تعديل هذه الدالة لحل المشكلة نهائياً وضمان فتح صفحة الطباعة والـ PDF بشكل سليم
         function printQRCode(element, tableNum) {
+            let canvas = element.querySelector('canvas');
             let img = element.querySelector('img');
-            let imgSrc = img ? img.src : '';
+            let imgSrc = '';
+            
+            if (canvas) {
+                imgSrc = canvas.toDataURL("image/png");
+            } else if (img) {
+                imgSrc = img.src;
+            }
+            
             if (!imgSrc) return;
 
             let printWindow = window.open('', '_blank');
@@ -711,7 +720,9 @@
                     <img src="${imgSrc}" />
                     <script>
                         window.onload = function() {
-                            window.print();
+                            setTimeout(function() {
+                                window.print();
+                            }, 300);
                         }
                     <\/script>
                 </body>
@@ -733,4 +744,3 @@
     </div>
 </body>
 </html>
-
