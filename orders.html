@@ -29,6 +29,8 @@
             justify-content: space-between;
             align-items: center;
         }
+        .header-brand { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); display: none; }
         header h1 { font-size: 15px; font-weight: 700; }
         #headerRestaurantTitle { color: var(--warning); font-size: 14px; }
 
@@ -95,17 +97,6 @@
             font-size: 12px;
             cursor: pointer;
             font-weight: 700;
-        }
-
-        .live-order-tracker {
-            background: linear-gradient(135deg, #1f2937 11%, #111827 100%);
-            border: 1px solid var(--warning);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
         }
 
         .categories-row {
@@ -259,35 +250,42 @@
 
     <div id="customAlertModal" class="hidden">
         <div class="custom-alert-box">
-            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> تنبيه</h3>
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> <span data-i18n="alert_title">تنبيه</span></h3>
             <p id="customAlertMessage">رسالة التنبيه هنا</p>
-            <button class="auth-btn" onclick="closeCustomAlert()">حسناً</button>
+            <button class="auth-btn" onclick="closeCustomAlert()" data-i18n="btn_ok">حسناً</button>
         </div>
     </div>
 
     <div id="authModal">
         <div class="auth-box">
             <h3 id="authModalTitle">تسجيل بيانات العميل للطلب</h3>
-            <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد)">
+            <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد / John)">
             <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الموبايل (مثال: 01012345678)">
-            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل">
-            <button class="auth-btn" onclick="saveClientData()">حفظ ودخول للمنيو <i class="fa-solid fa-arrow-left"></i></button>
+            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل / Address">
+            <button class="auth-btn" onclick="saveClientData()"><span data-i18n="btn_save_client">حفظ ودخول للمنيو</span> <i class="fa-solid fa-arrow-left"></i></button>
         </div>
     </div>
 
     <div id="historyModal" class="hidden">
         <div class="history-card-box">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="font-size: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> سجل طلباتي السابقة</h3>
+                <h3 style="font-size: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> <span data-i18n="my_orders">سجل طلباتي السابقة</span></h3>
                 <button onclick="toggleHistory(false)" style="background: none; border: none; color: var(--white); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="historyListContainer"></div>
-            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;">تسجيل خروج</button>
+            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;" data-i18n="btn_logout_client">تسجيل خروج</button>
         </div>
     </div>
 
     <header>
-        <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
+        <div class="header-brand">
+            <img id="headerLogoImg" class="header-logo" src="" alt="الشعار">
+            <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
+        </div>
+        <select id="langSelectOrders" onchange="changeLanguage(this.value)" style="width: 100px; padding: 4px; font-size: 11px; background: var(--dark-bg); color: #fff; border: 1px solid var(--border); border-radius: 6px;">
+            <option value="ar">العربية 🇸🇦</option>
+            <option value="en">English 🇺🇸</option>
+        </select>
     </header>
 
     <div class="container">
@@ -298,11 +296,11 @@
                 <span id="orderTypeBadge" style="font-weight: 700; font-size: 12px;">نوع الطلب: أونلاين</span>
                 <span id="tableDisplayBadge" style="color: var(--primary); font-weight: 700; font-size: 12px; margin-right: 8px;">توصيل دليفري</span>
             </div>
-            <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> طلباتي</button>
+            <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="btn_my_orders">طلباتي</span></button>
         </div>
 
         <div class="categories-row" id="categoriesRowContainer">
-            <button class="cat-btn active" onclick="filterCategory('الكل', this)">الكل</button>
+            <button class="cat-btn active" onclick="filterCategory('All', this)" data-i18n="all_cat">الكل</button>
         </div>
 
         <div id="customerMenuGrid" class="menu-grid"></div>
@@ -312,37 +310,94 @@
         <div class="cart-details" id="cartBreakdown"></div>
         <div class="cart-main-row">
             <div>
-                <div style="font-size: 10px; color: var(--gray);">الإجمالي النهائي</div>
+                <div style="font-size: 10px; color: var(--gray);" data-i18n="final_total">الإجمالي النهائي</div>
                 <div style="font-weight: 900; color: var(--secondary); font-size: 15px;" id="cartTotal">0.0 ج.م</div>
             </div>
-            <button class="btn-submit" onclick="submitOrder()">إرسال الطلب <i class="fa-solid fa-paper-plane"></i></button>
+            <button class="btn-submit" onclick="submitOrder()"><span data-i18n="btn_submit_order">إرسال الطلب</span> <i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 
     <script>
-        function showCustomAlert(msg) {
-            document.getElementById('customAlertMessage').innerText = msg;
-            document.getElementById('customAlertModal').classList.remove('hidden');
-        }
-        function closeCustomAlert() {
-            document.getElementById('customAlertModal').classList.add('hidden');
+        let currentLang = localStorage.getItem('app_lang') || 'ar';
+        const translations = {
+            ar: {
+                alert_title: "تنبيه",
+                btn_ok: "حسناً",
+                btn_save_client: "حفظ ودخول للمنيو",
+                my_orders: "سجل طلباتي السابقة",
+                btn_logout_client: "تسجيل خروج",
+                btn_my_orders: "طلباتي",
+                all_cat: "الكل",
+                final_total: "الإجمالي النهائي",
+                btn_submit_order: "إرسال الطلب",
+                add_btn: "إضافة",
+                auth_title: "تسجيل بيانات العميل للطلب",
+                name_placeholder: "اسمك الكريم (مثال: أحمد)",
+                phone_placeholder: "رقم الموبايل (مثال: 01012345678)",
+                address_placeholder: "العنوان بالتفصيل"
+            },
+            en: {
+                alert_title: "Alert",
+                btn_ok: "OK",
+                btn_save_client: "Save & Enter Menu",
+                my_orders: "My Order History",
+                btn_logout_client: "Logout",
+                btn_my_orders: "My Orders",
+                all_cat: "All",
+                final_total: "Final Total",
+                btn_submit_order: "Submit Order",
+                add_btn: "Add",
+                auth_title: "Enter Client Data for Order",
+                name_placeholder: "Your Name (e.g., John)",
+                phone_placeholder: "Mobile Number (e.g., 01012345678)",
+                address_placeholder: "Detailed Address"
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('app_lang', lang);
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('langSelectOrders').value = lang;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                let key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+            document.getElementById('clientName').placeholder = translations[lang].name_placeholder;
+            document.getElementById('clientPhone').placeholder = translations[lang].phone_placeholder;
+            document.getElementById('clientAddress').placeholder = translations[lang].address_placeholder;
+            loadCategoriesBar();
+            loadMenu();
         }
 
         const urlParams = new URLSearchParams(window.location.search);
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        let customColor = localStorage.getItem(`primary_color_${restaurant}`) || '#FF4757';
+        let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+        let restData = db[restaurant] || {};
+
+        let customColor = restData.primaryColor || '#FF4757';
         document.documentElement.style.setProperty('--primary', customColor);
+
+        if (restData.logo) {
+            let logoImg = document.getElementById('headerLogoImg');
+            logoImg.src = restData.logo;
+            logoImg.style.display = 'block';
+        }
 
         const table = urlParams.get('table');
         const isOnline = !table || table === 'online';
-        let orderType = isOnline ? 'أونلاين' : 'صالة';
-        document.getElementById('orderTypeBadge').innerText = `نوع الطلب: ${orderType}`;
-        document.getElementById('tableDisplayBadge').innerText = isOnline ? 'توصيل دليفري' : `table: ${table}`;
+        let orderType = isOnline ? (currentLang === 'ar' ? 'أونلاين' : 'Online') : (currentLang === 'ar' ? 'صالة' : 'Dine-In');
+        document.getElementById('orderTypeBadge').innerText = `${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}: ${orderType}`;
+        document.getElementById('tableDisplayBadge').innerText = isOnline ? (currentLang === 'ar' ? 'توصيل دليفري' : 'Delivery') : `Table: ${table}`;
 
         if (!isOnline) {
-            document.getElementById('authModalTitle').innerText = `تسجيل بيانات table ${table}`;
+            document.getElementById('authModalTitle').innerText = `${currentLang === 'ar' ? 'تسجيل بيانات طاولة' : 'Enter data for Table'} ${table}`;
             document.getElementById('clientAddress').style.display = 'none';
         }
 
@@ -354,10 +409,10 @@
         function saveClientData() {
             let name = document.getElementById('clientName').value.trim();
             let phone = document.getElementById('clientPhone').value.trim();
-            let address = isOnline ? document.getElementById('clientAddress').value.trim() : 'صالة table ' + table;
+            let address = isOnline ? document.getElementById('clientAddress').value.trim() : `Dine-In Table ${table}`;
             
             if(!name || phone.length < 10 || (isOnline && !address)) {
-                showCustomAlert('الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.');
+                showCustomAlert(currentLang === 'ar' ? 'الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.' : 'Please enter name, phone, and address.');
                 return;
             }
             currentUser = { name, phone, address };
@@ -385,40 +440,34 @@
             let myOrders = orders.filter(o => currentUser && o.client && o.client.phone === currentUser.phone);
 
             if (myOrders.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">لا توجد طلبات سابقة برقم هاتفك.</p>`;
+                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">${currentLang === 'ar' ? 'لا توجد طلبات سابقة برقم هاتفك.' : 'No previous orders found.'}</p>`;
                 return;
             }
 
             let html = '';
             myOrders.slice().reverse().forEach(ord => {
-                // تفصيل الأصناف والأسعار لكل صنف داخل الطلب في سجل الطلبات
                 let itemsDetailsHtml = '';
                 ord.items.forEach(i => {
                     itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
                         <span>${i.name} (x${i.qty})</span>
-                        <span style="color: var(--secondary);">${i.price * i.qty} ج.م</span>
+                        <span style="color: var(--secondary);">${i.price * i.qty} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
                     </div>`;
                 });
 
-                let serviceLabel = ord.type === 'صالة' ? 'خدمة صالة' : 'خدمة التوصيل';
                 let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
-                let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : ``;
+                let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">${currentLang === 'ar' ? 'إلغاء الطلب' : 'Cancel'}</button>` : ``;
 
                 html += `
                     <div class="history-item-row">
                         <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 8px;">
-                            <span>طلب #${ord.id} (${ord.type})</span>
+                            <span>${currentLang === 'ar' ? 'طلب' : 'Order'} #${ord.id} (${ord.type})</span>
                             <span>${ord.date} - ${ord.time}</span>
                         </div>
                         <div style="border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 6px;">
                             ${itemsDetailsHtml}
                         </div>
-                        <div style="font-size: 11px; color: var(--gray); margin-bottom: 6px; display: flex; justify-content: space-between;">
-                            <span>المجموع الفرعي: ${ord.subtotal || (ord.total - ord.serviceFee)} ج.م</span>
-                            <span>${serviceLabel}: ${ord.serviceFee} ج.م</span>
-                        </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
-                            <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">الإجمالي النهائي: ${ord.total} ج.م</span>
+                            <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">${currentLang === 'ar' ? 'الإجمالي النهائي' : 'Total'}: ${ord.total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${ord.status}</span>
                                 ${cancelBtnHtml}
@@ -434,11 +483,11 @@
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
             let order = orders.find(o => o.id === orderId);
             if (order) {
-                order.status = 'ملغي';
+                order.status = currentLang === 'ar' ? 'ملغي' : 'Cancelled';
                 localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
                 renderClientHistory();
                 updateLiveTracker();
-                showCustomAlert('تم إلغاء الطلب بنجاح.');
+                showCustomAlert(currentLang === 'ar' ? 'تم إلغاء الطلب بنجاح.' : 'Order cancelled successfully.');
             }
         }
 
@@ -446,14 +495,14 @@
             let trackerContainer = document.getElementById('liveOrderTrackerContainer');
             if (!currentUser) { trackerContainer.innerHTML = ''; return; }
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let activeOrder = orders.slice().reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي');
+            let activeOrder = orders.slice().reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي' && o.status !== 'Delivered' && o.status !== 'Cancelled');
 
             if (!activeOrder) { trackerContainer.innerHTML = ''; return; }
 
             trackerContainer.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> متابعة طلبك (#${activeOrder.id})</span>
-                    <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">الحالة: ${activeOrder.status}</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1f2937 11%, #111827 100%); border: 1px solid var(--warning); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
+                    <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> ${currentLang === 'ar' ? 'متابعة طلبك' : 'Track Order'} (#${activeOrder.id})</span>
+                    <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${activeOrder.status}</span>
                 </div>
             `;
         }
@@ -462,11 +511,10 @@
         let selectedCategory = 'All';
 
         function loadCategoriesBar() {
-            let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-            let cats = (db[restaurant] && db[restaurant].categories) ? db[restaurant].categories : ["وجبات", "مشروبات", "مقبلات", "حلويات"];
+            let cats = (restData && restData.categories) ? restData.categories : ["مشروبات / Drinks", "أكلات / Foods"];
             let container = document.getElementById('categoriesRowContainer');
             
-            let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">الكل</button>`;
+            let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">${translations[currentLang].all_cat}</button>`;
             cats.forEach(c => {
                 html += `<button class="cat-btn ${selectedCategory === c ? 'active' : ''}" onclick="filterCategory('${c}', this)">${c}</button>`;
             });
@@ -481,8 +529,7 @@
         }
 
         function loadMenu() {
-            let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-            let items = (db[restaurant] && db[restaurant].items) ? db[restaurant].items : [];
+            let items = (restData && restData.items) ? restData.items : [];
 
             if (selectedCategory !== 'All') {
                 items = items.filter(i => i.category === selectedCategory);
@@ -502,12 +549,12 @@
                         </div>
                         <div class="menu-footer">
                             <div class="menu-price">
-                                ${item.discount ? `<span style="text-decoration: line-through; color: var(--gray); font-size: 10px; display:block;">${item.price} ج.م</span>` : ''}
-                                ${finalPrice} ج.م
+                                ${item.discount ? `<span style="text-decoration: line-through; color: var(--gray); font-size: 10px; display:block;">${item.price}</span>` : ''}
+                                ${finalPrice} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}
                             </div>
                             <div id="btn-container-${item.id}">
                                 ${qty === 0 ? 
-                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)">إضافة</button>` :
+                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>` :
                                     `<div class="qty-controls">
                                         <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
                                         <span class="qty-num">${qty}</span>
@@ -543,8 +590,8 @@
                 let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
                 let finalTotal = subtotal + serviceFee;
 
-                document.getElementById('cartBreakdown').innerText = isOnline ? `المجموع: ${subtotal} + توصيل: 40 ج.م` : `المجموع: ${subtotal} + خدمة صالة 10%`;
-                document.getElementById('cartTotal').innerText = `${finalTotal} ج.م`;
+                document.getElementById('cartBreakdown').innerText = isOnline ? `${currentLang === 'ar' ? 'المجموع' : 'Subtotal'}: ${subtotal} + ${currentLang === 'ar' ? 'توصيل' : 'Delivery'}: 40` : `${currentLang === 'ar' ? 'المجموع' : 'Subtotal'}: ${subtotal} + ${currentLang === 'ar' ? 'خدمة صالة' : 'Service'}`;
+                document.getElementById('cartTotal').innerText = `${finalTotal} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`;
             } else {
                 document.getElementById('cartBar').classList.add('hidden');
             }
@@ -564,32 +611,39 @@
                 id: Math.floor(100000 + Math.random() * 900000),
                 client: currentUser,
                 type: orderType,
-                table: isOnline ? 'أونلاين (دليفري)' : table,
+                table: isOnline ? (currentLang === 'ar' ? 'أونلاين (دليفري)' : 'Online (Delivery)') : table,
                 items: itemsArray,
                 subtotal, serviceFee, total: finalTotal,
-                time: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}),
+                time: new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {hour: '2-digit', minute:'2-digit'}),
                 date: new Date().toISOString().split('T')[0],
-                status: 'قيد التحضير'
+                status: currentLang === 'ar' ? 'قيد التحضير' : 'Preparing'
             };
 
             orders.push(newOrder);
             localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
 
-            showCustomAlert('تم إرسال طلبك بنجاح!');
+            showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح!' : 'Order submitted successfully!');
             cart = {};
             updateCartBar();
             loadMenu();
             updateLiveTracker();
         }
 
+        function showCustomAlert(msg) {
+            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
+
         setInterval(updateLiveTracker, 2000);
         window.onload = function() {
-            loadCategoriesBar();
-            loadMenu();
+            changeLanguage(currentLang);
         };
     </script>
     <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-    تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
+        تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
     </div>
 </body>
 </html>
