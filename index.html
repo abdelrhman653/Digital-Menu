@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v5/dist/tesseract.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --primary: #FF4757;
@@ -213,7 +218,7 @@
             </div>
 
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;" data-i18n="label_store_name">اسم النشاط أو كود الدخول:</label>
-            <input type="text" id="authRestaurantName" placeholder="مثال: my_store">
+            <input type="text" id="authRestaurantName" placeholder="مثال: mystore">
 
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;" data-i18n="label_phone">رقم التليفون:</label>
             <input type="tel" id="authPhoneNumber" placeholder="مثال: 01012345678">
@@ -340,12 +345,28 @@
     </div>
 
     <script>
+        // إعدادات فايربيس السحابية (استبدلها ببيانات مشروعك الخاص لتعمل من أي مكان)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForDemoPurposes12345",
+            authDomain: "my-app-database.firebaseapp.com",
+            projectId: "my-app-database",
+            storageBucket: "my-app-database.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const dbCloud = firebase.firestore();
+
         let currentRestaurant = localStorage.getItem('current_restaurant');
         let currentLang = localStorage.getItem('app_lang') || 'ar';
         let uploadedImageBase64 = "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
         let uploadedLogoBase64 = "";
         let aiMenuImageFile = null;
         let defaultCategories = ["مشروبات / Drinks", "أكلات / Foods", "حلويات / Desserts"];
+        let currentStoreData = { phone: '', primaryColor: '#FF4757', logo: '', categories: [...defaultCategories], items: [] };
 
         const translations = {
             ar: {
@@ -448,19 +469,36 @@
             renderCategoriesManagement();
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             changeLanguage(currentLang);
             if (currentRestaurant) {
+                await fetchStoreDataFromCloud();
                 showDashboard();
             }
         }
 
-        function getAllRestaurants() {
-            return JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+        async function fetchStoreDataFromCloud() {
+            if (!currentRestaurant) return;
+            try {
+                let docRef = dbCloud.collection("restaurants").doc(currentRestaurant);
+                let doc = await docRef.get();
+                if (doc.exists) {
+                    currentStoreData = doc.data();
+                    if (!currentStoreData.categories) currentStoreData.categories = [...defaultCategories];
+                    if (!currentStoreData.items) currentStoreData.items = [];
+                }
+            } catch(e) {
+                console.log("Cloud fetch error:", e);
+            }
         }
 
-        function saveAllRestaurants(db) {
-            localStorage.setItem('all_restaurants_db', JSON.stringify(db));
+        async function saveStoreDataToCloud() {
+            if (!currentRestaurant) return;
+            try {
+                await dbCloud.collection("restaurants").doc(currentRestaurant).set(currentStoreData, { merge: true });
+            } catch(e) {
+                console.log("Cloud save error:", e);
+            }
         }
 
         function applyThemeColor(color) {
@@ -469,7 +507,7 @@
             document.documentElement.style.setProperty('--primary-gradient', `linear-gradient(135deg, ${color}cc 0%, ${color} 100%)`);
         }
 
-        function handleRegister() {
+        async function handleRegister() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
 
@@ -478,30 +516,35 @@
                 return;
             }
 
-            let db = getAllRestaurants();
-            if (db[nameInput]) {
-                showCustomAlert(currentLang === 'ar' ? 'هذا النشاط مسجل مسبقاً! سجل دخولك مباشرة.' : 'This store is already registered! Please login directly.');
-                return;
+            try {
+                let docRef = dbCloud.collection("restaurants").doc(nameInput);
+                let doc = await docRef.get();
+                if (doc.exists) {
+                    showCustomAlert(currentLang === 'ar' ? 'هذا النشاط مسجل مسبقاً! سجل دخولك مباشرة.' : 'This store is already registered! Please login directly.');
+                    return;
+                }
+
+                currentStoreData = {
+                    phone: phoneInput,
+                    primaryColor: '#FF4757',
+                    logo: '',
+                    categories: [...defaultCategories],
+                    items: []
+                };
+
+                await docRef.set(currentStoreData);
+
+                currentRestaurant = nameInput;
+                localStorage.setItem('current_restaurant', currentRestaurant);
+                
+                showCustomAlert(currentLang === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!');
+                showDashboard();
+            } catch(e) {
+                showCustomAlert(currentLang === 'ar' ? 'خطأ في الاتصال بالسيرفر السحابي.' : 'Cloud connection error.');
             }
-
-            db[nameInput] = {
-                phone: phoneInput,
-                primaryColor: '#FF4757',
-                logo: '',
-                categories: [...defaultCategories],
-                items: []
-            };
-            saveAllRestaurants(db);
-
-            currentRestaurant = nameInput;
-            localStorage.setItem('current_restaurant', currentRestaurant);
-            localStorage.setItem('current_phone', phoneInput);
-            
-            showCustomAlert(currentLang === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!');
-            showDashboard();
         }
 
-        function handleLogin() {
+        async function handleLogin() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
 
@@ -510,20 +553,26 @@
                 return;
             }
 
-            let db = getAllRestaurants();
-            if (!db[nameInput]) {
-                showCustomAlert(currentLang === 'ar' ? 'هذا النشاط غير موجود! أنشئ حساباً جديداً.' : 'Store not found! Create a new account.');
-                return;
-            }
-            if (db[nameInput].phone !== phoneInput) {
-                showCustomAlert(currentLang === 'ar' ? 'رقم التليفون غير صحيح!' : 'Incorrect phone number!');
-                return;
-            }
+            try {
+                let docRef = dbCloud.collection("restaurants").doc(nameInput);
+                let doc = await docRef.get();
+                if (!doc.exists) {
+                    showCustomAlert(currentLang === 'ar' ? 'هذا النشاط غير موجود! أنشئ حساباً جديداً.' : 'Store not found! Create a new account.');
+                    return;
+                }
+                let data = doc.data();
+                if (data.phone !== phoneInput) {
+                    showCustomAlert(currentLang === 'ar' ? 'رقم التليفون غير صحيح!' : 'Incorrect phone number!');
+                    return;
+                }
 
-            currentRestaurant = nameInput;
-            localStorage.setItem('current_restaurant', currentRestaurant);
-            localStorage.setItem('current_phone', phoneInput);
-            showDashboard();
+                currentRestaurant = nameInput;
+                currentStoreData = data;
+                localStorage.setItem('current_restaurant', currentRestaurant);
+                showDashboard();
+            } catch(e) {
+                showCustomAlert(currentLang === 'ar' ? 'خطأ في الاتصال بالسيرفر السحابي.' : 'Cloud connection error.');
+            }
         }
 
         function handleLogoUpload(event) {
@@ -535,19 +584,16 @@
             reader.readAsDataURL(file);
         }
 
-        function updateRestaurantIdentity() {
+        async function updateRestaurantIdentity() {
             let newColor = document.getElementById('adminPrimaryColor').value;
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                db[currentRestaurant].primaryColor = newColor;
-                if (uploadedLogoBase64) {
-                    db[currentRestaurant].logo = uploadedLogoBase64;
-                }
-                saveAllRestaurants(db);
-                applyThemeColor(newColor);
-                loadLogoOnHeader(db[currentRestaurant].logo);
-                showCustomAlert(currentLang === 'ar' ? 'تم تحديث إعدادات الهوية واللون بنجاح!' : 'Identity settings updated successfully!');
+            currentStoreData.primaryColor = newColor;
+            if (uploadedLogoBase64) {
+                currentStoreData.logo = uploadedLogoBase64;
             }
+            await saveStoreDataToCloud();
+            applyThemeColor(newColor);
+            loadLogoOnHeader(currentStoreData.logo);
+            showCustomAlert(currentLang === 'ar' ? 'تم تحديث إعدادات الهوية واللون بنجاح!' : 'Identity settings updated successfully!');
         }
 
         function loadLogoOnHeader(logoUrl) {
@@ -562,24 +608,20 @@
 
         function logout() {
             localStorage.removeItem('current_restaurant');
-            localStorage.removeItem('current_phone');
             currentRestaurant = null;
             document.getElementById('authSection').style.display = 'block';
             document.getElementById('dashboardSection').style.display = 'none';
         }
 
-        function showDashboard() {
+        async function showDashboard() {
+            await fetchStoreDataFromCloud();
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
             document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
 
-            let db = getAllRestaurants();
-            let brandColor = '#FF4757';
-            let logoUrl = '';
-            if (db[currentRestaurant]) {
-                if (db[currentRestaurant].primaryColor) brandColor = db[currentRestaurant].primaryColor;
-                if (db[currentRestaurant].logo) logoUrl = db[currentRestaurant].logo;
-            }
+            let brandColor = currentStoreData.primaryColor || '#FF4757';
+            let logoUrl = currentStoreData.logo || '';
+            
             document.getElementById('adminPrimaryColor').value = brandColor;
             applyThemeColor(brandColor);
             loadLogoOnHeader(logoUrl);
@@ -595,22 +637,13 @@
         }
 
         function getCategories() {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                if (!db[currentRestaurant].categories) {
-                    db[currentRestaurant].categories = [...defaultCategories];
-                }
-                return db[currentRestaurant].categories;
-            }
-            return [...defaultCategories];
+            if (!currentStoreData.categories) currentStoreData.categories = [...defaultCategories];
+            return currentStoreData.categories;
         }
 
-        function saveCategories(cats) {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                db[currentRestaurant].categories = cats;
-                saveAllRestaurants(db);
-            }
+        async function saveCategories(cats) {
+            currentStoreData.categories = cats;
+            await saveStoreDataToCloud();
         }
 
         function updateCategoryDropdown() {
@@ -640,7 +673,7 @@
             container.innerHTML = html;
         }
 
-        function addNewCategoryToList() {
+        async function addNewCategoryToList() {
             let customInput = document.getElementById('customCategoryInput');
             let val = customInput.value.trim();
             if (!val) {
@@ -650,7 +683,7 @@
             let cats = getCategories();
             if (!cats.includes(val)) {
                 cats.push(val);
-                saveCategories(cats);
+                await saveCategories(cats);
                 updateCategoryDropdown();
                 renderCategoriesManagement();
                 document.getElementById('newItemCategory').value = val;
@@ -661,10 +694,10 @@
             }
         }
 
-        function deleteCategory(catName) {
+        async function deleteCategory(catName) {
             let cats = getCategories();
             cats = cats.filter(c => c !== catName);
-            saveCategories(cats);
+            await saveCategories(cats);
             updateCategoryDropdown();
             renderCategoriesManagement();
             showCustomAlert(currentLang === 'ar' ? 'تم حذف التصنيف بنجاح.' : 'Category deleted successfully.');
@@ -693,7 +726,6 @@
             return 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500';
         }
 
-        // دعم القراءة الذكية للغتين العربية والإنجليزية معاً
         async function importBilingualMenuOCR(replaceExisting = false) {
             if (!aiMenuImageFile) {
                 showCustomAlert(currentLang === 'ar' ? 'الرجاء اختيار صورة المنيو أولاً!' : 'Please select menu image first!');
@@ -707,7 +739,6 @@
             statusDiv.innerText = currentLang === 'ar' ? "جاري تحليل النصوص (عربي / إنجليزي)..." : "Analyzing texts (Arabic / English)...";
 
             try {
-                // Tesseract يدعم اللغتين معاً بوضع ara+eng
                 let result = await Tesseract.recognize(
                     aiMenuImageFile,
                     'ara+eng', 
@@ -731,19 +762,12 @@
 
                 lines.forEach((line, index) => {
                     let cleanLine = line.toLowerCase();
-                    
-                    if (cleanLine.includes('menu') || cleanLine.includes('قائمة') || cleanLine.length < 2) {
-                        return;
-                    }
-
+                    if (cleanLine.includes('menu') || cleanLine.includes('قائمة') || cleanLine.length < 2) return;
                     let hasNumbers = /\d/.test(line);
                     
-                    // إذا كان السطر لا يحتوي على أرقام وغالباً عنوان تصنيف (عربي أو إنجليزي)
                     if (!hasNumbers && line.length >= 2 && line.length < 30) {
                         currentCategory = line;
-                        if (!categories.includes(currentCategory)) {
-                            categories.push(currentCategory);
-                        }
+                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
                         return;
                     }
 
@@ -769,8 +793,8 @@
                     }
                 });
 
-                saveCategories(categories);
-                saveItems(currentItems);
+                await saveCategories(categories);
+                await saveItems(currentItems);
                 updateCategoryDropdown();
                 renderCategoriesManagement();
                 renderItems();
@@ -790,22 +814,16 @@
         }
 
         function getItems() {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                return db[currentRestaurant].items || [];
-            }
-            return [];
+            if (!currentStoreData.items) currentStoreData.items = [];
+            return currentStoreData.items;
         }
 
-        function saveItems(items) {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                db[currentRestaurant].items = items;
-                saveAllRestaurants(db);
-            }
+        async function saveItems(items) {
+            currentStoreData.items = items;
+            await saveStoreDataToCloud();
         }
 
-        function saveItemAction() {
+        async function saveItemAction() {
             let editId = document.getElementById('editItemId').value;
             let name = document.getElementById('newItemName').value.trim();
             let category = document.getElementById('newItemCategory').value;
@@ -842,7 +860,7 @@
                 showCustomAlert(currentLang === 'ar' ? 'تم إضافة الصنف للمنيو بنجاح!' : 'Item added successfully!');
             }
 
-            saveItems(items);
+            await saveItems(items);
             resetItemForm();
             renderItems();
         }
@@ -879,9 +897,9 @@
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
-        function deleteItem(id) {
+        async function deleteItem(id) {
             let items = getItems().filter(i => i.id !== id);
-            saveItems(items);
+            await saveItems(items);
             renderItems();
         }
 
