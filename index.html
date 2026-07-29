@@ -242,7 +242,7 @@
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو بالذكاء الاصطناعي (Gemini AI)
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">قم بإدخال مفتاح Gemini API الخاص بك وارفع صورة المنيو، وسيقوم الذكاء الاصطناعي بتحليلها واستخراج كافة الأصناف والأسعار بدقة مذهلة.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">قم بإدخال مفتاح Gemini API الخاص بك وارفع صورة المنيو، وسيقوم الذكاء الاصطناعي بتحليلها واستخراج كافة الأصناف والأسعار وتوليد صور لها بدقة مذهلة.</p>
                 
                 <label style="font-size: 13px;">مفتاح Gemini API Key:</label>
                 <input type="password" id="geminiApiKeyInput" placeholder="أدخل مفتاح Gemini API هنا (AIza...)" style="margin-bottom: 10px;">
@@ -456,7 +456,7 @@
         function showDashboard() {
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('headerRestaurantTitle',).innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
+            document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
 
             let db = getAllRestaurants();
             let brandColor = '#FF4757';
@@ -568,7 +568,6 @@
             document.getElementById('aiFileNameDisplay').innerText = file.name;
         }
 
-        // تحويل الصورة إلى Base64
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -578,7 +577,9 @@
             });
         }
 
-        // دالة الاتصال بـ Gemini API مباشرة لتحليل صورة المنيو واستخراج الأصناف بدقة ذكية
+        // ==============================================================
+        // التعديل الخاص بطلبك: استخراج الأصناف وإنشاء صورة حقيقية لكل صنف
+        // ==============================================================
         async function importMenuWithGeminiAI(replaceExisting = false) {
             let apiKey = document.getElementById('geminiApiKeyInput').value.trim();
             if (!apiKey) {
@@ -593,15 +594,16 @@
             localStorage.setItem('gemini_api_key', apiKey);
             let btn = document.getElementById('parseAiBtn');
             let statusDiv = document.getElementById('aiProgressStatus');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري تحليل المنيو بواسطة Gemini AI...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري تحليل المنيو وتوليد الصور...`;
             btn.disabled = true;
-            statusDiv.innerText = "جاري إرسال الصورة إلى نموذج Gemini للذكاء الاصطناعي...";
+            statusDiv.innerText = "جاري قراءة المنيو وتوليد صور الأكلات بالذكاء الاصطناعي (قد يستغرق بعض الوقت)...";
 
             try {
                 let base64Data = await fileToBase64(aiMenuImageFile);
                 let mimeType = aiMenuImageFile.type || "image/jpeg";
 
-                let promptText = "Analyze this restaurant menu image carefully. Extract all menu items, their categories, and their prices. Return ONLY a valid JSON array of objects with keys: name (string), category (string), price (number). Do not include any markdown backticks like ```json, just return the raw JSON array string.";
+                // تعديل أمر الذكاء الاصطناعي لكي يقوم بوصف الصورة لكي نولدها
+                let promptText = "Analyze this restaurant menu image carefully. Extract all menu items, their categories, and their prices. For each item, also provide a highly descriptive English prompt (e.g., 'delicious pepperoni pizza, high quality food photography') that can be used to generate a realistic image of that food. Return ONLY a valid JSON array of objects with keys: name (string), category (string), price (number), imagePrompt (string). Do not include any markdown backticks like ```json, just return the raw JSON array string.";
 
                 let requestBody = {
                     contents: [
@@ -619,7 +621,7 @@
                     ]
                 };
 
-                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                let response = await fetch(`[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
@@ -631,18 +633,9 @@
                 }
 
                 let aiResponseText = data.candidates[0].content.parts[0].text;
-                // Clean markdown code blocks if any
                 aiResponseText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
                 
                 let parsedItems = JSON.parse(aiResponseText);
-
-                let sampleImages = [
-                    "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500",
-                    "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500",
-                    "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500",
-                    "https://images.unsplash.com/photo-1544025162-d76694265947?w=500",
-                    "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500"
-                ];
 
                 let currentItems = replaceExisting ? [] : getItems();
                 let categories = getCategories();
@@ -653,13 +646,19 @@
                         if (!categories.includes(cat)) {
                             categories.push(cat);
                         }
+                        
+                        // استخدام خدمة توليد الصور المجانية Pollinations AI بناءً على الوصف الذي قدمه Gemini
+                        let generatedImageUrl = item.imagePrompt 
+                            ? `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){encodeURIComponent(item.imagePrompt + ' delicious realistic food photography')}?width=500&height=500&nologo=true` 
+                            : "[https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500](https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500)"; // صورة افتراضية للطوارئ
+
                         currentItems.push({
                             id: Date.now() + index + Math.random(),
                             name: item.name,
                             category: cat,
                             price: Number(item.price),
                             discount: 0,
-                            img: sampleImages[index % sampleImages.length]
+                            img: generatedImageUrl
                         });
                     }
                 });
@@ -673,7 +672,7 @@
                 statusDiv.innerText = "";
                 btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل وإضافة الأصناف بـ Gemini ➕`;
                 btn.disabled = false;
-                showCustomAlert(`✨ تم استخراج وإضافة عدد (${parsedItems.length}) صنفاً بنجاح تام عبر ذكاء Gemini الاصطناعي!`);
+                showCustomAlert(`✨ تم استخراج عدد (${parsedItems.length}) صنفاً وتوليد صور حقيقية لها بنجاح!`);
 
             } catch (err) {
                 console.error(err);
@@ -683,6 +682,7 @@
                 showCustomAlert('حدث خطأ أثناء التواصل مع نموذج Gemini API. تأكد من صحة المفتاح وجودة الصورة.');
             }
         }
+        // ==============================================================
 
         function getItems() {
             let db = getAllRestaurants();
@@ -769,7 +769,7 @@
             document.getElementById('newItemPrice').value = '';
             document.getElementById('newItemDiscount').value = '';
             document.getElementById('fileNameDisplay').innerText = 'اضغط لاختيار صورة الصنف';
-            uploadedImageBase64 = "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500";
+            uploadedImageBase64 = "[https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500](https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500)";
 
             document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> إضافة صنف جديد للقائمة`;
             document.getElementById('saveItemBtn').innerHTML = `<i class="fa-solid fa-rocket"></i> إضافة الصنف للمنيو`;
@@ -983,4 +983,3 @@
     </div>
 </body>
 </html>
-
