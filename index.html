@@ -203,7 +203,7 @@
         <div class="card" style="text-align: right;">
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="font-size: 20px;"><i class="fa-solid fa-store" style="color: var(--primary);"></i> Abdelrhman Mohamed - بوابة إدارة الأنشطة</h2>
-                <p style="color: var(--gray); font-size: 13px; margin-top: 8px;">سجل دخولك لإدارة المنيو والأصناف بكل سهولة.</p>
+                <p style="color: var(--gray); font-size: 13px; margin-top: 8px;">سجل دخولك لإدارة المنيو والأصناف بكل سهولة (عربي / إنجليزي).</p>
             </div>
 
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;">اسم النشاط أو كود الدخول:</label>
@@ -233,60 +233,66 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم إعدادات البراند واللوجو -->
+            <!-- إعدادات الهوية واللغة -->
             <div class="card">
-                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-palette" style="color: var(--primary);"></i> إعدادات الهوية واللوجو</h3>
+                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-palette" style="color: var(--primary);"></i> إعدادات الهوية ولغة العرض</h3>
                 
-                <label>لوجو المكان (يظهر في جميع الصفحات):</label>
+                <label>لغة المنيو الافتراضية:</label>
+                <select id="adminStoreLang" onchange="updateStoreLanguageSetting()">
+                    <option value="ar">العربية (Arabic)</option>
+                    <option value="en">الإنجليزية (English)</option>
+                </select>
+
+                <label>لوجو المكان:</label>
                 <div class="file-upload-box" onclick="document.getElementById('logoFile').click()">
                     <i class="fa-solid fa-image" style="font-size: 24px; color: var(--primary); margin-bottom: 5px;"></i>
                     <div id="logoFileNameDisplay" style="font-size: 13px; color: var(--gray);">اضغط لاختيار صورة اللوجو</div>
                 </div>
                 <input type="file" id="logoFile" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
 
-                <label style="margin-top: 10px; display: block;">اختر لون البراند الأساسي:</label>
+                <label style="margin-top: 10px; display: block;">لون البراند الأساسي:</label>
                 <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
                     <input type="color" id="adminPrimaryColor" value="#FF4757" style="width: 70px; height: 45px; padding: 0; cursor: pointer; margin: 0;">
                     <button class="btn" style="width: auto; padding: 10px 20px; margin: 0;" onclick="updateRestaurantIdentity()"><i class="fa-solid fa-check"></i> حفظ الإعدادات</button>
                 </div>
             </div>
 
-            <!-- قسم استيراد المنيو الذكي -->
+            <!-- استيراد المنيو الذكي (عربي + إنجليزي) -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (قراءة عربية دقيقة)
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (عربي / إنجليزي OCR)
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو، وسيقوم النظام بالتعرف على التصنيفات وتوزيع الأصناف تحتها مباشرة.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو (سواء كانت باللغة العربية أو الإنجليزية)، وسيقوم الذكاء الاصطناعي بقراءة التصنيفات والأصناف تلقائياً.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
-                    <div id="aiFileNameDisplay" style="font-size: 13px; color: var(--gray);">اضغط لاختيار صورة المنيو من جهازك</div>
+                    <div id="aiFileNameDisplay" style="font-size: 13px; color: var(--gray);">اضغط لاختيار صورة المنيو (صورة / PDF مكتوب)</div>
                 </div>
                 <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
                 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importArabicMenuOCR(false)"><i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕</button>
-                    <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importArabicMenuOCR(true)"><i class="fa-solid fa-rotate"></i> استبدال 🔄</button>
+                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importBilingualMenuOCR(false)"><i class="fa-solid fa-brain"></i> قراءة المنيو (عربي/إنجليزي) ➕</button>
+                    <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importBilingualMenuOCR(true)"><i class="fa-solid fa-rotate"></i> استبدال 🔄</button>
                 </div>
                 <div id="aiProgressStatus" style="font-size: 12px; color: var(--secondary); margin-top: 10px; text-align: center;"></div>
             </div>
 
-            <!-- قسم إضافة أو تعديل صنف -->
+            <!-- إضافة أو تعديل صنف -->
             <div class="card">
                 <h3 id="formTitle" style="margin-bottom: 15px;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> إضافة صنف جديد للقائمة</h3>
                 <input type="hidden" id="editItemId" value="">
                 
-                <label>اسم الصنف:</label>
-                <input type="text" id="newItemName" placeholder="مثال: عصير ليمون، بيتزا...">
+                <label>اسم الصنف (عربي أو إنجليزي):</label>
+                <input type="text" id="newItemName" placeholder="مثال: Burger / برجر">
                 
                 <label>التصنيف:</label>
                 <div style="display: flex; gap: 8px; margin-bottom: 15px;">
                     <select id="newItemCategory" style="margin-bottom: 0; flex: 2;"></select>
-                    <input type="text" id="customCategoryInput" placeholder="أو تصنيف جديد..." style="margin-bottom: 0; flex: 2;">
+                    <input type="text" id="customCategoryInput" placeholder="تصنيف جديد / New Category..." style="margin-bottom: 0; flex: 2;">
                     <button class="btn" style="flex: 1; padding: 0; font-size: 13px;" onclick="addNewCategoryToList()">إضافة</button>
                 </div>
 
-                <label>السعر (ج.م):</label>
+                <label>السعر:</label>
                 <input type="number" id="newItemPrice" placeholder="50">
 
                 <label>قيمة الخصم - اختياري:</label>
@@ -332,7 +338,7 @@
         let uploadedImageBase64 = "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
         let uploadedLogoBase64 = "";
         let aiMenuImageFile = null;
-        let defaultCategories = ["مشروبات", "أكلات", "حلويات", "أنواع العسل"];
+        let defaultCategories = ["مشروبات / Drinks", "أكلات / Meals", "حلويات / Desserts"];
 
         window.onload = function() {
             if (currentRestaurant) {
@@ -371,7 +377,8 @@
 
             db[nameInput] = {
                 phone: phoneInput,
-                primaryColor: '#FFB300',
+                primaryColor: '#FF4757',
+                lang: 'ar',
                 logo: '',
                 categories: [...defaultCategories],
                 items: []
@@ -420,18 +427,29 @@
             reader.readAsDataURL(file);
         }
 
+        function updateStoreLanguageSetting() {
+            let lang = document.getElementById('adminStoreLang').value;
+            let db = getAllRestaurants();
+            if (db[currentRestaurant]) {
+                db[currentRestaurant].lang = lang;
+                saveAllRestaurants(db);
+            }
+        }
+
         function updateRestaurantIdentity() {
             let newColor = document.getElementById('adminPrimaryColor').value;
+            let lang = document.getElementById('adminStoreLang').value;
             let db = getAllRestaurants();
             if (db[currentRestaurant]) {
                 db[currentRestaurant].primaryColor = newColor;
+                db[currentRestaurant].lang = lang;
                 if (uploadedLogoBase64) {
                     db[currentRestaurant].logo = uploadedLogoBase64;
                 }
                 saveAllRestaurants(db);
                 applyThemeColor(newColor);
                 loadLogoOnHeader(db[currentRestaurant].logo);
-                showCustomAlert('تم تحديث إعدادات الهوية واللون بنجاح!');
+                showCustomAlert('تم تحديث إعدادات الهوية واللغة بنجاح!');
             }
         }
 
@@ -459,13 +477,16 @@
             document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
 
             let db = getAllRestaurants();
-            let brandColor = '#FFB300';
+            let brandColor = '#FF4757';
             let logoUrl = '';
+            let storeLang = 'ar';
             if (db[currentRestaurant]) {
                 if (db[currentRestaurant].primaryColor) brandColor = db[currentRestaurant].primaryColor;
                 if (db[currentRestaurant].logo) logoUrl = db[currentRestaurant].logo;
+                if (db[currentRestaurant].lang) storeLang = db[currentRestaurant].lang;
             }
             document.getElementById('adminPrimaryColor').value = brandColor;
+            document.getElementById('adminStoreLang').value = storeLang;
             applyThemeColor(brandColor);
             loadLogoOnHeader(logoUrl);
 
@@ -573,12 +594,13 @@
 
         function getSmartFoodImage(itemName) {
             let name = itemName.toLowerCase();
-            if (name.includes('عصير') || name.includes('مشروب') || name.includes('ليمون') || name.includes('برتقال')) return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=500';
-            if (name.includes('بيتزا') || name.includes('برجر') || name.includes('أكلات')) return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500';
+            if (name.includes('juice') || name.includes('coffee') || name.includes('عصير') || name.includes('مشروب')) return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=500';
+            if (name.includes('pizza') || name.includes('burger') || name.includes('meal') || name.includes('بيتزا') || name.includes('برجر')) return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500';
             return 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500';
         }
 
-        async function importArabicMenuOCR(replaceExisting = false) {
+        // قراءة المنيو بالذكاء الاصطناعي (يدعم اللغتين العربية والإنجليزية)
+        async function importBilingualMenuOCR(replaceExisting = false) {
             if (!aiMenuImageFile) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
                 return;
@@ -586,14 +608,15 @@
 
             let btn = document.getElementById('parseAiBtn');
             let statusDiv = document.getElementById('aiProgressStatus');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو (AR/EN)...`;
             btn.disabled = true;
-            statusDiv.innerText = "جاري تحليل نصوص المنيو وتصنيفاتها...";
+            statusDiv.innerText = "جاري تحليل نصوص المنيو باللغتين العربية والإنجليزية...";
 
             try {
+                // نطلب من تيسيركت قراءة اللغتين معا (العربية والإنجليزية)
                 let result = await Tesseract.recognize(
                     aiMenuImageFile,
-                    'ara', 
+                    'ara+eng', 
                     { 
                         logger: m => {
                             if (m.status === 'recognizing text') {
@@ -609,19 +632,20 @@
                 
                 let currentItems = replaceExisting ? [] : getItems();
                 let categories = getCategories();
-                let currentCategory = "مشروبات";
+                let currentCategory = "General / عامة";
                 let addedCount = 0;
 
                 lines.forEach((line, index) => {
                     let cleanLine = line.toLowerCase();
                     
-                    if (cleanLine.includes('قائمة') || cleanLine.includes('متجر') || cleanLine.length < 2) {
+                    if (cleanLine.includes('menu') || cleanLine.includes('قائمة') || cleanLine.length < 2) {
                         return;
                     }
 
                     let hasNumbers = /\d/.test(line);
                     
-                    if (!hasNumbers && line.length >= 2 && line.length < 20) {
+                    // إذا لم تحتوي السطر على أرقام وكانت قصيرة فهي غالباً تصنيف (Category)
+                    if (!hasNumbers && line.length >= 2 && line.length < 30) {
                         currentCategory = line;
                         if (!categories.includes(currentCategory)) {
                             categories.push(currentCategory);
@@ -629,17 +653,16 @@
                         return;
                     }
 
-                    let priceMatch = line.match(/(\d+)/g);
+                    // استخراج الأرقام (الأسعار) من السطر
+                    let priceMatch = line.match(/(\d+[\.\d]*)/g);
                     if (priceMatch && priceMatch.length > 0) {
-                        let price = parseInt(priceMatch[priceMatch.length - 1]);
-                        let name = line.replace(/(\d+)/g, '')
-                                       .replace(/ريال/g, '')
-                                       .replace(/ج.م/g, '')
-                                       .replace(/جنيه/g, '')
+                        let price = parseFloat(priceMatch[priceMatch.length - 1]);
+                        let name = line.replace(/(\d+[\.\d]*)/g, '')
+                                       .replace(/ريال|ج.م|جنيه|egp|sar|\$|LE/gi, '')
                                        .replace(/[\~\-\.\,\*\+\/]/g, '')
                                        .trim();
 
-                        if (name.length >= 2 && price > 0 && price < 100000) {
+                        if (name.length >= 2 && price > 0 && price < 1000000) {
                             addedCount++;
                             currentItems.push({
                                 id: Date.now() + index + Math.random(),
@@ -660,16 +683,16 @@
                 renderItems();
 
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة المنيو (عربي/إنجليزي) ➕`;
                 btn.disabled = false;
-                showCustomAlert(`✨ تم استيراد أصناف المنيو وتوزيعها على التصنيفات (${addedCount} صنف) بنجاح!`);
+                showCustomAlert(`✨ تم استيراد أصناف المنيو وتصنيفاتها بنجاح (${addedCount} صنف)!`);
 
             } catch (err) {
                 console.error(err);
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة المنيو (عربي/إنجليزي) ➕`;
                 btn.disabled = false;
-                showCustomAlert('حدث خطأ أثناء تحليل الصورة. حاول مرة أخرى.');
+                showCustomAlert('حدث خطأ أثناء تحليل الصورة. تأكد من وضوحها وحاول مرة أخرى.');
             }
         }
 
@@ -789,7 +812,7 @@
                             <div>
                                 <div style="font-weight: 700; font-size: 14px;">${item.name} <span style="font-size: 11px; color: var(--primary);">(${item.category})</span></div>
                                 <div style="color: var(--secondary); font-size: 13px; font-weight: 600;">
-                                    ${finalPrice} ج.م ${item.discount ? `<span style="color: var(--primary); font-size: 11px;">(خصم ${item.discount})</span>` : ''}
+                                    ${finalPrice} ${item.discount ? `<span style="color: var(--primary); font-size: 11px;">(خصم ${item.discount})</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -814,9 +837,9 @@
                 let box = document.createElement('div');
                 box.className = 'qr-box';
                 box.innerHTML = `
-                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">طاولة ${i}</div>
+                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">طاولة / Table ${i}</div>
                     <div class="qr-img-container" id="qrcode-${i}"></div>
-                    <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> فتح الرابط</a>
+                    <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> فتح الرابط / Open</a>
                 `;
                 container.appendChild(box);
 
