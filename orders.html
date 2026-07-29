@@ -332,7 +332,6 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        // تطبيق لون البراند المخصص لهذا المطعم
         let customColor = localStorage.getItem(`primary_color_${restaurant}`) || '#FF4757';
         document.documentElement.style.setProperty('--primary', customColor);
 
@@ -392,19 +391,34 @@
 
             let html = '';
             myOrders.slice().reverse().forEach(ord => {
-                let itemsStr = ord.items.map(i => `${i.name} (x${i.qty})`).join('، ');
+                // تفصيل الأصناف والأسعار لكل صنف داخل الطلب في سجل الطلبات
+                let itemsDetailsHtml = '';
+                ord.items.forEach(i => {
+                    itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
+                        <span>${i.name} (x${i.qty})</span>
+                        <span style="color: var(--secondary);">${i.price * i.qty} ج.م</span>
+                    </div>`;
+                });
+
+                let serviceLabel = ord.type === 'صالة' ? 'خدمة صالة' : 'خدمة التوصيل';
                 let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
                 let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : ``;
 
                 html += `
                     <div class="history-item-row">
-                        <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 5px;">
-                            <span>طلب #${ord.id}</span>
+                        <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 8px;">
+                            <span>طلب #${ord.id} (${ord.type})</span>
                             <span>${ord.date} - ${ord.time}</span>
                         </div>
-                        <div style="font-weight: 600; margin-bottom: 5px; font-size: 12px;">${itemsStr}</div>
+                        <div style="border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 6px;">
+                            ${itemsDetailsHtml}
+                        </div>
+                        <div style="font-size: 11px; color: var(--gray); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                            <span>المجموع الفرعي: ${ord.subtotal || (ord.total - ord.serviceFee)} ج.م</span>
+                            <span>${serviceLabel}: ${ord.serviceFee} ج.م</span>
+                        </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
-                            <span style="color: var(--secondary); font-weight: 700;">الإجمالي: ${ord.total} ج.م</span>
+                            <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">الإجمالي النهائي: ${ord.total} ج.م</span>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${ord.status}</span>
                                 ${cancelBtnHtml}
@@ -574,8 +588,8 @@
             loadMenu();
         };
     </script>
-        <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
+    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
     تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-        </div>
+    </div>
 </body>
 </html>
