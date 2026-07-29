@@ -6,6 +6,11 @@
     <title>المنيو والطلب</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --primary: #FF4757;
@@ -242,7 +247,6 @@
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -259,9 +263,9 @@
     <div id="authModal">
         <div class="auth-box">
             <h3 id="authModalTitle">تسجيل بيانات العميل للطلب</h3>
-            <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد / John)">
+            <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد)">
             <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الموبايل (مثال: 01012345678)">
-            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل / Address">
+            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل">
             <button class="auth-btn" onclick="saveClientData()"><span data-i18n="btn_save_client">حفظ ودخول للمنيو</span> <i class="fa-solid fa-arrow-left"></i></button>
         </div>
     </div>
@@ -318,6 +322,20 @@
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForDemoPurposes12345",
+            authDomain: "my-app-database.firebaseapp.com",
+            projectId: "my-app-database",
+            storageBucket: "my-app-database.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const dbCloud = firebase.firestore();
+
         let currentLang = localStorage.getItem('app_lang') || 'ar';
         const translations = {
             ar: {
@@ -378,18 +396,6 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-        let restData = db[restaurant] || {};
-
-        let customColor = restData.primaryColor || '#FF4757';
-        document.documentElement.style.setProperty('--primary', customColor);
-
-        if (restData.logo) {
-            let logoImg = document.getElementById('headerLogoImg');
-            logoImg.src = restData.logo;
-            logoImg.style.display = 'block';
-        }
-
         const table = urlParams.get('table');
         const isOnline = !table || table === 'online';
         let orderType = isOnline ? (currentLang === 'ar' ? 'أونلاين' : 'Online') : (currentLang === 'ar' ? 'صالة' : 'Dine-In');
@@ -404,6 +410,38 @@
         let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`));
         if (currentUser) {
             document.getElementById('authModal').classList.add('hidden');
+        }
+
+        let restData = { categories: [], items: [] };
+        let cachedOrders = [];
+
+        async function initOrdersPage() {
+            try {
+                let doc = await dbCloud.collection("restaurants").doc(restaurant).get();
+                if (doc.exists) {
+                    restData = doc.data();
+                    if (restData.primaryColor) document.documentElement.style.setProperty('--primary', restData.primaryColor);
+                    if (restData.logo) {
+                        let logoImg = document.getElementById('headerLogoImg');
+                        logoImg.src = restData.logo;
+                        logoImg.style.display = 'block';
+                    }
+                }
+            } catch(e) {}
+
+            dbCloud.collection("restaurants").doc(restaurant).collection("orders")
+                .onSnapshot(snapshot => {
+                    cachedOrders = [];
+                    snapshot.forEach(doc => {
+                        cachedOrders.push(doc.data());
+                    });
+                    if(currentUser) {
+                        updateLiveTracker();
+                    }
+                });
+
+            loadCategoriesBar();
+            loadMenu();
         }
 
         function saveClientData() {
@@ -436,7 +474,7 @@
 
         function renderClientHistory() {
             let container = document.getElementById('historyListContainer');
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let orders = cachedOrders;
             let myOrders = orders.filter(o => currentUser && o.client && o.client.phone === currentUser.phone);
 
             if (myOrders.length === 0) {
@@ -455,7 +493,7 @@
                 });
 
                 let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
-                let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">${currentLang === 'ar' ? 'إلغاء الطلب' : 'Cancel'}</button>` : ``;
+                let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder('${ord.docId}')" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">${currentLang === 'ar' ? 'إلغاء الطلب' : 'Cancel'}</button>` : ``;
 
                 html += `
                     <div class="history-item-row">
@@ -479,22 +517,21 @@
             container.innerHTML = html;
         }
 
-        function cancelOrder(orderId) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let order = orders.find(o => o.id === orderId);
-            if (order) {
-                order.status = currentLang === 'ar' ? 'ملغي' : 'Cancelled';
-                localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
+        async function cancelOrder(docId) {
+            try {
+                await dbCloud.collection("restaurants").doc(restaurant).collection("orders").doc(docId).update({
+                    status: currentLang === 'ar' ? 'ملغي' : 'Cancelled'
+                });
                 renderClientHistory();
                 updateLiveTracker();
                 showCustomAlert(currentLang === 'ar' ? 'تم إلغاء الطلب بنجاح.' : 'Order cancelled successfully.');
-            }
+            } catch(e) {}
         }
 
         function updateLiveTracker() {
             let trackerContainer = document.getElementById('liveOrderTrackerContainer');
             if (!currentUser) { trackerContainer.innerHTML = ''; return; }
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let orders = cachedOrders;
             let activeOrder = orders.slice().reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي' && o.status !== 'Delivered' && o.status !== 'Cancelled');
 
             if (!activeOrder) { trackerContainer.innerHTML = ''; return; }
@@ -597,7 +634,7 @@
             }
         }
 
-        function submitOrder() {
+        async function submitOrder() {
             if (!currentUser) { document.getElementById('authModal').classList.remove('hidden'); return; }
             let itemsArray = Object.values(cart);
             if (itemsArray.length === 0) return;
@@ -606,9 +643,12 @@
             let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
             let finalTotal = subtotal + serviceFee;
 
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let orderIdNum = Math.floor(100000 + Math.random() * 900000);
+            let orderDocRef = dbCloud.collection("restaurants").doc(restaurant).collection("orders").doc();
+
             let newOrder = {
-                id: Math.floor(100000 + Math.random() * 900000),
+                docId: orderDocRef.id,
+                id: orderIdNum,
                 client: currentUser,
                 type: orderType,
                 table: isOnline ? (currentLang === 'ar' ? 'أونلاين (دليفري)' : 'Online (Delivery)') : table,
@@ -619,14 +659,16 @@
                 status: currentLang === 'ar' ? 'قيد التحضير' : 'Preparing'
             };
 
-            orders.push(newOrder);
-            localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
-
-            showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح!' : 'Order submitted successfully!');
-            cart = {};
-            updateCartBar();
-            loadMenu();
-            updateLiveTracker();
+            try {
+                await orderDocRef.set(newOrder);
+                showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح!' : 'Order submitted successfully!');
+                cart = {};
+                updateCartBar();
+                loadMenu();
+                updateLiveTracker();
+            } catch(e) {
+                showCustomAlert(currentLang === 'ar' ? 'خطأ في إرسال الطلب، حاول مرة أخرى.' : 'Error submitting order.');
+            }
         }
 
         function showCustomAlert(msg) {
@@ -637,9 +679,9 @@
             document.getElementById('customAlertModal').classList.add('hidden');
         }
 
-        setInterval(updateLiveTracker, 2000);
         window.onload = function() {
             changeLanguage(currentLang);
+            initOrdersPage();
         };
     </script>
     <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
