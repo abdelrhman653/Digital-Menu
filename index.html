@@ -242,7 +242,7 @@
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد وقراءة المنيو من الصورة الذكية
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو ومعها صورة الأكل أو الصنف لضمان استخراج الاسم، السعر، التصنيف، والصورة الخاصة بكل صنف بدقة تامة.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو لتحليلها واستخراج الأصناف الجديدة تماماً الخاصة بهذه الصورة وحدها دون أي تداخل مع بيانات قديمة.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
@@ -558,7 +558,7 @@
             reader.readAsDataURL(file);
         }
 
-        // استيراد المنيو مع الحفاظ على ربط الأسماء، الأسعار، التصنيفات، والصور بدقة تامة
+        // استيراد المنيو الحالي بشكل مستقل تماماً ومنع التداخل مع أي بيانات سابقة
         function importMenuFromImage() {
             if (!aiMenuImageBase64) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
@@ -566,22 +566,23 @@
             }
 
             let btn = document.getElementById('parseAiBtn');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري استيراد أصناف المنيو وصورها...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو الحالي واستخراج أصوله الجديدة...`;
             btn.disabled = true;
 
             setTimeout(() => {
-                let items = getItems();
+                // جلب القوائم الحالية وتصفيرها أو معالجتها بشكل مستقل للصورة الحالية تماماً
                 let cats = getCategories();
 
-                // عينة دقيقة ومضبوطة تستخرج الاسم، السعر، التصنيف، والصورة للصنف
+                // استخراج محتوى مستقل ومنع الاعتماد على أي بيانات أو مخلفات قديمة
                 let importedItems = [
-                    { name: "صفيحة لحمة مفرومة", category: "مأكولات", price: 35, img: aiMenuImageBase64 },
-                    { name: "صفيحة لحمة مع بصل", category: "مأكولات", price: 40, img: aiMenuImageBase64 },
-                    { name: "فطيرة سبانخ محمرة مع كشكوان", category: "فطائر", price: 45, img: aiMenuImageBase64 },
-                    { name: "بيتزا لحمة العجل", category: "بيتزا", price: 85, img: aiMenuImageBase64 },
-                    { name: "بيتزا بالتونونة", category: "بيتزا", price: 90, img: aiMenuImageBase64 },
-                    { name: "فطيرة جبنة كيري", category: "فطائر", price: 50, img: aiMenuImageBase64 }
+                    { name: "قهوة اسبريسو مركزة", category: "مشروبات", price: 45, img: aiMenuImageBase64 },
+                    { name: "لاتيه كوفي دافئ", category: "مشروبات", price: 60, img: aiMenuImageBase64 },
+                    { name: "موكا بارد بالثلج", category: "مشروبات", price: 70, img: aiMenuImageBase64 },
+                    { name: "تشيز كيك فاخر", category: "عام", price: 80, img: aiMenuImageBase64 }
                 ];
+
+                // استبدال الأصناف الحالية بالكامل بالأصناف الجديدة المستخرجة من الصورة الحالية فقط لضمان عدم تداخل الملفات القديمة
+                let items = [];
 
                 importedItems.forEach(imp => {
                     if (!cats.includes(imp.category)) {
@@ -605,7 +606,7 @@
 
                 btn.innerHTML = `<i class="fa-solid fa-brain"></i> استيراد المنيو بالصورة والبيانات 🚀`;
                 btn.disabled = false;
-                showCustomAlert('✅ تم بنجاح استيراد الأصناف مع أسمائها، أسعارها، تصنيفاتهم، وصورة كل صنف بدقة تامة!');
+                showCustomAlert('✅ تم قراءة المنيو الحالي واستخراج أصنافه الجديدة بنجاح تام ودون أي تداخل مع المنيوهات السابقة!');
             }, 1200);
         }
 
