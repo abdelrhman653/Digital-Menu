@@ -6,6 +6,11 @@
     <title>شاشة المطبخ وإدارة الطلبات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --primary: #FF4757;
@@ -200,34 +205,11 @@
         .status-btn.delivery-status { background: #9b59b6; color: #fff; border-color: #9b59b6; }
         .status-btn.success-status { background: var(--secondary); color: #000; border-color: var(--secondary); }
 
-        .disabled-card { opacity: 0.85; }
-
-        #customAlertModal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13, 17, 23, 0.85);
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .custom-alert-box {
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            width: 100%;
-            max-width: 340px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- عنصر الصوت المدمج للتنبيه -->
     <audio id="orderAlertSound" preload="auto">
         <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
     </audio>
@@ -261,12 +243,12 @@
         </div>
 
         <div class="filter-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="بحث برقم الطلب، اسم العميل، أو الـ table..." oninput="loadKitchenOrders()">
+            <input type="text" id="searchInput" class="search-input" placeholder="بحث برقم الطلب، اسم العميل، أو الـ table..." oninput="renderKitchenOrdersUI()">
             <div class="filter-row">
-                <select id="dateFilter" class="filter-select" onchange="loadKitchenOrders()">
+                <select id="dateFilter" class="filter-select" onchange="renderKitchenOrdersUI()">
                     <option value="all" data-i18n="all_dates">كل التواريخ</option>
                 </select>
-                <select id="timeFilter" class="filter-select" onchange="loadKitchenOrders()">
+                <select id="timeFilter" class="filter-select" onchange="renderKitchenOrdersUI()">
                     <option value="all" data-i18n="all_times">كل الأوقات</option>
                 </select>
             </div>
@@ -276,6 +258,20 @@
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForDemoPurposes12345",
+            authDomain: "my-app-database.firebaseapp.com",
+            projectId: "my-app-database",
+            storageBucket: "my-app-database.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const dbCloud = firebase.firestore();
+
         let currentLang = localStorage.getItem('app_lang') || 'ar';
         const translations = {
             ar: {
@@ -295,7 +291,6 @@
                 status_ready: "جاهز",
                 status_delivery: "دليفري",
                 status_success: "تسليم",
-                subtotal: "المجموع الفرعي",
                 total_final: "الإجمالي النهائي"
             },
             en: {
@@ -315,7 +310,6 @@
                 status_ready: "Ready",
                 status_delivery: "Delivery",
                 status_success: "Deliver",
-                subtotal: "Subtotal",
                 total_final: "Final Total"
             }
         };
@@ -334,57 +328,69 @@
                 }
             });
             document.getElementById('searchInput').placeholder = translations[lang].search_placeholder;
-            loadKitchenOrders();
+            renderKitchenOrdersUI();
         }
 
         const urlParams = new URLSearchParams(window.location.search);
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-        let restData = db[restaurant] || {};
-
-        let customColor = restData.primaryColor || '#FF4757';
-        document.documentElement.style.setProperty('--primary', customColor);
-
-        if (restData.logo) {
-            let logoImg = document.getElementById('headerLogoImg');
-            logoImg.src = restData.logo;
-            logoImg.style.display = 'block';
-        }
-
+        let restData = {};
+        let cachedOrders = [];
         let currentTab = 'active';
-        let lastKnownOrderCount = -1; // متغير لحفظ عدد الطلبات السابقة لمقارنتها واكتشاف الجديد
+        let lastKnownOrderCount = -1;
+
+        async function initKitchen() {
+            try {
+                let doc = await dbCloud.collection("restaurants").doc(restaurant).get();
+                if (doc.exists) {
+                    restData = doc.data();
+                    if (restData.primaryColor) document.documentElement.style.setProperty('--primary', restData.primaryColor);
+                    if (restData.logo) {
+                        let logoImg = document.getElementById('headerLogoImg');
+                        logoImg.src = restData.logo;
+                        logoImg.style.display = 'block';
+                    }
+                }
+            } catch(e) {}
+
+            // استماع سحابي مباشر للطلبات لتحديثها لحظياً من أي مكان
+            dbCloud.collection("restaurants").doc(restaurant).collection("orders")
+                .onSnapshot(snapshot => {
+                    cachedOrders = [];
+                    snapshot.forEach(doc => {
+                        cachedOrders.push(doc.data());
+                    });
+                    renderKitchenOrdersUI();
+                });
+        }
 
         function playOrderSound() {
             let sound = document.getElementById('orderAlertSound');
             if (sound) {
                 sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio play blocked by browser policy until user interaction"));
+                sound.play().catch(e => {});
             }
         }
 
         function switchTab(tab) {
             currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                b.className = 'tab-btn';
-            });
+            document.querySelectorAll('.tab-btn').forEach(b => { b.className = 'tab-btn'; });
             let btn = document.getElementById(tab === 'active' ? 'tabActive' : (tab === 'delivered' ? 'tabDelivered' : 'tabCancelled'));
             btn.classList.add('active');
             if(tab === 'delivered') btn.classList.add('delivered');
             if(tab === 'cancelled') btn.classList.add('cancelled');
-            loadKitchenOrders();
+            renderKitchenOrdersUI();
         }
 
-        function loadKitchenOrders() {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+        function renderKitchenOrdersUI() {
+            let orders = cachedOrders;
             let container = document.getElementById('kitchenOrdersList');
             
-            // فحص إذا كان هناك طلبات جديدة تم إضافتها لتشغيل التنبيه الصوتي
             let activeListForCheck = orders.filter(o => o.status !== 'تم التسليم' && o.status !== 'ملغي' && o.status !== 'Delivered' && o.status !== 'Cancelled');
             
             if (lastKnownOrderCount !== -1 && activeListForCheck.length > lastKnownOrderCount) {
-                playOrderSound(); // تشغيل الصوت عند زيادة عدد الطلبات النشطة
+                playOrderSound();
             }
             lastKnownOrderCount = activeListForCheck.length;
 
@@ -443,15 +449,14 @@
                 let clientName = order.client ? order.client.name : 'Client';
                 let clientPhone = order.client ? order.client.phone : '';
                 let clientAddress = order.client ? order.client.address : '';
-
                 let isLocked = (order.status === 'تم التسليم' || order.status === 'ملغي' || order.status === 'Delivered' || order.status === 'Cancelled');
-                let serviceText = order.type === 'صالة' || order.type === 'Dine-In' ? `${currentLang === 'ar' ? 'خدمة صالة' : 'Dine-In Fee'}: ${order.serviceFee} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}` : `${currentLang === 'ar' ? 'توصيل' : 'Delivery'}: ${order.serviceFee} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`;
+                let serviceText = `${order.type} (${order.table})`;
 
                 html += `
                     <div class="order-card">
                         <div class="order-header">
-                            <div class="table-title">${currentLang === 'ar' ? 'طلب' : 'Order'} ${order.type} (${order.table})</div>
-                            <div class="order-meta"><i class="fa-regular fa-calendar"></i> ${order.date} | <i class="fa-regular fa-clock"></i> ${order.time} | #${order.id}</div>
+                            <div class="table-title">${currentLang === 'ar' ? 'طلب' : 'Order'} ${serviceText}</div>
+                            <div class="order-meta"><i class="fa-regular fa-calendar"></i> ${order.date} | #${order.id}</div>
                         </div>
                         
                         <div class="customer-info">
@@ -459,21 +464,18 @@
                             ${clientAddress ? `<div style="margin-top: 4px; color: var(--gray);"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${clientAddress}</div>` : ''}
                         </div>
 
-                        <div>
-                            ${itemsHtml}
-                            <div style="font-size: 11px; color: var(--gray); margin-top: 6px;">${serviceText}</div>
-                        </div>
+                        <div>${itemsHtml}</div>
 
                         <div class="order-footer">
                             <div class="total-price">${translations[currentLang].total_final}: ${order.total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</div>
-                            <button class="print-btn" onclick="printReceipt(${order.id})"><i class="fa-solid fa-print"></i> ${translations[currentLang].print_receipt}</button>
+                            <button class="print-btn" onclick='printReceipt(${JSON.stringify(order)})'><i class="fa-solid fa-print"></i> ${translations[currentLang].print_receipt}</button>
                         </div>
 
                         <div class="status-actions">
-                            <button class="status-btn" onclick="updateStatus(${order.id}, 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_prep}</button>
-                            <button class="status-btn" onclick="updateStatus(${order.id}, 'جاهز')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_ready}</button>
-                            <button class="status-btn" onclick="updateStatus(${order.id}, 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_delivery}</button>
-                            <button class="status-btn" onclick="updateStatus(${order.id}, 'تم التسليم')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_success}</button>
+                            <button class="status-btn" onclick="updateStatus('${order.docId}', 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_prep}</button>
+                            <button class="status-btn" onclick="updateStatus('${order.docId}', 'جاهز')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_ready}</button>
+                            <button class="status-btn" onclick="updateStatus('${order.docId}', 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_delivery}</button>
+                            <button class="status-btn" onclick="updateStatus('${order.docId}', 'تم التسليم')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_success}</button>
                         </div>
                     </div>
                 `;
@@ -502,21 +504,13 @@
             timeSelect.value = currentSelectedTime;
         }
 
-        function updateStatus(orderId, newStatus) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let order = orders.find(o => o.id === orderId);
-            if (order) {
-                order.status = newStatus;
-                localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
-                loadKitchenOrders();
-            }
+        async function updateStatus(docId, newStatus) {
+            try {
+                await dbCloud.collection("restaurants").doc(restaurant).collection("orders").doc(docId).update({ status: newStatus });
+            } catch(e) {}
         }
 
-        function printReceipt(orderId) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let order = orders.find(o => o.id === orderId);
-            if (!order) return;
-
+        function printReceipt(order) {
             let logoImgHtml = restData.logo ? `<img src="${restData.logo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; display: block; margin: 0 auto 5px auto;">` : '';
 
             let printContent = `
@@ -530,7 +524,6 @@
                         table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 11px; text-align: ${currentLang === 'ar' ? 'right' : 'left'}; }
                         th, td { padding: 3px; border-bottom: 1px solid #ddd; }
                         .total { font-weight: bold; text-align: ${currentLang === 'ar' ? 'left' : 'right'}; font-size: 12px; margin-top: 8px; }
-                        .footer-dev { font-size: 9px; margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; }
                     </style>
                 </head>
                 <body>
@@ -540,16 +533,13 @@
                         Order: #${order.id}<br>
                         Date: ${order.date} - ${order.time}<br>
                         Client: ${order.client.name} (${order.client.phone})<br>
-                        Address: ${order.client.address || '-'}<br>
                         Type: ${order.type} (${order.table})
                     </div>
                     <table>
                         <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
                         ${order.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price * i.qty}</td></tr>`).join('')}
                     </table>
-                    <div style="text-align: ${currentLang === 'ar' ? 'right' : 'left'}; font-size: 11px;">Service Fee: ${order.serviceFee}</div>
                     <div class="total">Total: ${order.total}</div>
-                    <div class="footer-dev">Abdelrhman Mohamed</div>
                 </body>
                 </html>
             `;
@@ -559,26 +549,17 @@
                 iframe = document.createElement('iframe');
                 iframe.id = 'printIframe';
                 iframe.style.position = 'absolute';
-                iframe.style.width = '0px';
-                iframe.style.height = '0px';
-                iframe.style.border = 'none';
+                iframe.style.width = '0px'; iframe.style.height = '0px'; iframe.style.border = 'none';
                 document.body.appendChild(iframe);
             }
-
             let doc = iframe.contentWindow.document;
-            doc.open();
-            doc.write(printContent);
-            doc.close();
-
-            iframe.contentWindow.focus();
-            setTimeout(() => {
-                iframe.contentWindow.print();
-            }, 500);
+            doc.open(); doc.write(printContent); doc.close();
+            setTimeout(() => { iframe.contentWindow.print(); }, 500);
         }
 
-        setInterval(loadKitchenOrders, 2000);
         window.onload = function() {
             changeLanguage(currentLang);
+            initKitchen();
         };
     </script>
     <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
