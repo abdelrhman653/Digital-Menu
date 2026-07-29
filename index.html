@@ -237,16 +237,13 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم إدخال مفتاح Gemini API والتحليل الذكي الحقيقي بالذكاء الاصطناعي -->
+            <!-- قسم استيراد المنيو بالذكاء الاصطناعي (مفتاح API مثبت مسبقاً) -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو بالذكاء الاصطناعي (Gemini AI)
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">قم بإدخال مفتاح Gemini API الخاص بك وارفع صورة المنيو، وسيقوم الذكاء الاصطناعي بتحليلها واستخراج كافة الأصناف والأسعار وتوليد صور لها بدقة مذهلة.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">قم برفع صورة المنيو، وسيقوم الذكاء الاصطناعي بتحليلها واستخراج كافة الأصناف والأسعار وتوليد صور لها بدقة مذهلة.</p>
                 
-                <label style="font-size: 13px;">مفتاح Gemini API Key:</label>
-                <input type="password" id="geminiApiKeyInput" placeholder="أدخل مفتاح Gemini API هنا (AIza...)" style="margin-bottom: 10px;">
-
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
                     <div id="aiFileNameDisplay" style="font-size: 13px; color: var(--gray);">اضغط لاختيار صورة المنيو من جهازك</div>
@@ -328,6 +325,9 @@
     </div>
 
     <script>
+        // مفتاح Gemini API المضمن مباشرة في الكود
+        const GEMINI_API_KEY = "AQ.Ab8RN6I6brlDleij2RzDmr-cMLwPkuXfpe-mgzXc-uAlTCfR0A";
+
         let currentRestaurant = localStorage.getItem('current_restaurant');
         let uploadedImageBase64 = "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500";
         let aiMenuImageFile = null;
@@ -336,10 +336,6 @@
         window.onload = function() {
             if (currentRestaurant) {
                 showDashboard();
-            }
-            let savedApiKey = localStorage.getItem('gemini_api_key');
-            if (savedApiKey) {
-                document.getElementById('geminiApiKeyInput').value = savedApiKey;
             }
         }
 
@@ -577,32 +573,22 @@
             });
         }
 
-        // ==============================================================
-        // التعديل الخاص بطلبك: استخراج الأصناف وإنشاء صورة حقيقية لكل صنف
-        // ==============================================================
         async function importMenuWithGeminiAI(replaceExisting = false) {
-            let apiKey = document.getElementById('geminiApiKeyInput').value.trim();
-            if (!apiKey) {
-                showCustomAlert('الرجاء إدخال مفتاح Gemini API Key أولاً!');
-                return;
-            }
             if (!aiMenuImageFile) {
-                showCustomAlert('الرجاء اختيار صورة المنيو!');
+                showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
                 return;
             }
 
-            localStorage.setItem('gemini_api_key', apiKey);
             let btn = document.getElementById('parseAiBtn');
             let statusDiv = document.getElementById('aiProgressStatus');
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري تحليل المنيو وتوليد الصور...`;
             btn.disabled = true;
-            statusDiv.innerText = "جاري قراءة المنيو وتوليد صور الأكلات بالذكاء الاصطناعي (قد يستغرق بعض الوقت)...";
+            statusDiv.innerText = "جاري قراءة المنيو وتوليد صور الأكلات بالذكاء الاصطناعي...";
 
             try {
                 let base64Data = await fileToBase64(aiMenuImageFile);
                 let mimeType = aiMenuImageFile.type || "image/jpeg";
 
-                // تعديل أمر الذكاء الاصطناعي لكي يقوم بوصف الصورة لكي نولدها
                 let promptText = "Analyze this restaurant menu image carefully. Extract all menu items, their categories, and their prices. For each item, also provide a highly descriptive English prompt (e.g., 'delicious pepperoni pizza, high quality food photography') that can be used to generate a realistic image of that food. Return ONLY a valid JSON array of objects with keys: name (string), category (string), price (number), imagePrompt (string). Do not include any markdown backticks like ```json, just return the raw JSON array string.";
 
                 let requestBody = {
@@ -621,9 +607,12 @@
                     ]
                 };
 
-                let response = await fetch(`[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){apiKey}`, {
+                let response = await fetch("[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': GEMINI_API_KEY
+                    },
                     body: JSON.stringify(requestBody)
                 });
 
@@ -647,10 +636,9 @@
                             categories.push(cat);
                         }
                         
-                        // استخدام خدمة توليد الصور المجانية Pollinations AI بناءً على الوصف الذي قدمه Gemini
                         let generatedImageUrl = item.imagePrompt 
                             ? `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){encodeURIComponent(item.imagePrompt + ' delicious realistic food photography')}?width=500&height=500&nologo=true` 
-                            : "[https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500](https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500)"; // صورة افتراضية للطوارئ
+                            : "[https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500](https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500)";
 
                         currentItems.push({
                             id: Date.now() + index + Math.random(),
@@ -679,10 +667,9 @@
                 statusDiv.innerText = "";
                 btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل وإضافة الأصناف بـ Gemini ➕`;
                 btn.disabled = false;
-                showCustomAlert('حدث خطأ أثناء التواصل مع نموذج Gemini API. تأكد من صحة المفتاح وجودة الصورة.');
+                showCustomAlert('حدث خطأ أثناء الاتصال بـ Gemini API. تأكد من جودة الصورة أو الاتصال بالإنترنت.');
             }
         }
-        // ==============================================================
 
         function getItems() {
             let db = getAllRestaurants();
