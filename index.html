@@ -708,7 +708,7 @@
                 <head>
                     <title>طباعة QR كود - table ${tableNum}</title>
                     <style>
-                        body { text-align: center; font-family: 'Cairo', sans-serif; padding-top: 30px; }
+                        body { text-align: center; font-family: 'Cairo', sans-serif; padding-top: 30px; margin: 0; }
                         .qr-print-card {
                             display: inline-block;
                             border: 3px solid #333;
@@ -736,7 +736,11 @@
                         window.onload = function() {
                             setTimeout(function() {
                                 window.print();
-                            }, 300);
+                                // إغلاق النافذة أو العودة تلقائياً بعد الطباعة لتفادي بقاء صفحة فارغة
+                                window.onafterprint = function() {
+                                    window.close();
+                                };
+                            }, 400);
                         }
                     <\/script>
                 </body>
