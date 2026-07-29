@@ -207,7 +207,7 @@
         <div class="card" style="text-align: right;">
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="font-size: 20px;"><i class="fa-solid fa-store" style="color: var(--primary);"></i> بوابة إدارة الأنشطة والمطاعم</h2>
-                <p style="color: var(--gray); font-size: 13px; margin-top: 8px;">سجل دخولك أو أنشئ حساباً واختار ألوان البراند الخاص بك.</p>
+                <p style="color: var(--gray); font-size: 13px; margin-top: 8px;">سجل دخولك أو أنشئ حساباً لإدارة المنيو الخاص بك.</p>
             </div>
 
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;">اسم النشاط أو كود الدخول:</label>
@@ -215,12 +215,6 @@
 
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;">رقم التليفون:</label>
             <input type="tel" id="authPhoneNumber" placeholder="مثال: 01012345678">
-
-            <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;">لون البراند الأساسي (Primary Color):</label>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
-                <input type="color" id="authPrimaryColor" value="#FF4757" style="width: 60px; height: 45px; padding: 0; cursor: pointer; margin: 0;">
-                <span style="font-size: 12px; color: var(--gray);">اختر لون زر التشغيل والأزرار الرئيسية في منيو مطعمك.</span>
-            </div>
 
             <button class="btn" style="margin-top: 10px;" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</button>
             <button class="btn btn-secondary-action" onclick="handleRegister()"><i class="fa-solid fa-user-plus"></i> إنشاء حساب جديد</button>
@@ -239,6 +233,16 @@
             <div class="card" style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <a href="#" id="onlineMenuBtn" target="_blank" class="btn" style="flex: 1;"><i class="fa-solid fa-utensils"></i> المنيو أونلاين</a>
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
+            </div>
+
+            <!-- قسم إعدادات البراند واللون من جوه لوحة الإدارة -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-palette" style="color: var(--primary);"></i> إعدادات الهوية واللون (البراند)</h3>
+                <label>اختر لون البراند الأساسي لمطعمك:</label>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                    <input type="color" id="adminPrimaryColor" value="#FF4757" style="width: 70px; height: 45px; padding: 0; cursor: pointer; margin: 0;">
+                    <button class="btn" style="width: auto; padding: 10px 20px; margin: 0;" onclick="updateRestaurantColor()"><i class="fa-solid fa-check"></i> حفظ اللون</button>
+                </div>
             </div>
 
             <!-- قسم إضافة أو تعديل صنف -->
@@ -289,6 +293,7 @@
 
             <div class="card">
                 <h3><i class="fa-solid fa-qrcode" style="color: var(--primary);"></i> مولد QR كود للترابيزات</h3>
+                <p style="font-size: 12px; color: var(--gray); margin-top: 5px; margin-bottom: 10px;">💡 اضغط على صورة الـ QR كود مباشرة لطباعته أو تحميله كملف PDF.</p>
                 <label>عدد الترابيزات:</label>
                 <input type="number" id="tablesCountInput" value="2" min="1" oninput="generateTablesQR()">
                 <div id="qrResultsContainer" class="qr-grid"></div>
@@ -315,11 +320,16 @@
             localStorage.setItem('all_restaurants_db', JSON.stringify(db));
         }
 
+        function applyThemeColor(color) {
+            if (!color) return;
+            document.documentElement.style.setProperty('--primary', color);
+            document.documentElement.style.setProperty('--primary-gradient', `linear-gradient(135deg, ${color}cc 0%, ${color} 100%)`);
+        }
+
         function developerBypass() {
             currentRestaurant = "abdo_dev_store";
             localStorage.setItem('current_restaurant', currentRestaurant);
             localStorage.setItem('current_phone', '01000000000');
-            localStorage.setItem(`primary_color_${currentRestaurant}`, '#FF4757');
             
             let db = getAllRestaurants();
             if (!db[currentRestaurant]) {
@@ -340,7 +350,6 @@
         function handleRegister() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
-            let colorInput = document.getElementById('authPrimaryColor').value;
 
             if (!nameInput || !phoneInput) {
                 showCustomAlert('الرجاء كتابة اسم أو كود النشاط ورقم التليفون!');
@@ -355,7 +364,7 @@
 
             db[nameInput] = {
                 phone: phoneInput,
-                primaryColor: colorInput,
+                primaryColor: '#FF4757',
                 categories: [...defaultCategories],
                 items: []
             };
@@ -364,7 +373,7 @@
             currentRestaurant = nameInput;
             localStorage.setItem('current_restaurant', currentRestaurant);
             localStorage.setItem('current_phone', phoneInput);
-            localStorage.setItem(`primary_color_${currentRestaurant}`, colorInput);
+            localStorage.setItem(`primary_color_${currentRestaurant}`, '#FF4757');
             
             showCustomAlert('تم إنشاء الحساب بنجاح!');
             showDashboard();
@@ -373,7 +382,6 @@
         function handleLogin() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
-            let colorInput = document.getElementById('authPrimaryColor').value;
 
             if (!nameInput || !phoneInput) {
                 showCustomAlert('الرجاء إدخال اسم النشاط ورقم التليفون!');
@@ -390,14 +398,22 @@
                 return;
             }
 
-            db[nameInput].primaryColor = colorInput;
-            saveAllRestaurants(db);
-
             currentRestaurant = nameInput;
             localStorage.setItem('current_restaurant', currentRestaurant);
             localStorage.setItem('current_phone', phoneInput);
-            localStorage.setItem(`primary_color_${currentRestaurant}`, colorInput);
             showDashboard();
+        }
+
+        function updateRestaurantColor() {
+            let newColor = document.getElementById('adminPrimaryColor').value;
+            let db = getAllRestaurants();
+            if (db[currentRestaurant]) {
+                db[currentRestaurant].primaryColor = newColor;
+                saveAllRestaurants(db);
+                localStorage.setItem(`primary_color_${currentRestaurant}`, newColor);
+                applyThemeColor(newColor);
+                showCustomAlert('تم تحديث لون البراند بنجاح!');
+            }
         }
 
         function logout() {
@@ -412,6 +428,14 @@
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
             document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
+
+            let db = getAllRestaurants();
+            let brandColor = '#FF4757';
+            if (db[currentRestaurant] && db[currentRestaurant].primaryColor) {
+                brandColor = db[currentRestaurant].primaryColor;
+            }
+            document.getElementById('adminPrimaryColor').value = brandColor;
+            applyThemeColor(brandColor);
 
             let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             document.getElementById('onlineMenuBtn').href = `${baseUrl}orders.html?restaurant=${currentRestaurant}`;
@@ -540,7 +564,6 @@
             let items = getItems();
 
             if (editId) {
-                // تعديل صنف موجود
                 let item = items.find(i => i.id == editId);
                 if (item) {
                     item.name = name;
@@ -551,7 +574,6 @@
                 }
                 showCustomAlert('تم تعديل الصنف بنجاح!');
             } else {
-                // إضافة صنف جديد
                 let newItem = {
                     id: Date.now(),
                     name,
@@ -656,7 +678,7 @@
                 box.className = 'qr-box';
                 box.innerHTML = `
                     <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">ترابيزة ${i}</div>
-                    <div class="qr-img-container" id="qrcode-${i}"></div>
+                    <div class="qr-img-container" id="qrcode-${i}" title="اضغط للطباعة أو الحفظ كـ PDF" onclick="printQRCode(this, ${i})"></div>
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> فتح الرابط</a>
                 `;
                 container.appendChild(box);
@@ -667,6 +689,38 @@
             }
         }
 
+        // دالة الطباعة والتحفظ كـ PDF عند الضغط المباشر على صورة الـ QR
+        function printQRCode(element, tableNum) {
+            let img = element.querySelector('img');
+            let imgSrc = img ? img.src : '';
+            if (!imgSrc) return;
+
+            let printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html dir="rtl">
+                <head>
+                    <title>طباعة QR كود - ترابيزة ${tableNum}</title>
+                    <style>
+                        body { text-align: center; font-family: 'Cairo', sans-serif; padding-top: 50px; }
+                        h2 { margin-bottom: 20px; color: #333; }
+                        img { width: 250px; height: 250px; border: 2px solid #ddd; padding: 10px; border-radius: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <h2>${currentRestaurant.toUpperCase()} - ترابيزة ${tableNum}</h2>
+                    <br>
+                    <img src="${imgSrc}" />
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
         function showCustomAlert(msg) {
             document.getElementById('customAlertMessage').innerText = msg;
             document.getElementById('customAlertModal').classList.remove('hidden');
@@ -675,9 +729,8 @@
             document.getElementById('customAlertModal').classList.add('hidden');
         }
     </script>
-        <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-    تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-        </div>
+    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
+        تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
+    </div>
 </body>
 </html>
-
