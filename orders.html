@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنيو والطلب</title>
+    <title>المنيو والطلب / Menu & Ordering</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -173,45 +173,6 @@
         .qty-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 12px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
         .qty-num { font-size: 13px; font-weight: 700; min-width: 15px; text-align: center; }
 
-        .add-initial-btn {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: 700;
-        }
-
-        #historyModal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13, 17, 23, 0.95);
-            z-index: 9998;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-        }
-        .history-card-box {
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
-            width: 100%;
-            max-width: 440px;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .history-item-row {
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
-            font-size: 13px;
-        }
-
         .cart-bar {
             position: fixed;
             bottom: 0; left: 0; right: 0;
@@ -251,9 +212,7 @@
             width: 100%;
             max-width: 340px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -261,37 +220,26 @@
 
     <div id="customAlertModal" class="hidden">
         <div class="custom-alert-box">
-            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> تنبيه</h3>
-            <p id="customAlertMessage">رسالة التنبيه هنا</p>
-            <button class="auth-btn" onclick="closeCustomAlert()">حسناً</button>
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> Alert</h3>
+            <p id="customAlertMessage">Alert Message</p>
+            <button class="auth-btn" onclick="closeCustomAlert()">OK</button>
         </div>
     </div>
 
     <div id="authModal">
         <div class="auth-box">
-            <h3 id="authModalTitle">تسجيل بيانات العميل للطلب</h3>
-            <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد)">
-            <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الموبايل (مثال: 01012345678)">
-            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل">
-            <button class="auth-btn" onclick="saveClientData()">حفظ ودخول للمنيو <i class="fa-solid fa-arrow-left"></i></button>
-        </div>
-    </div>
-
-    <div id="historyModal" class="hidden">
-        <div class="history-card-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="font-size: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> سجل طلباتي السابقة</h3>
-                <button onclick="toggleHistory(false)" style="background: none; border: none; color: var(--white); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="historyListContainer"></div>
-            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;">تسجيل خروج</button>
+            <h3 id="authModalTitle">Enter Your Details / تسجيل بيانات العميل</h3>
+            <input type="text" id="clientName" class="auth-input" placeholder="Your Name / اسمك الكريم">
+            <input type="tel" id="clientPhone" class="auth-input" placeholder="Phone Number / رقم الموبايل">
+            <input type="text" id="clientAddress" class="auth-input" placeholder="Address / العنوان بالتفصيل">
+            <button class="auth-btn" onclick="saveClientData()">Continue / متابعة للمنيو <i class="fa-solid fa-arrow-left"></i></button>
         </div>
     </div>
 
     <header>
         <div class="header-brand">
-            <img id="headerLogoImg" class="header-logo" src="" alt="الشعار">
-            <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
+            <img id="headerLogoImg" class="header-logo" src="" alt="Logo">
+            <h1 id="headerRestaurantTitle">Menu</h1>
         </div>
     </header>
 
@@ -300,45 +248,48 @@
 
         <div class="top-bar">
             <div>
-                <span id="orderTypeBadge" style="font-weight: 700; font-size: 12px;">نوع الطلب: أونلاين</span>
-                <span id="tableDisplayBadge" style="color: var(--primary); font-weight: 700; font-size: 12px; margin-right: 8px;">توصيل دليفري</span>
+                <span id="orderTypeBadge" style="font-weight: 700; font-size: 12px;">Type: Online</span>
+                <span id="tableDisplayBadge" style="color: var(--primary); font-weight: 700; font-size: 12px; margin-right: 8px;">Delivery</span>
             </div>
-            <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> طلباتي</button>
+            <button class="history-btn-top" onclick="toggleHistory(true)" id="myOrdersBtnText">My Orders</button>
         </div>
 
         <div class="categories-row" id="categoriesRowContainer">
-            <button class="cat-btn active" onclick="filterCategory('الكل', this)">الكل</button>
+            <button class="cat-btn active" onclick="filterCategory('الكل', this)" id="allCatBtnText">All / الكل</button>
         </div>
 
         <div id="customerMenuGrid" class="menu-grid"></div>
     </div>
 
     <div id="cartBar" class="cart-bar hidden">
-        <div class="cart-details" id="cartBreakdown"></div>
+        <div class="cart-details" id="cartDetailsText">0 items selected</div>
         <div class="cart-main-row">
             <div>
-                <div style="font-size: 10px; color: var(--gray);">الإجمالي النهائي</div>
-                <div style="font-weight: 900; color: var(--secondary); font-size: 15px;" id="cartTotal">0.0 ج.م</div>
+                <span style="font-size: 12px; color: var(--gray);" id="totalTextLabel">Total:</span>
+                <span id="cartTotalPrice" style="font-weight: 900; font-size: 16px; color: var(--secondary);">0</span>
             </div>
-            <button class="btn-submit" onclick="submitOrder()">إرسال الطلب <i class="fa-solid fa-paper-plane"></i></button>
+            <button class="btn-submit" onclick="submitOrder()" id="submitOrderBtnText">Submit Order / إرسال الطلب</button>
         </div>
     </div>
 
     <script>
-        function showCustomAlert(msg) {
-            document.getElementById('customAlertMessage').innerText = msg;
-            document.getElementById('customAlertModal').classList.remove('hidden');
-        }
-        function closeCustomAlert() {
-            document.getElementById('customAlertModal').classList.add('hidden');
-        }
-
         const urlParams = new URLSearchParams(window.location.search);
-        const restaurant = urlParams.get('restaurant') || 'default';
-        document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
+        const restaurantName = urlParams.get('restaurant') || 'default';
+        const tableNumber = urlParams.get('table');
 
         let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-        let restData = db[restaurant] || {};
+        let restData = db[restaurantName] || {};
+        let storeLang = restData.lang || 'ar';
+
+        // ضبط اتجاه الصفحة تلقائياً حسب لغة المكان (عربي RTL أو إنجليزي LTR)
+        let htmlRoot = document.getElementById('htmlRoot');
+        if (storeLang === 'en') {
+            htmlRoot.setAttribute('dir', 'ltr');
+            htmlRoot.setAttribute('lang', 'en');
+        } else {
+            htmlRoot.setAttribute('dir', 'rtl');
+            htmlRoot.setAttribute('lang', 'ar');
+        }
 
         let customColor = restData.primaryColor || '#FF4757';
         document.documentElement.style.setProperty('--primary', customColor);
@@ -349,258 +300,215 @@
             logoImg.style.display = 'block';
         }
 
-        const table = urlParams.get('table');
-        const isOnline = !table || table === 'online';
-        let orderType = isOnline ? 'أونلاين' : 'صالة';
-        document.getElementById('orderTypeBadge').innerText = `نوع الطلب: ${orderType}`;
-        document.getElementById('tableDisplayBadge').innerText = isOnline ? 'توصيل دليفري' : `table: ${table}`;
+        let clientData = JSON.parse(localStorage.getItem(`client_${restaurantName}`)) || null;
+        let cart = {};
+        let activeCategory = 'الكل';
 
-        if (!isOnline) {
-            document.getElementById('authModalTitle').innerText = `تسجيل بيانات table ${table}`;
-            document.getElementById('clientAddress').style.display = 'none';
-        }
+        window.onload = function() {
+            if (clientData) {
+                document.getElementById('authModal').classList.add('hidden');
+            }
+            if (tableNumber) {
+                document.getElementById('orderTypeBadge').innerText = storeLang === 'en' ? `Type: Dine-in` : `نوع الطلب: صالة`;
+                document.getElementById('tableDisplayBadge').innerText = storeLang === 'en' ? `Table ${tableNumber}` : `طاولة ${tableNumber}`;
+            } else {
+                document.getElementById('orderTypeBadge').innerText = storeLang === 'en' ? `Type: Delivery` : `نوع الطلب: أونلاين`;
+                document.getElementById('tableDisplayBadge').innerText = storeLang === 'en' ? `Delivery` : `توصيل دليفري`;
+            }
 
-        let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`));
-        if (currentUser) {
-            document.getElementById('authModal').classList.add('hidden');
-        }
+            renderCategories();
+            renderMenu();
+            checkActiveOrderTracker();
+        };
 
         function saveClientData() {
             let name = document.getElementById('clientName').value.trim();
             let phone = document.getElementById('clientPhone').value.trim();
-            let address = isOnline ? document.getElementById('clientAddress').value.trim() : 'صالة table ' + table;
-            
-            if(!name || phone.length < 10 || (isOnline && !address)) {
-                showCustomAlert('الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.');
+            let address = document.getElementById('clientAddress').value.trim();
+
+            if (!name || !phone) {
+                showCustomAlert(storeLang === 'en' ? 'Please enter your name and phone number!' : 'الرجاء إدخال الاسم ورقم الموبايل!');
                 return;
             }
-            currentUser = { name, phone, address };
-            localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+
+            clientData = { name, phone, address };
+            localStorage.setItem(`client_${restaurantName}`, JSON.stringify(clientData));
             document.getElementById('authModal').classList.add('hidden');
-            loadCategoriesBar();
-            loadMenu();
-            updateLiveTracker();
         }
 
-        function logoutClient() {
-            localStorage.removeItem(`current_client_${restaurant}`);
-            location.reload();
+        function getCategories() {
+            return restData.categories || ["Drinks / مشروبات", "Meals / أكلات"];
         }
 
-        function toggleHistory(show) {
-            let modal = document.getElementById('historyModal');
-            if (show) { renderClientHistory(); modal.classList.remove('hidden'); }
-            else { modal.classList.add('hidden'); }
-        }
-
-        function renderClientHistory() {
-            let container = document.getElementById('historyListContainer');
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let myOrders = orders.filter(o => currentUser && o.client && o.client.phone === currentUser.phone);
-
-            if (myOrders.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">لا توجد طلبات سابقة برقم هاتفك.</p>`;
-                return;
-            }
-
-            let html = '';
-            myOrders.slice().reverse().forEach(ord => {
-                let itemsDetailsHtml = '';
-                ord.items.forEach(i => {
-                    itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
-                        <span>${i.name} (x${i.qty})</span>
-                        <span style="color: var(--secondary);">${i.price * i.qty} ج.م</span>
-                    </div>`;
-                });
-
-                let serviceLabel = ord.type === 'صالة' ? 'خدمة صالة' : 'خدمة التوصيل';
-                let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
-                let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : ``;
-
-                html += `
-                    <div class="history-item-row">
-                        <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 8px;">
-                            <span>طلب #${ord.id} (${ord.type})</span>
-                            <span>${ord.date} - ${ord.time}</span>
-                        </div>
-                        <div style="border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 6px;">
-                            ${itemsDetailsHtml}
-                        </div>
-                        <div style="font-size: 11px; color: var(--gray); margin-bottom: 6px; display: flex; justify-content: space-between;">
-                            <span>المجموع الفرعي: ${ord.subtotal || (ord.total - ord.serviceFee)} ج.م</span>
-                            <span>${serviceLabel}: ${ord.serviceFee} ج.م</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
-                            <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">الإجمالي النهائي: ${ord.total} ج.م</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${ord.status}</span>
-                                ${cancelBtnHtml}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-        function cancelOrder(orderId) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let order = orders.find(o => o.id === orderId);
-            if (order) {
-                order.status = 'ملغي';
-                localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
-                renderClientHistory();
-                updateLiveTracker();
-                showCustomAlert('تم إلغاء الطلب بنجاح.');
-            }
-        }
-
-        function updateLiveTracker() {
-            let trackerContainer = document.getElementById('liveOrderTrackerContainer');
-            if (!currentUser) { trackerContainer.innerHTML = ''; return; }
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let activeOrder = orders.slice().reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي');
-
-            if (!activeOrder) { trackerContainer.innerHTML = ''; return; }
-
-            trackerContainer.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> متابعة طلبك (#${activeOrder.id})</span>
-                    <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">الحالة: ${activeOrder.status}</span>
-                </div>
-            `;
-        }
-
-        let cart = {};
-        let selectedCategory = 'All';
-
-        function loadCategoriesBar() {
-            let cats = (restData && restData.categories) ? restData.categories : ["وجبات", "مشروبات", "مقبلات", "حلويات"];
+        function renderCategories() {
             let container = document.getElementById('categoriesRowContainer');
-            
-            let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">الكل</button>`;
+            let cats = getCategories();
+            let html = `<button class="cat-btn active" onclick="filterCategory('الكل', this)">${storeLang === 'en' ? 'All' : 'الكل'}</button>`;
             cats.forEach(c => {
-                html += `<button class="cat-btn ${selectedCategory === c ? 'active' : ''}" onclick="filterCategory('${c}', this)">${c}</button>`;
+                html += `<button class="cat-btn" onclick="filterCategory('${c}', this)">${c}</button>`;
             });
             container.innerHTML = html;
         }
 
         function filterCategory(cat, btn) {
-            selectedCategory = cat;
+            activeCategory = cat;
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            loadMenu();
+            renderMenu();
         }
 
-        function loadMenu() {
-            let items = (restData && restData.items) ? restData.items : [];
+        function renderMenu() {
+            let items = restData.items || [];
+            let container = document.getElementById('customerMenuGrid');
 
-            if (selectedCategory !== 'All') {
-                items = items.filter(i => i.category === selectedCategory);
+            let filtered = activeCategory === 'الكل' ? items : items.filter(i => i.category === activeCategory);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--gray); padding: 30px;">${storeLang === 'en' ? 'No items available in this category.' : 'لا توجد أصناف متاحة في هذا التصنيف.'}</p>`;
+                return;
             }
 
-            let grid = document.getElementById('customerMenuGrid');
             let html = '';
-            items.forEach(item => {
+            filtered.forEach(item => {
                 let qty = cart[item.id] ? cart[item.id].qty : 0;
                 let finalPrice = item.discount ? (item.price - item.discount) : item.price;
 
                 html += `
                     <div class="menu-card">
-                        <img src="${item.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'}" alt="${item.name}">
+                        <img src="${item.img}" alt="${item.name}">
                         <div class="menu-content">
                             <div class="menu-title">${item.name}</div>
+                            <div class="menu-price">${finalPrice} ${item.discount ? `<span style="font-size:10px; color:var(--primary); text-decoration:line-through;">${item.price}</span>` : ''}</div>
                         </div>
                         <div class="menu-footer">
-                            <div class="menu-price">
-                                ${item.discount ? `<span style="text-decoration: line-through; color: var(--gray); font-size: 10px; display:block;">${item.price} ج.م</span>` : ''}
-                                ${finalPrice} ج.م
-                            </div>
-                            <div id="btn-container-${item.id}">
-                                ${qty === 0 ? 
-                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)">إضافة</button>` :
-                                    `<div class="qty-controls">
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
-                                        <span class="qty-num">${qty}</span>
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
-                                     </div>`
-                                }
-                            </div>
+                            ${qty === 0 ? `
+                                <button class="auth-btn" style="padding: 6px 12px; font-size: 12px;" onclick="changeQty(${item.id}, 1)">${storeLang === 'en' ? 'Add +ing' : 'إضافة ➕'}</button>
+                            ` : `
+                                <div class="qty-controls">
+                                    <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                                    <span class="qty-num">${qty}</span>
+                                    <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+                                </div>
+                            `}
                         </div>
                     </div>
                 `;
             });
-            grid.innerHTML = html;
-            updateLiveTracker();
+            container.innerHTML = html;
+            updateCartBar();
         }
 
-        function changeQty(id, name, price, change) {
-            if (!cart[id]) {
-                if (change > 0) cart[id] = { id, name, price, qty: 1 };
-            } else {
-                cart[id].qty += change;
-                if (cart[id].qty <= 0) delete cart[id];
+        function changeQty(itemId, delta) {
+            let items = restData.items || [];
+            let item = items.find(i => i.id == itemId);
+            if (!item) return;
+
+            if (!cart[itemId]) {
+                cart[itemId] = { ...item, qty: 0 };
             }
-            loadMenu();
-            updateCartBar();
+
+            cart[itemId].qty += delta;
+            if (cart[itemId].qty <= 0) {
+                delete cart[itemId];
+            }
+            renderMenu();
         }
 
         function updateCartBar() {
-            let itemsArray = Object.values(cart);
-            let subtotal = itemsArray.reduce((sum, item) => sum + (item.price * item.qty), 0);
-
-            if (itemsArray.length > 0) {
-                document.getElementById('cartBar').classList.remove('hidden');
-                let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
-                let finalTotal = subtotal + serviceFee;
-
-                document.getElementById('cartBreakdown').innerText = isOnline ? `المجموع: ${subtotal} + توصيل: 40 ج.م` : `المجموع: ${subtotal} + خدمة صالة 10%`;
-                document.getElementById('cartTotal').innerText = `${finalTotal} ج.م`;
-            } else {
-                document.getElementById('cartBar').classList.add('hidden');
+            let cartBar = document.getElementById('cartBar');
+            let keys = Object.keys(cart);
+            if (keys.length === 0) {
+                cartBar.classList.add('hidden');
+                return;
             }
+
+            cartBar.classList.remove('hidden');
+            let totalCount = 0;
+            let totalPrice = 0;
+            keys.forEach(k => {
+                totalCount += cart[k].qty;
+                let itemPrice = cart[k].discount ? (cart[k].price - cart[k].discount) : cart[k].price;
+                totalPrice += itemPrice * cart[k].qty;
+            });
+
+            document.getElementById('cartDetailsText').innerText = storeLang === 'en' ? `${totalCount} items in cart` : `تم اختيار ${totalCount} صنف`;
+            document.getElementById('cartTotalPrice').innerText = totalPrice;
         }
 
         function submitOrder() {
-            if (!currentUser) { document.getElementById('authModal').classList.remove('hidden'); return; }
-            let itemsArray = Object.values(cart);
-            if (itemsArray.length === 0) return;
+            if (!clientData) {
+                document.getElementById('authModal').classList.remove('hidden');
+                return;
+            }
 
-            let subtotal = itemsArray.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
-            let finalTotal = subtotal + serviceFee;
+            let keys = Object.keys(cart);
+            if (keys.length === 0) return;
 
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let orderItems = [];
+            let totalPrice = 0;
+            keys.forEach(k => {
+                let item = cart[k];
+                let itemPrice = item.discount ? (item.price - item.discount) : item.price;
+                totalPrice += itemPrice * item.qty;
+                orderItems.push({ name: item.name, price: itemPrice, qty: item.qty });
+            });
+
+            let serviceFee = tableNumber ? 10 : 25; // رسوم خدمة أو توصيل
+            let finalTotal = totalPrice + serviceFee;
+
             let newOrder = {
-                id: Math.floor(100000 + Math.random() * 900000),
-                client: currentUser,
-                type: orderType,
-                table: isOnline ? 'أونلاين (دليفري)' : table,
-                items: itemsArray,
-                subtotal, serviceFee, total: finalTotal,
-                time: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}),
-                date: new Date().toISOString().split('T')[0],
-                status: 'قيد التحضير'
+                id: Date.now().toString().slice(-5),
+                client: clientData,
+                items: orderItems,
+                type: tableNumber ? (storeLang === 'en' ? 'Dine-in' : 'صالة') : (storeLang === 'en' ? 'Delivery' : 'توصيل'),
+                table: tableNumber ? `Table ${tableNumber}` : (storeLang === 'en' ? 'Online' : 'أونلاين'),
+                serviceFee: serviceFee,
+                total: finalTotal,
+                status: storeLang === 'en' ? 'Pending' : 'قيد التحضير',
+                date: new Date().toLocaleDateString(),
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
 
-            orders.push(newOrder);
-            localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
+            let ordersKey = `orders_${restaurantName}`;
+            let existingOrders = JSON.parse(localStorage.getItem(ordersKey)) || [];
+            existingOrders.push(newOrder);
+            localStorage.setItem(ordersKey, JSON.stringify(existingOrders));
 
-            showCustomAlert('تم إرسال طلبك بنجاح!');
             cart = {};
-            updateCartBar();
-            loadMenu();
-            updateLiveTracker();
+            renderMenu();
+            checkActiveOrderTracker();
+            showCustomAlert(storeLang === 'en' ? 'Order sent successfully! Kitchen is preparing it.' : 'تم إرسال طلبك بنجاح وجاري تحضيره في المطبخ!');
         }
 
-        setInterval(updateLiveTracker, 2000);
-        window.onload = function() {
-            loadCategoriesBar();
-            loadMenu();
-        };
+        function checkActiveOrderTracker() {
+            let ordersKey = `orders_${restaurantName}`;
+            let existingOrders = JSON.parse(localStorage.getItem(ordersKey)) || [];
+            if (!clientData) return;
+
+            let userOrders = existingOrders.filter(o => o.client && o.client.phone === clientData.phone);
+            if (userOrders.length === 0) return;
+
+            let latestOrder = userOrders[userOrders.length - 1];
+            let trackerContainer = document.getElementById('liveOrderTrackerContainer');
+
+            trackerContainer.innerHTML = `
+                <div class="live-order-tracker">
+                    <div style="font-size: 13px; font-weight: 700; display: flex; justify-content: space-between;">
+                        <span>${storeLang === 'en' ? 'Order Status #' : 'حالة الطلب رقم'} #${latestOrder.id}</span>
+                        <span style="color: var(--secondary);">${latestOrder.status}</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--gray);">${latestOrder.type} | Total: ${latestOrder.total}</div>
+                </div>
+            `;
+        }
+
+        function showCustomAlert(msg) {
+            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
     </script>
-    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-    تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-    </div>
 </body>
 </html>
