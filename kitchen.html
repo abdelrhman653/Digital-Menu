@@ -30,6 +30,8 @@
             justify-content: space-between;
             align-items: center;
         }
+        .header-brand { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 35px; height: 35px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); display: none; }
         header h1 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         #headerRestaurantTitle { color: var(--warning); font-size: 14px; }
 
@@ -234,7 +236,10 @@
     </div>
 
     <header>
-        <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> شاشة المطبخ</h1>
+        <div class="header-brand">
+            <img id="headerLogoImg" class="header-logo" src="" alt="الشعار">
+            <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> شاشة المطبخ</h1>
+        </div>
         <div id="headerRestaurantTitle">مطعمي</div>
     </header>
 
@@ -280,9 +285,17 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        // تطبيق لون البراند المخصص لهذا المطعم في شاشة المطبخ
-        let customColor = localStorage.getItem(`primary_color_${restaurant}`) || '#FF4757';
+        let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+        let restData = db[restaurant] || {};
+
+        let customColor = restData.primaryColor || '#FF4757';
         document.documentElement.style.setProperty('--primary', customColor);
+
+        if (restData.logo) {
+            let logoImg = document.getElementById('headerLogoImg');
+            logoImg.src = restData.logo;
+            logoImg.style.display = 'block';
+        }
 
         let currentTab = 'active';
 
@@ -429,20 +442,24 @@
             let order = orders.find(o => o.id === orderId);
             if (!order) return;
 
+            let logoImgHtml = restData.logo ? `<img src="${restData.logo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; display: block; margin: 0 auto 5px auto;">` : '';
+
             let printContent = `
                 <html dir="rtl">
                 <head>
                     <title>إيصال طلب #${order.id}</title>
                     <style>
-                        body { font-family: 'Cairo', sans-serif; padding: 10px; font-size: 13px; color: #000; width: 100px; margin: 0 auto; }
-                        h2 { text-align: center; margin-bottom: 5px; font-size: 15px; }
-                        .info { margin-bottom: 8px; border-bottom: 1px dashed #000; padding-bottom: 6px; font-size: 11px; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 11px; }
-                        th, td { padding: 3px; text-align: right; border-bottom: 1px solid #ddd; }
+                        body { font-family: 'Cairo', sans-serif; padding: 10px; font-size: 13px; color: #000; width: 180px; margin: 0 auto; text-align: center; }
+                        h2 { margin-bottom: 2px; font-size: 15px; }
+                        .info { margin-bottom: 8px; border-bottom: 1px dashed #000; padding-bottom: 6px; font-size: 11px; text-align: right; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 11px; text-align: right; }
+                        th, td { padding: 3px; border-bottom: 1px solid #ddd; }
                         .total { font-weight: bold; text-align: left; font-size: 12px; margin-top: 8px; }
+                        .footer-dev { font-size: 9px; margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; }
                     </style>
                 </head>
                 <body>
+                    ${logoImgHtml}
                     <h2>${restaurant.toUpperCase()}</h2>
                     <div class="info">
                         رقم الطلب: #${order.id}<br>
@@ -452,11 +469,12 @@
                         النوع: ${order.type} (${order.table})
                     </div>
                     <table>
-                        <tr><th>الصنف</th><th>الكمية</th><th>السعر</th></tr>
+                        <tr><th>الصنف</th><th>كمية</th><th>السعر</th></tr>
                         ${order.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price * i.qty} ج.م</td></tr>`).join('')}
                     </table>
-                    <div>${order.type === 'صالة' ? 'خدمة صالة' : 'خدمة التوصيل'}: ${order.serviceFee} ج.م</div>
+                    <div style="text-align: right; font-size: 11px;">${order.type === 'صالة' ? 'خدمة صالة' : 'خدمة التوصيل'}: ${order.serviceFee} ج.م</div>
                     <div class="total">الإجمالي النهائي: ${order.total} ج.م</div>
+                    <div class="footer-dev">Abdelrhman Mohamed</div>
                 </body>
                 </html>
             `;
