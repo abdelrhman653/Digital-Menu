@@ -292,9 +292,9 @@
             </div>
 
             <div class="card">
-                <h3><i class="fa-solid fa-qrcode" style="color: var(--primary);"></i> مولد QR كود للترابيزات</h3>
+                <h3><i class="fa-solid fa-qrcode" style="color: var(--primary);"></i> مولد QR كود للـ table</h3>
                 <p style="font-size: 12px; color: var(--gray); margin-top: 5px; margin-bottom: 10px;">💡 اضغط على صورة الـ QR كود مباشرة لطباعته أو تحميله كملف PDF.</p>
-                <label>عدد الترابيزات:</label>
+                <label>عدد الـ table:</label>
                 <input type="number" id="tablesCountInput" value="2" min="1" oninput="generateTablesQR()">
                 <div id="qrResultsContainer" class="qr-grid"></div>
             </div>
@@ -677,7 +677,7 @@
                 let box = document.createElement('div');
                 box.className = 'qr-box';
                 box.innerHTML = `
-                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">ترابيزة ${i}</div>
+                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">table ${i}</div>
                     <div class="qr-img-container" id="qrcode-${i}" title="اضغط للطباعة أو الحفظ كـ PDF" onclick="printQRCode(this, ${i})"></div>
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> فتح الرابط</a>
                 `;
@@ -707,7 +707,7 @@
             printWindow.document.write(`
                 <html dir="rtl">
                 <head>
-                    <title>طباعة QR كود - ترابيزة ${tableNum}</title>
+                    <title>طباعة QR كود - table ${tableNum}</title>
                     <style>
                         body { text-align: center; font-family: 'Cairo', sans-serif; padding-top: 50px; }
                         h2 { margin-bottom: 20px; color: #333; }
@@ -715,7 +715,7 @@
                     </style>
                 </head>
                 <body>
-                    <h2>${currentRestaurant.toUpperCase()} - ترابيزة ${tableNum}</h2>
+                    <h2>${currentRestaurant.toUpperCase()} - table ${tableNum}</h2>
                     <br>
                     <img src="${imgSrc}" />
                     <script>
