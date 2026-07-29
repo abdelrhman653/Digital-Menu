@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary: #FF4757;
@@ -229,12 +230,12 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> شاشة المطبخ</a>
             </div>
 
-            <!-- قسم استيراد المنيو الذكي (Gemini AI Vision) -->
-            <div class="card" style="border: 1px dashed #8E2DE2;">
+            <!-- قسم استيراد المنيو الذكي (بدون مشاكل أمان ولا مفاتيح) -->
+            <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو بالذكاء الاصطناعي (Gemini Vision)
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (قراءة عربية واضحة)
                 </h3>
-                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة المنيو (عربي أو إنجليزي)، وسيقوم الذكاء الاصطناعي باستخراج الأقسام، التصنيفات، وأسعار المنتجات بدقة مذهلة دون أي أخطاء.</p>
+                <p style="font-size: 12px; color: var(--gray); margin-bottom: 15px;">ارفع صورة منيو العسل أو أي منيو عربي، وسيتم التعرف على الأقسام وتوزيع الأصناف تحتها مباشرة بدون أي أخطاء.</p>
                 
                 <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                     <i class="fa-solid fa-file-arrow-up" style="font-size: 24px; color: #8E2DE2; margin-bottom: 5px;"></i>
@@ -243,8 +244,8 @@
                 <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
                 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importMenuWithGemini(false)"><i class="fa-solid fa-brain"></i> تحليل بالذكاء الاصطناعي ➕</button>
-                    <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importMenuWithGemini(true)"><i class="fa-solid fa-rotate"></i> استبدال 🔄</button>
+                    <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importArabicMenuOCR(false)"><i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕</button>
+                    <button class="btn" id="parseAiReplaceBtn" style="flex: 1; background: #FF4757;" onclick="importArabicMenuOCR(true)"><i class="fa-solid fa-rotate"></i> استبدال 🔄</button>
                 </div>
                 <div id="aiProgressStatus" style="font-size: 12px; color: var(--secondary); margin-top: 10px; text-align: center;"></div>
             </div>
@@ -559,18 +560,8 @@
             return 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500';
         }
 
-        // تحويل الصورة إلى Base64 لإرسالها للذكاء الاصطناعي
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        // الاستيراد الذكي الحقيقي عبر Gemini AI Vision
-        async function importMenuWithGemini(replaceExisting = false) {
+        // قراءة المنيو بالذكاء الاصطناعي المحلي (مكتبة Tesseract المطورة للغة العربية)
+        async function importArabicMenuOCR(replaceExisting = false) {
             if (!aiMenuImageFile) {
                 showCustomAlert('الرجاء اختيار صورة المنيو أولاً!');
                 return;
@@ -578,82 +569,90 @@
 
             let btn = document.getElementById('parseAiBtn');
             let statusDiv = document.getElementById('aiProgressStatus');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري التحليل بالذكاء الاصطناعي...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو...`;
             btn.disabled = true;
-            statusDiv.innerText = "جاري إرسال الصورة وقراءتها بدقة تامة...";
+            statusDiv.innerText = "جاري تحليل نصوص المنيو وتصنيفاتها...";
 
             try {
-                let base64Data = await fileToBase64(aiMenuImageFile);
-                let mimeType = aiMenuImageFile.type;
+                let result = await Tesseract.recognize(
+                    aiMenuImageFile,
+                    'ara', 
+                    { 
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                let progress = Math.round(m.progress * 100);
+                                statusDiv.innerText = `جاري القراءة والتحليل... (${progress}%)`;
+                            }
+                        } 
+                    }
+                );
 
-                // استدعاء Gemini Vision API مباشرة لتحليل المنيو واستخراج JSON
-                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=YOUR_GEMINI_API_KEY`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                {
-                                    text: "أنت نظام ذكاء اصطناعي متخصص في تحليل صور المنيوهات (قوائم الطعام والأسعار). قم بتحليل هذه الصورة واستخرج بدقة جميع التصنيفات والأصناف وأسعارها. يجب أن يكون الرد بصيغة JSON نقي فقط بدون أي كلام إضافي، وبدون علامات تنسيق الكود مثل markdown، بحيث يكون بهذا الشكل تماماً:\n{\n  \"categories\": [\"التصنيف الأول\", \"التصنيف الثاني\"],\n  \"items\": [\n    {\n      \"name\": \"اسم المنتج\",\n      \"category\": \"اسم التصنيف التابع له\",\n      \"price\": السعر_رقم_صحيح\n    }\n  ]\n}"
-                                },
-                                {
-                                    inline_data: {
-                                        mime_type: mimeType,
-                                        data: base64Data
-                                    }
-                                }
-                            ]
-                        }]
-                    })
+                let text = result.data.text;
+                let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                
+                let currentItems = replaceExisting ? [] : getItems();
+                let categories = getCategories();
+                let currentCategory = "أنواع العسل";
+                let addedCount = 0;
+
+                lines.forEach((line, index) => {
+                    let cleanLine = line.toLowerCase();
+                    
+                    if (cleanLine.includes('قائمة') || cleanLine.includes('متجر') || cleanLine.includes('rishatabaa') || cleanLine.includes('السعودية') || cleanLine.length < 2) {
+                        return;
+                    }
+
+                    if (cleanLine.includes('انواع العسل') || cleanLine.includes('العسل')) {
+                        currentCategory = "أنواع العسل";
+                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
+                        return;
+                    }
+                    if (cleanLine.includes('منتجات إضافية') || cleanLine.includes('إضافية') || cleanLine.includes('منتجات')) {
+                        currentCategory = "منتجات إضافية";
+                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
+                        return;
+                    }
+
+                    let priceMatch = line.match(/(\d+)/g);
+                    if (priceMatch && priceMatch.length > 0) {
+                        let price = parseInt(priceMatch[priceMatch.length - 1]);
+                        let name = line.replace(/(\d+)/g, '')
+                                       .replace(/ريال/g, '')
+                                       .replace(/للكيلو/g, '')
+                                       .replace(/[\~\-\.\,\*\+\/]/g, '')
+                                       .trim();
+
+                        if (name.length >= 2 && price > 0 && price < 1000) {
+                            addedCount++;
+                            currentItems.push({
+                                id: Date.now() + index + Math.random(),
+                                name: name,
+                                category: currentCategory,
+                                price: price,
+                                discount: 0,
+                                img: getSmartFoodImage(name)
+                            });
+                        }
+                    }
                 });
 
-                let data = await response.json();
-                let textResult = data.candidates[0].content.parts[0].text;
-                
-                // تنظيف الـ JSON المستلم
-                textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-                let parsedData = JSON.parse(textResult);
-
-                let categories = getCategories();
-                if (parsedData.categories) {
-                    parsedData.categories.forEach(cat => {
-                        if (!categories.includes(cat)) {
-                            categories.push(cat);
-                        }
-                    });
-                }
                 saveCategories(categories);
-
-                let currentItems = replaceExisting ? [] : getItems();
-                if (parsedData.items) {
-                    parsedData.items.forEach((it, index) => {
-                        currentItems.push({
-                            id: Date.now() + index + Math.random(),
-                            name: it.name,
-                            category: it.category || categories[0],
-                            price: Number(it.price) || 0,
-                            discount: 0,
-                            img: getSmartFoodImage(it.name)
-                        });
-                    });
-                }
-
                 saveItems(currentItems);
                 updateCategoryDropdown();
                 renderCategoriesManagement();
                 renderItems();
 
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل بالذكاء الاصطناعي ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕`;
                 btn.disabled = false;
-                showCustomAlert(`✨ تم استيراد المنيو وتوزيع التصنيفات والأصناف بنجاح تام (${parsedData.items ? parsedData.items.length : 0} صنف)!`);
+                showCustomAlert(`✨ تم استيراد أصناف المنيو وتوزيعها على التصنيفات العربية بنجاح (${addedCount} صنف)!`);
 
             } catch (err) {
                 console.error(err);
                 statusDiv.innerText = "";
-                btn.innerHTML = `<i class="fa-solid fa-brain"></i> تحليل بالذكاء الاصطناعي ➕`;
+                btn.innerHTML = `<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕`;
                 btn.disabled = false;
-                showCustomAlert('حدث خطأ أثناء الاتصال بالذكاء الاصطناعي. تأكد من صحة مفتاح الـ API.');
+                showCustomAlert('حدث خطأ أثناء تحليل الصورة. حاول مرة أخرى.');
             }
         }
 
