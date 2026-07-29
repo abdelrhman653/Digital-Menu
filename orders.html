@@ -64,7 +64,7 @@
             font-size: 13px;
         }
         .auth-btn {
-            background: var(--primary-gradient);
+            background: var(--primary);
             color: white;
             border: none;
             width: 100%;
@@ -97,7 +97,6 @@
             font-weight: 700;
         }
 
-        /* شريط متابعة حالة الطلب الحالي النشط في الأعلى */
         .live-order-tracker {
             background: linear-gradient(135deg, #1f2937 11%, #111827 100%);
             border: 1px solid var(--warning);
@@ -149,11 +148,7 @@
             flex-direction: column;
             justify-content: space-between;
         }
-        .menu-card img {
-            width: 100%;
-            height: 105px;
-            object-fit: cover;
-        }
+        .menu-card img { width: 100%; height: 105px; object-fit: cover; }
         .menu-content { padding: 8px; }
         .menu-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
         .menu-footer {
@@ -173,18 +168,7 @@
             border-radius: 8px;
             padding: 2px 6px;
         }
-        .qty-btn {
-            background: none;
-            border: none;
-            color: var(--white);
-            cursor: pointer;
-            font-size: 12px;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .qty-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 12px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
         .qty-num { font-size: 13px; font-weight: 700; min-width: 15px; text-align: center; }
 
         .add-initial-btn {
@@ -235,16 +219,8 @@
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
             z-index: 990;
         }
-        .cart-details {
-            font-size: 11px;
-            color: var(--gray);
-            margin-bottom: 6px;
-        }
-        .cart-main-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .cart-details { font-size: 11px; color: var(--gray); margin-bottom: 6px; }
+        .cart-main-row { display: flex; justify-content: space-between; align-items: center; }
         .btn-submit {
             background: var(--secondary);
             color: #000;
@@ -256,7 +232,6 @@
             font-size: 13px;
         }
 
-        /* نافذة التنبيهات المخصصة */
         #customAlertModal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(13, 17, 23, 0.85);
@@ -290,14 +265,12 @@
         </div>
     </div>
 
-    <!-- نافذة تسجيل الدخول (تتغير حسب نوع الطلب ترابيزة أم أونلاين) -->
     <div id="authModal">
         <div class="auth-box">
             <h3 id="authModalTitle">تسجيل بيانات العميل للطلب</h3>
             <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد)">
             <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الموبايل (مثال: 01012345678)">
-            <!-- حقل العنوان يظهر للأونلاين فقط ويختفي للترابيزات -->
-            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل (مثال: شارع الهرم، عمارة 5)">
+            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل">
             <button class="auth-btn" onclick="saveClientData()">حفظ ودخول للمنيو <i class="fa-solid fa-arrow-left"></i></button>
         </div>
     </div>
@@ -309,7 +282,7 @@
                 <button onclick="toggleHistory(false)" style="background: none; border: none; color: var(--white); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="historyListContainer"></div>
-            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;">تسجيل خروج (تغيير البيانات)</button>
+            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;">تسجيل خروج</button>
         </div>
     </div>
 
@@ -318,7 +291,6 @@
     </header>
 
     <div class="container">
-        <!-- شريط متابعة حالة الطلب المتزامن في المنيو -->
         <div id="liveOrderTrackerContainer"></div>
 
         <div class="top-bar">
@@ -326,16 +298,11 @@
                 <span id="orderTypeBadge" style="font-weight: 700; font-size: 12px;">نوع الطلب: أونلاين</span>
                 <span id="tableDisplayBadge" style="color: var(--primary); font-weight: 700; font-size: 12px; margin-right: 8px;">توصيل دليفري</span>
             </div>
-            <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> طلباتي السابقة</button>
+            <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> طلباتي</button>
         </div>
 
-        <!-- تصفية التصنيفات -->
-        <div class="categories-row">
+        <div class="categories-row" id="categoriesRowContainer">
             <button class="cat-btn active" onclick="filterCategory('الكل', this)">الكل</button>
-            <button class="cat-btn" onclick="filterCategory('وجبات', this)">وجبات</button>
-            <button class="cat-btn" onclick="filterCategory('مشروبات', this)">مشروبات</button>
-            <button class="cat-btn" onclick="filterCategory('مقبلات', this)">مقبلات</button>
-            <button class="cat-btn" onclick="filterCategory('حلويات', this)">حلويات</button>
         </div>
 
         <div id="customerMenuGrid" class="menu-grid"></div>
@@ -365,17 +332,19 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
+        // تطبيق لون البراند المخصص لهذا المطعم
+        let customColor = localStorage.getItem(`primary_color_${restaurant}`) || '#FF4757';
+        document.documentElement.style.setProperty('--primary', customColor);
+
         const table = urlParams.get('table');
         const isOnline = !table || table === 'online';
-
         let orderType = isOnline ? 'أونلاين' : 'صالة';
         document.getElementById('orderTypeBadge').innerText = `نوع الطلب: ${orderType}`;
         document.getElementById('tableDisplayBadge').innerText = isOnline ? 'توصيل دليفري' : `ترابيزة: ${table}`;
 
-        // ضبط واجهة التسجيل حسب نوع الطلب (ترابيزة أم أونلاين)
         if (!isOnline) {
             document.getElementById('authModalTitle').innerText = `تسجيل بيانات ترابيزة ${table}`;
-            document.getElementById('clientAddress').style.display = 'none'; // إخفاء العنوان للترابيزات
+            document.getElementById('clientAddress').style.display = 'none';
         }
 
         let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`));
@@ -389,12 +358,13 @@
             let address = isOnline ? document.getElementById('clientAddress').value.trim() : 'صالة ترابيزة ' + table;
             
             if(!name || phone.length < 10 || (isOnline && !address)) {
-                showCustomAlert(isOnline ? 'الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.' : 'الرجاء إدخال الاسم ورقم الهاتف.');
+                showCustomAlert('الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.');
                 return;
             }
             currentUser = { name, phone, address };
             localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
             document.getElementById('authModal').classList.add('hidden');
+            loadCategoriesBar();
             loadMenu();
             updateLiveTracker();
         }
@@ -406,12 +376,8 @@
 
         function toggleHistory(show) {
             let modal = document.getElementById('historyModal');
-            if (show) {
-                renderClientHistory();
-                modal.classList.remove('hidden');
-            } else {
-                modal.classList.add('hidden');
-            }
+            if (show) { renderClientHistory(); modal.classList.remove('hidden'); }
+            else { modal.classList.add('hidden'); }
         }
 
         function renderClientHistory() {
@@ -420,7 +386,7 @@
             let myOrders = orders.filter(o => currentUser && o.client && o.client.phone === currentUser.phone);
 
             if (myOrders.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">لا توجد طلبات سابقة مسجلة برقم هاتفك.</p>`;
+                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">لا توجد طلبات سابقة برقم هاتفك.</p>`;
                 return;
             }
 
@@ -428,18 +394,15 @@
             myOrders.slice().reverse().forEach(ord => {
                 let itemsStr = ord.items.map(i => `${i.name} (x${i.qty})`).join('، ');
                 let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
-                let cancelBtnHtml = canCancel ? 
-                    `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : 
-                    ``;
+                let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">إلغاء الطلب</button>` : ``;
 
                 html += `
                     <div class="history-item-row">
                         <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 5px;">
                             <span>طلب #${ord.id}</span>
-                            <span><i class="fa-regular fa-calendar"></i> ${ord.date} - ${ord.time}</span>
+                            <span>${ord.date} - ${ord.time}</span>
                         </div>
                         <div style="font-weight: 600; margin-bottom: 5px; font-size: 12px;">${itemsStr}</div>
-                        <div style="font-size: 11px; color: var(--gray); margin-bottom: 8px;"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${ord.client.address || ''}</div>
                         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
                             <span style="color: var(--secondary); font-weight: 700;">الإجمالي: ${ord.total} ج.م</span>
                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -457,45 +420,44 @@
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
             let order = orders.find(o => o.id === orderId);
             if (order) {
-                if(order.status === 'قيد التحضير' || order.status === 'جاهز') {
-                    order.status = 'ملغي';
-                    localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
-                    renderClientHistory();
-                    updateLiveTracker();
-                    showCustomAlert('تم إلغاء الطلب وتحديث الحالة فوراً.');
-                } else {
-                    showCustomAlert('عذراً، لا يمكن إلغاء الطلب لتخطيه مرحلة التحضير.');
-                }
+                order.status = 'ملغي';
+                localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
+                renderClientHistory();
+                updateLiveTracker();
+                showCustomAlert('تم إلغاء الطلب بنجاح.');
             }
         }
 
-        // تحديث شريط متابعة الطلب الحالي في أعلى المنيو متزامناً مع المطبخ
         function updateLiveTracker() {
             let trackerContainer = document.getElementById('liveOrderTrackerContainer');
-            if (!currentUser) {
-                trackerContainer.innerHTML = '';
-                return;
-            }
+            if (!currentUser) { trackerContainer.innerHTML = ''; return; }
             let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            // جلب أحدث طلب للعميل لم يتم تسليمه أو إلغاؤه
-            let activeOrder = orders.reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي');
+            let activeOrder = orders.slice().reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي');
 
-            if (!activeOrder) {
-                trackerContainer.innerHTML = '';
-                return;
-            }
+            if (!activeOrder) { trackerContainer.innerHTML = ''; return; }
 
             trackerContainer.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> متابعة طلبك الحالي (#${activeOrder.id})</span>
+                    <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> متابعة طلبك (#${activeOrder.id})</span>
                     <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">الحالة: ${activeOrder.status}</span>
                 </div>
-                <div style="font-size: 11px; color: var(--gray);">الإجمالي: ${activeOrder.total} ج.م | الأصناف: ${activeOrder.items.length} أصناف</div>
             `;
         }
 
         let cart = {};
-        let selectedCategory = 'الكل';
+        let selectedCategory = 'All';
+
+        function loadCategoriesBar() {
+            let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+            let cats = (db[restaurant] && db[restaurant].categories) ? db[restaurant].categories : ["وجبات", "مشروبات", "مقبلات", "حلويات"];
+            let container = document.getElementById('categoriesRowContainer');
+            
+            let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">الكل</button>`;
+            cats.forEach(c => {
+                html += `<button class="cat-btn ${selectedCategory === c ? 'active' : ''}" onclick="filterCategory('${c}', this)">${c}</button>`;
+            });
+            container.innerHTML = html;
+        }
 
         function filterCategory(cat, btn) {
             selectedCategory = cat;
@@ -505,11 +467,10 @@
         }
 
         function loadMenu() {
-            let items = JSON.parse(localStorage.getItem(`menu_items_${restaurant}`)) || [
-                { id: 1, name: "برجر كلاسيك سينجل", price: 120, category: "وجبات", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" }
-            ];
+            let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+            let items = (db[restaurant] && db[restaurant].items) ? db[restaurant].items : [];
 
-            if (selectedCategory !== 'الكل') {
+            if (selectedCategory !== 'All') {
                 items = items.filter(i => i.category === selectedCategory);
             }
 
@@ -517,6 +478,8 @@
             let html = '';
             items.forEach(item => {
                 let qty = cart[item.id] ? cart[item.id].qty : 0;
+                let finalPrice = item.discount ? (item.price - item.discount) : item.price;
+
                 html += `
                     <div class="menu-card">
                         <img src="${item.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'}" alt="${item.name}">
@@ -524,14 +487,17 @@
                             <div class="menu-title">${item.name}</div>
                         </div>
                         <div class="menu-footer">
-                            <div class="menu-price">${item.price} ج.م</div>
+                            <div class="menu-price">
+                                ${item.discount ? `<span style="text-decoration: line-through; color: var(--gray); font-size: 10px; display:block;">${item.price} ج.م</span>` : ''}
+                                ${finalPrice} ج.م
+                            </div>
                             <div id="btn-container-${item.id}">
                                 ${qty === 0 ? 
-                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${item.name}', ${item.price}, 1)">إضافة</button>` :
+                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)">إضافة</button>` :
                                     `<div class="qty-controls">
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${item.price}, -1)"><i class="fa-solid fa-minus"></i></button>
+                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
                                         <span class="qty-num">${qty}</span>
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${item.price}, 1)"><i class="fa-solid fa-plus"></i></button>
+                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
                                      </div>`
                                 }
                             </div>
@@ -561,10 +527,9 @@
             if (itemsArray.length > 0) {
                 document.getElementById('cartBar').classList.remove('hidden');
                 let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
-                let serviceText = isOnline ? `المجموع: ${subtotal} + توصيل: 40 ج.م` : `المجموع: ${subtotal} + خدمة صالة 10%`;
                 let finalTotal = subtotal + serviceFee;
 
-                document.getElementById('cartBreakdown').innerText = serviceText;
+                document.getElementById('cartBreakdown').innerText = isOnline ? `المجموع: ${subtotal} + توصيل: 40 ج.م` : `المجموع: ${subtotal} + خدمة صالة 10%`;
                 document.getElementById('cartTotal').innerText = `${finalTotal} ج.م`;
             } else {
                 document.getElementById('cartBar').classList.add('hidden');
@@ -572,10 +537,7 @@
         }
 
         function submitOrder() {
-            if (!currentUser) {
-                document.getElementById('authModal').classList.remove('hidden');
-                return;
-            }
+            if (!currentUser) { document.getElementById('authModal').classList.remove('hidden'); return; }
             let itemsArray = Object.values(cart);
             if (itemsArray.length === 0) return;
 
@@ -590,9 +552,7 @@
                 type: orderType,
                 table: isOnline ? 'أونلاين (دليفري)' : table,
                 items: itemsArray,
-                subtotal: subtotal,
-                serviceFee: serviceFee,
-                total: finalTotal,
+                subtotal, serviceFee, total: finalTotal,
                 time: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}),
                 date: new Date().toISOString().split('T')[0],
                 status: 'قيد التحضير'
@@ -601,18 +561,18 @@
             orders.push(newOrder);
             localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
 
-            showCustomAlert('تم إرسال طلبك بنجاح! سيتم تحضيره فوراً.');
+            showCustomAlert('تم إرسال طلبك بنجاح!');
             cart = {};
             updateCartBar();
             loadMenu();
             updateLiveTracker();
         }
 
-        setInterval(updateLiveTracker, 2000); // تحديث دوري لحالة الطلب في المنيو
-        window.onload = loadMenu;
+        setInterval(updateLiveTracker, 2000);
+        window.onload = function() {
+            loadCategoriesBar();
+            loadMenu();
+        };
     </script>
-    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-    تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-</div>
 </body>
 </html>
