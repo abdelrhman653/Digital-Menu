@@ -216,44 +216,44 @@
 
         #singlePrintModal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); z-index: 999999; display: none;
+            background: rgba(0,0,0,0.85); z-index: 999999; display: none;
             justify-content: center; align-items: center;
         }
         .single-print-card {
-            border: 2px solid #333;
-            padding: 25px;
-            border-radius: 16px;
+            border: 2px solid var(--primary);
+            padding: 30px 25px;
+            border-radius: 20px;
             width: 320px;
             text-align: center;
-            background: #fff;
-            color: #000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: var(--dark-card);
+            color: var(--white);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
 
-        /* ─── تعديل نظام الطباعة جذرياً لمنع الصفحات البيضاء تماماً ─── */
+        /* ─── نظام الطباعة المحسّن بالكامل ─── */
         @media print {
-            /* إخفاء الصفحة بالكامل افتراضياً عند الطباعة */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
             body * {
                 display: none !important;
             }
 
-            /* في حالة طباعة كود فردي */
+            /* طباعة كود فردي بشكل لوحة احترافية متناسقة */
             body.printing-single,
             body.printing-single #singlePrintModal {
-                display: block !important;
-                background: #ffffff !important;
-                position: absolute !important;
+                display: flex !important;
+                background: #0D1117 !important;
+                position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
+                width: 100vw !important;
+                height: 100vh !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 z-index: 999999 !important;
-            }
-
-            body.printing-single #singlePrintModal {
-                display: flex !important;
                 justify-content: center !important;
                 align-items: center !important;
             }
@@ -261,48 +261,100 @@
             body.printing-single #singlePrintModal * {
                 display: block !important;
                 visibility: visible !important;
-                color: #000000 !important;
             }
 
             body.printing-single .single-print-card {
-                border: 2px solid #000000 !important;
-                background: #ffffff !important;
+                background: #151B22 !important;
+                border: 3px solid #FF4757 !important;
+                color: #FFFFFF !important;
                 box-shadow: none !important;
                 margin: auto !important;
+                padding: 40px 30px !important;
+                border-radius: 24px !important;
+                width: 380px !important;
             }
 
-            /* في حالة طباعة كل الأكواد */
+            body.printing-single .single-print-card #printModalRestName {
+                color: #FFFFFF !important;
+                font-size: 26px !important;
+            }
+
+            body.printing-single .single-print-card #printModalTableTag {
+                color: #FF4757 !important;
+                font-size: 18px !important;
+                background: rgba(255, 71, 87, 0.15) !important;
+                padding: 6px 16px !important;
+            }
+
+            /* طباعة كل الأكواد: كود واحد مستقل في كل صفحة */
             body.printing-all,
             body.printing-all #qrResultsContainer {
                 display: block !important;
-                background: #ffffff !important;
+                background: #0D1117 !important;
                 position: absolute !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
                 margin: 0 !important;
-                padding: 10px !important;
+                padding: 0 !important;
                 z-index: 999999 !important;
             }
 
             body.printing-all #qrResultsContainer {
-                display: grid !important;
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 15px !important;
+                display: block !important;
             }
 
             body.printing-all #qrResultsContainer * {
-                display: block !important;
                 visibility: visible !important;
-                color: #000000 !important;
             }
 
             body.printing-all .qr-box {
-                background: #ffffff !important;
-                border: 2px solid #333333 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: #151B22 !important;
+                border: 3px solid #FF4757 !important;
+                color: #FFFFFF !important;
                 box-shadow: none !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                height: 92vh !important;
+                margin: 20px !important;
+                padding: 40px !important;
+                border-radius: 24px !important;
+                box-sizing: border-box !important;
+            }
+
+            body.printing-all .qr-box .restaurant-title-qr {
+                font-size: 32px !important;
+                color: #FFFFFF !important;
+                margin-bottom: 15px !important;
+            }
+
+            body.printing-all .qr-box .table-title-qr {
+                font-size: 22px !important;
+                color: #FF4757 !important;
+                background: rgba(255, 71, 87, 0.15) !important;
+                padding: 8px 20px !important;
+                margin-bottom: 25px !important;
+            }
+
+            body.printing-all .qr-box .qr-img-container {
+                padding: 18px !important;
+                border-radius: 16px !important;
+            }
+
+            body.printing-all .qr-box .qr-img-container img,
+            body.printing-all .qr-box .qr-img-container canvas {
+                width: 220px !important;
+                height: 220px !important;
+            }
+
+            body.printing-all .qr-box .welcome-text-qr {
+                font-size: 18px !important;
+                color: #8B949E !important;
+                margin-top: 25px !important;
             }
 
             body.printing-all .table-link {
@@ -323,12 +375,12 @@
 
     <div id="singlePrintModal">
         <div class="single-print-card">
-            <h2 id="printModalRestName" style="margin: 0 0 6px 0; font-size: 18px; font-weight: 900; color: #000;"></h2>
-            <div id="printModalTableTag" style="font-size: 14px; font-weight: 700; color: #FF4757; margin-bottom: 12px; background: #fff1f2; padding: 4px 10px; border-radius: 8px; display: inline-block;"></div>
+            <h2 id="printModalRestName" style="margin: 0 0 6px 0; font-size: 20px; font-weight: 900; color: #fff;"></h2>
+            <div id="printModalTableTag" style="font-size: 14px; font-weight: 700; color: #FF4757; margin-bottom: 15px; background: rgba(255, 71, 87, 0.15); padding: 4px 12px; border-radius: 8px; display: inline-block;"></div>
             <div style="display: flex; justify-content: center;">
-                <div id="printModalQrContainer" style="background: #fff; padding: 8px; border-radius: 10px; display: inline-block; margin: 5px 0 10px 0;"></div>
+                <div id="printModalQrContainer" style="background: #fff; padding: 12px; border-radius: 14px; display: inline-block; margin: 5px 0 10px 0;"></div>
             </div>
-            <div style="font-size: 12px; color: #555; margin-top: 10px; line-height: 1.5; font-weight: 600;">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
+            <div style="font-size: 13px; color: #8B949E; margin-top: 15px; line-height: 1.5; font-weight: 600;">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
         </div>
     </div>
 
@@ -1074,8 +1126,8 @@
 
                 new QRCode(document.getElementById(qrElementId), {
                     text: tableUrl, 
-                    width: 110, 
-                    height: 110, 
+                    width: 130, 
+                    height: 130, 
                     colorDark: "#000000", 
                     colorLight: "#ffffff", 
                     correctLevel: QRCode.CorrectLevel.H
@@ -1092,8 +1144,8 @@
             
             new QRCode(container, {
                 text: url, 
-                width: 150, 
-                height: 150, 
+                width: 180, 
+                height: 180, 
                 colorDark: "#000000", 
                 colorLight: "#ffffff", 
                 correctLevel: QRCode.CorrectLevel.H
