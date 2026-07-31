@@ -150,24 +150,24 @@
             font-size: 18px;
             font-weight: 900;
             color: var(--white);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .table-title-qr {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             background: rgba(255, 71, 87, 0.1);
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 4px 10px;
+            border-radius: 8px;
             display: inline-block;
         }
         .qr-img-container {
             background: #fff;
-            padding: 8px;
-            border-radius: 10px;
+            padding: 10px;
+            border-radius: 12px;
             display: inline-block;
-            margin: 2px 0 6px 0;
+            margin: 5px 0 10px 0;
             cursor: pointer;
             transition: transform 0.2s;
         }
@@ -175,10 +175,10 @@
             transform: scale(1.03);
         }
         .welcome-text-qr {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--gray);
-            margin-top: 6px;
-            line-height: 1.4;
+            margin-top: 10px;
+            line-height: 1.5;
             font-weight: 600;
         }
         .table-link {
@@ -189,7 +189,7 @@
             align-items: center;
             justify-content: center;
             gap: 5px;
-            margin-top: 8px;
+            margin-top: 10px;
             font-weight: 600;
         }
         .hidden { display: none !important; }
@@ -231,13 +231,16 @@
                 break-after: page !important;
                 box-shadow: none !important; 
                 width: 240px !important;
-                margin: 20px auto !important;
+                margin: 0 auto 20px auto !important;
                 padding: 15px !important;
                 text-align: center !important;
             }
             .qr-box div, .restaurant-title-qr, .table-title-qr, .welcome-text-qr { color: #000 !important; }
+            .restaurant-title-qr { font-size: 16px !important; margin-bottom: 4px !important; }
+            .table-title-qr { font-size: 13px !important; margin-bottom: 8px !important; padding: 2px 8px !important; }
+            .qr-img-container { padding: 5px !important; margin: 2px 0 6px 0 !important; }
+            .welcome-text-qr { font-size: 11px !important; margin-top: 6px !important; }
             .table-link { display: none !important; }
-            .qr-img-container { background: #fff !important; padding: 5px !important; margin: 4px auto !important; display: inline-block !important; }
         }
     </style>
 </head>
@@ -991,7 +994,7 @@
                 container.appendChild(box);
 
                 new QRCode(document.getElementById(`qrcode-${i}`), {
-                    text: tableUrl, width: 100, height: 100, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                    text: tableUrl, width: 110, height: 110, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
                 });
             }
         }
@@ -1003,23 +1006,50 @@
                 <head>
                     <title>طباعة ${title}</title>
                     <style>
-                        body { 
-                            font-family: 'Cairo', sans-serif; 
-                            text-align: center; 
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                            margin: 0;
-                            background: #fff; 
-                        }
-                        .print-box { 
-                            border: 2px solid #222; 
-                            padding: 15px; 
-                            display: inline-block; 
-                            border-radius: 14px; 
-                            width: 240px; 
-                            text-align: center;
-                        }
-                        h2 { margin: 0 0 3px 0; font-size: 16px; font-weight: 900; color: #000; }
-                        .table
+                        body { font-family: 'Cairo', sans-serif; text-align: center; padding-top: 20px; background: #fff; margin: 0; }
+                        .print-box { border: 2px solid #333; padding: 15px; display: inline-block; border-radius: 12px; width: 240px; text-align: center; }
+                        h2 { margin: 0 0 4px 0; font-size: 16px; font-weight: 900; color: #000; }
+                        .table-tag { font-size: 13px; font-weight: 700; color: #FF4757; margin-bottom: 8px; background: #fff1f2; padding: 2px 8px; border-radius: 6px; display: inline-block; }
+                        .welcome { font-size: 11px; color: #555; margin-top: 6px; line-height: 1.4; font-weight: 600; }
+                        #singleQr { background: #fff; padding: 5px; border-radius: 8px; display: inline-block; margin: 2px 0 6px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-box">
+                        <h2>${currentRestaurant.toUpperCase()}</h2>
+                        <div class="table-tag">${title}</div>
+                        <div>
+                            <div id="singleQr"></div>
+                        </div>
+                        <div class="welcome">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
+                    </div>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+                    <script>
+                        new QRCode(document.getElementById('singleQr'), {
+                            text: "${url}", width: 140, height: 140, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                        });
+                        setTimeout(() => { window.print(); window.close(); }, 600);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+        function printAllQRs() {
+            window.print();
+        }
+
+        function showCustomAlert(msg) {
+            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
+    </script>
+    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
+        تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
+    </div>
+</body>
+</html>
