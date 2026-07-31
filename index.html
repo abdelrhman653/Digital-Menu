@@ -141,21 +141,45 @@
         .qr-box {
             background: #0D1117;
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 15px;
+            border-radius: 16px;
+            padding: 20px;
             text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .restaurant-title-qr {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--white);
+            margin-bottom: 6px;
+        }
+        .table-title-qr {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            background: rgba(255, 71, 87, 0.1);
+            padding: 4px 10px;
+            border-radius: 8px;
+            display: inline-block;
         }
         .qr-img-container {
             background: #fff;
             padding: 10px;
-            border-radius: 10px;
+            border-radius: 12px;
             display: inline-block;
-            margin: 10px 0;
+            margin: 5px 0 10px 0;
             cursor: pointer;
             transition: transform 0.2s;
         }
         .qr-img-container:hover {
             transform: scale(1.03);
+        }
+        .welcome-text-qr {
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 10px;
+            line-height: 1.5;
+            font-weight: 600;
         }
         .table-link {
             color: var(--secondary);
@@ -165,7 +189,7 @@
             align-items: center;
             justify-content: center;
             gap: 5px;
-            margin-top: 8px;
+            margin-top: 10px;
             font-weight: 600;
         }
         .hidden { display: none !important; }
@@ -197,8 +221,8 @@
                 position: absolute; left: 0; top: 0; width: 100%;
                 display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
             }
-            .qr-box { background: #fff !important; color: #000 !important; border: 1px solid #ddd !important; page-break-inside: avoid; }
-            .qr-box div { color: #000 !important; }
+            .qr-box { background: #fff !important; color: #000 !important; border: 2px solid #333 !important; page-break-inside: avoid; box-shadow: none !important; }
+            .qr-box div, .restaurant-title-qr, .table-title-qr, .welcome-text-qr { color: #000 !important; }
             .table-link { display: none !important; }
         }
     </style>
@@ -942,8 +966,12 @@
                 let box = document.createElement('div');
                 box.className = 'qr-box';
                 box.innerHTML = `
-                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">${currentLang === 'ar' ? `طاولة ${i}` : `Table ${i}`}</div>
-                    <div class="qr-img-container" id="qrcode-${i}" title="${currentLang === 'ar' ? 'اضغط للطباعة' : 'Click to print'}" onclick="printSingleQR('${tableUrl}', '${currentLang === 'ar' ? `طاولة ${i}` : `Table ${i}`}')"></div>
+                    <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
+                    <div class="table-title-qr">Table ${i}</div>
+                    <div>
+                        <div class="qr-img-container" id="qrcode-${i}" title="${currentLang === 'ar' ? 'اضغط للطباعة' : 'Click to print'}" onclick="printSingleQR('${tableUrl}', 'Table ${i}')"></div>
+                    </div>
+                    <div class="welcome-text-qr">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> ${currentLang === 'ar' ? 'فتح الرابط' : 'Open Link'}</a>
                 `;
                 container.appendChild(box);
@@ -961,43 +989,23 @@
                 <head>
                     <title>طباعة ${title}</title>
                     <style>
-                        body { font-family: 'Cairo', sans-serif; text-align: center; padding-top: 50px; }
-                        .print-box { border: 2px dashed #333; padding: 30px; display: inline-block; border-radius: 15px; }
-                        h2 { margin-bottom: 20px; font-size: 24px; }
+                        body { font-family: 'Cairo', sans-serif; text-align: center; padding-top: 40px; background: #fff; }
+                        .print-box { border: 2px solid #333; padding: 25px; display: inline-block; border-radius: 16px; width: 300px; }
+                        h2 { margin-bottom: 5px; font-size: 20px; font-weight: 900; color: #000; }
+                        .table-tag { font-size: 16px; font-weight: 700; color: #FF4757; margin-bottom: 12px; background: #fff1f2; padding: 4px 10px; border-radius: 8px; display: inline-block; }
+                        .welcome { font-size: 13px; color: #555; margin-top: 10px; line-height: 1.5; font-weight: 600; }
+                        #singleQr { background: #fff; padding: 10px; border-radius: 10px; display: inline-block; }
                     </style>
                 </head>
                 <body>
                     <div class="print-box">
-                        <h2>${title} - ${currentRestaurant.toUpperCase()}</h2>
-                        <div id="singleQr"></div>
+                        <h2>${currentRestaurant.toUpperCase()}</h2>
+                        <div class="table-tag">${title}</div>
+                        <div>
+                            <div id="singleQr"></div>
+                        </div>
+                        <div class="welcome">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
                     </div>
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
                     <script>
-                        new QRCode(document.getElementById('singleQr'), {
-                            text: "${url}", width: 220, height: 220, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
-                        });
-                        setTimeout(() => { window.print(); window.close(); }, 500);
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWin.document.close();
-        }
-
-        function printAllQRs() {
-            window.print();
-        }
-
-        function showCustomAlert(msg) {
-            document.getElementById('customAlertMessage').innerText = msg;
-            document.getElementById('customAlertModal').classList.remove('hidden');
-        }
-        function closeCustomAlert() {
-            document.getElementById('customAlertModal').classList.add('hidden');
-        }
-    </script>
-    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-        تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-    </div>
-</body>
-</html>
+                        new QRCode(document.getEl
