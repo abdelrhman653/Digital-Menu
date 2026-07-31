@@ -235,8 +235,8 @@
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                color: #000 !important; /* إجبار كل النصوص على اللون الأسود */
-                background: #FFF !important; /* إجبار كل الخلفيات على اللون الأبيض */
+                color: #000 !important;
+                background: #FFF !important;
                 box-shadow: none !important;
                 text-shadow: none !important;
             }
@@ -267,8 +267,8 @@
             }
 
             body.printing-single .single-print-card {
-                border: 3px solid #000 !important; /* مربع أسود سادة */
-                border-radius: 0 !important; /* إلغاء الدوران */
+                border: 3px solid #000 !important;
+                border-radius: 0 !important;
                 margin: auto !important;
                 padding: 40px !important;
                 width: 400px !important;
@@ -284,7 +284,7 @@
             body.printing-single .single-print-card #printModalTableTag {
                 font-size: 24px !important;
                 font-weight: bold !important;
-                border: 2px solid #000 !important; /* مربع حول رقم الطاولة */
+                border: 2px solid #000 !important;
                 padding: 5px 15px !important;
                 margin-bottom: 25px !important;
                 display: inline-block !important;
@@ -292,7 +292,7 @@
             }
 
             body.printing-single #printModalQrContainer {
-                border: 3px solid #000 !important; /* مربع حول الـ QR */
+                border: 3px solid #000 !important;
                 padding: 15px !important;
                 border-radius: 0 !important;
                 display: inline-block !important;
@@ -325,8 +325,8 @@
                 flex-direction: column !important;
                 align-items: center !important;
                 justify-content: center !important;
-                border: 3px solid #000 !important; /* مربع أسود سادة */
-                border-radius: 0 !important; /* إلغاء الدوران */
+                border: 3px solid #000 !important;
+                border-radius: 0 !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 height: 95vh !important;
@@ -344,7 +344,7 @@
             body.printing-all .qr-box .table-title-qr {
                 font-size: 26px !important;
                 font-weight: bold !important;
-                border: 2px solid #000 !important; /* مربع حول رقم الطاولة */
+                border: 2px solid #000 !important;
                 padding: 8px 20px !important;
                 margin-bottom: 30px !important;
                 display: inline-block !important;
@@ -352,7 +352,7 @@
             }
 
             body.printing-all .qr-box .qr-img-container {
-                border: 3px solid #000 !important; /* مربع حول الـ QR */
+                border: 3px solid #000 !important;
                 padding: 15px !important;
                 border-radius: 0 !important;
             }
@@ -512,6 +512,12 @@
                 </div>
             </div>
 
+            <!-- مربع البحث الجديد -->
+            <div class="card">
+                <h3 style="margin-bottom: 10px;"><i class="fa-solid fa-search" style="color: var(--primary);"></i> <span data-i18n="section_search">بحث في الأصناف</span></h3>
+                <input type="text" id="itemSearchInput" placeholder="ابحث باسم الصنف..." oninput="renderItems()" style="margin-bottom: 0;">
+            </div>
+
             <div class="card">
                 <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-tags" style="color: var(--primary);"></i> <span data-i18n="section_manage_cats">إدارة التصنيفات</span></h3>
                 <div id="categoriesManagementList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
@@ -571,6 +577,7 @@
                 choose_item_img: "اضغط لاختيار صورة الصنف",
                 btn_save_item: "إضافة الصنف للمنيو",
                 btn_cancel: "إلغاء التعديل",
+                section_search: "بحث في الأصناف",
                 section_manage_cats: "إدارة التصنيفات",
                 section_manage_items: "إدارة الأصناف الحالية",
                 section_qr_generator: "مولد QR كود للطاولات",
@@ -611,6 +618,7 @@
                 choose_item_img: "Click to choose item image",
                 btn_save_item: "Add Item to Menu",
                 btn_cancel: "Cancel Edit",
+                section_search: "Search Items",
                 section_manage_cats: "Manage Categories",
                 section_manage_items: "Manage Current Items",
                 section_qr_generator: "Table QR Code Generator",
@@ -1077,11 +1085,17 @@
 
         function renderItems() {
             let items = getItems();
+            let searchQuery = document.getElementById('itemSearchInput') ? document.getElementById('itemSearchInput').value.trim().toLowerCase() : '';
+            
+            if (searchQuery) {
+                items = items.filter(item => item.name.toLowerCase().includes(searchQuery) || item.category.toLowerCase().includes(searchQuery));
+            }
+
             let container = document.getElementById('currentItemsList');
             document.getElementById('itemsCount').innerText = items.length;
 
             if (items.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 15px;">${currentLang === 'ar' ? 'لا توجد أصناف حالياً لهذا النشاط.' : 'No items found.'}</p>`;
+                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 15px;">${currentLang === 'ar' ? 'لا توجد أصناف مطابقة للبحث.' : 'No items found.'}</p>`;
                 return;
             }
 
