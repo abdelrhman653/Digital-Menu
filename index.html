@@ -219,9 +219,22 @@
             #qrResultsContainer, #qrResultsContainer * { visibility: visible; }
             #qrResultsContainer {
                 position: absolute; left: 0; top: 0; width: 100%;
-                display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+                display: block !important;
             }
-            .qr-box { background: #fff !important; color: #000 !important; border: 2px solid #333 !important; page-break-inside: avoid; box-shadow: none !important; }
+            .qr-box { 
+                background: #fff !important; 
+                color: #000 !important; 
+                border: 2px solid #333 !important; 
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                box-shadow: none !important; 
+                width: 80% !important;
+                max-width: 350px !important;
+                margin: 0 auto 30px auto !important;
+                padding: 30px !important;
+            }
             .qr-box div, .restaurant-title-qr, .table-title-qr, .welcome-text-qr { color: #000 !important; }
             .table-link { display: none !important; }
         }
@@ -1000,7 +1013,7 @@
                 <body>
                     <div class="print-box">
                         <h2>${currentRestaurant.toUpperCase()}</h2>
-                        <div class="table-tag">${title}</div>
+                        <div class="table-title-qr">${title}</div>
                         <div>
                             <div id="singleQr"></div>
                         </div>
