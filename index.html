@@ -154,6 +154,9 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
+        .qr-img-container:hover {
+            transform: scale(1.03);
+        }
         .table-link {
             color: var(--secondary);
             font-size: 12px;
@@ -185,6 +188,37 @@
             max-width: 340px;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* تخصيص الطباعة لإظهار الـ QR فقط واختفاء باقي لوحة التحكم */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #qrResultsContainer, #qrResultsContainer * {
+                visibility: visible;
+            }
+            #qrResultsContainer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            .qr-box {
+                background: #fff !important;
+                color: #000 !important;
+                border: 1px solid #ddd !important;
+                page-break-inside: avoid;
+            }
+            .qr-box div {
+                color: #000 !important;
+            }
+            .table-link {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -693,7 +727,6 @@
             return 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500';
         }
 
-        // دعم القراءة الذكية للغتين العربية والإنجليزية معاً
         async function importBilingualMenuOCR(replaceExisting = false) {
             if (!aiMenuImageFile) {
                 showCustomAlert(currentLang === 'ar' ? 'الرجاء اختيار صورة المنيو أولاً!' : 'Please select menu image first!');
@@ -707,7 +740,6 @@
             statusDiv.innerText = currentLang === 'ar' ? "جاري تحليل النصوص (عربي / إنجليزي)..." : "Analyzing texts (Arabic / English)...";
 
             try {
-                // Tesseract يدعم اللغتين معاً بوضع ara+eng
                 let result = await Tesseract.recognize(
                     aiMenuImageFile,
                     'ara+eng', 
@@ -738,7 +770,6 @@
 
                     let hasNumbers = /\d/.test(line);
                     
-                    // إذا كان السطر لا يحتوي على أرقام وغالباً عنوان تصنيف (عربي أو إنجليزي)
                     if (!hasNumbers && line.length >= 2 && line.length < 30) {
                         currentCategory = line;
                         if (!categories.includes(currentCategory)) {
@@ -931,7 +962,7 @@
                 box.className = 'qr-box';
                 box.innerHTML = `
                     <div style="font-weight: 700; font-size: 13px; margin-bottom: 5px;">${currentLang === 'ar' ? `طاولة ${i}` : `Table ${i}`}</div>
-                    <div class="qr-img-container" id="qrcode-${i}"></div>
+                    <div class="qr-img-container" id="qrcode-${i}" title="${currentLang === 'ar' ? 'اضغط للطباعة' : 'Click to print'}" onclick="printSingleQR('${tableUrl}', '${currentLang === 'ar' ? `طاولة ${i}` : `Table ${i}`}')"></div>
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> ${currentLang === 'ar' ? 'فتح الرابط' : 'Open Link'}</a>
                 `;
                 container.appendChild(box);
@@ -940,6 +971,37 @@
                     text: tableUrl, width: 110, height: 110, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
                 });
             }
+        }
+
+        // دالة لطباعة QR كود واحد عند الضغط عليه
+        function printSingleQR(url, title) {
+            let printWin = window.open('', '_blank');
+            printWin.document.write(`
+                <html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
+                <head>
+                    <title>طباعة ${title}</title>
+                    <style>
+                        body { font-family: 'Cairo', sans-serif; text-align: center; padding-top: 50px; }
+                        .print-box { border: 2px dashed #333; padding: 30px; display: inline-block; border-radius: 15px; }
+                        h2 { margin-bottom: 20px; font-size: 24px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-box">
+                        <h2>${title} - ${currentRestaurant.toUpperCase()}</h2>
+                        <div id="singleQr"></div>
+                    </div>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+                    <script>
+                        new QRCode(document.getElementById('singleQr'), {
+                            text: "${url}", width: 220, height: 220, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                        });
+                        setTimeout(() => { window.print(); window.close(); }, 500);
+                    </script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
         }
 
         function printAllQRs() {
@@ -957,5 +1019,4 @@
     <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
         تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
     </div>
-</body>
-</html>
+</bo
