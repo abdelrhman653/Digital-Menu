@@ -190,35 +190,16 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* تخصيص الطباعة لإظهار الـ QR فقط واختفاء باقي لوحة التحكم */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #qrResultsContainer, #qrResultsContainer * {
-                visibility: visible;
-            }
+            body * { visibility: hidden; }
+            #qrResultsContainer, #qrResultsContainer * { visibility: visible; }
             #qrResultsContainer {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
+                position: absolute; left: 0; top: 0; width: 100%;
+                display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
             }
-            .qr-box {
-                background: #fff !important;
-                color: #000 !important;
-                border: 1px solid #ddd !important;
-                page-break-inside: avoid;
-            }
-            .qr-box div {
-                color: #000 !important;
-            }
-            .table-link {
-                display: none !important;
-            }
+            .qr-box { background: #fff !important; color: #000 !important; border: 1px solid #ddd !important; page-break-inside: avoid; }
+            .qr-box div { color: #000 !important; }
+            .table-link { display: none !important; }
         }
     </style>
 </head>
@@ -973,7 +954,6 @@
             }
         }
 
-        // دالة لطباعة QR كود واحد عند الضغط عليه
         function printSingleQR(url, title) {
             let printWin = window.open('', '_blank');
             printWin.document.write(`
@@ -997,7 +977,7 @@
                             text: "${url}", width: 220, height: 220, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
                         });
                         setTimeout(() => { window.print(); window.close(); }, 500);
-                    </script>
+                    <\/script>
                 </body>
                 </html>
             `);
@@ -1019,4 +999,5 @@
     <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
         تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
     </div>
-</bo
+</body>
+</html>
