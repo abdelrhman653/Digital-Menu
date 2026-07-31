@@ -214,8 +214,28 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
+        /* حاوية الطباعة الخاصة بـ QR منفرد */
+        #singlePrintModal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #fff; z-index: 999999; display: none;
+            justify-content: center; align-items: center; color: #000;
+        }
+        .single-print-card {
+            border: 2px solid #333;
+            padding: 25px;
+            border-radius: 16px;
+            width: 280px;
+            text-align: center;
+            background: #fff;
+        }
+
         @media print {
             body * { visibility: hidden; }
+            #singlePrintModal, #singlePrintModal * { visibility: visible; }
+            #singlePrintModal {
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+                display: flex !important; background: #fff !important;
+            }
             #qrResultsContainer, #qrResultsContainer * { visibility: visible; }
             #qrResultsContainer {
                 position: absolute; left: 0; top: 0; width: 100%;
@@ -251,6 +271,18 @@
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> <span data-i18n="alert_title">تنبيه</span></h3>
             <p id="customAlertMessage">رسالة التنبيه هنا</p>
             <button class="btn" onclick="closeCustomAlert()" data-i18n="btn_ok">حسناً</button>
+        </div>
+    </div>
+
+    <!-- نافذة الطباعة الفردية الآمنة -->
+    <div id="singlePrintModal">
+        <div class="single-print-card">
+            <h2 id="printModalRestName" style="margin: 0 0 6px 0; font-size: 18px; font-weight: 900; color: #000;"></h2>
+            <div id="printModalTableTag" style="font-size: 14px; font-weight: 700; color: #FF4757; margin-bottom: 12px; background: #fff1f2; padding: 4px 10px; border-radius: 8px; display: inline-block;"></div>
+            <div style="display: flex; justify-content: center;">
+                <div id="printModalQrContainer" style="background: #fff; padding: 8px; border-radius: 10px; display: inline-block; margin: 5px 0 10px 0;"></div>
+            </div>
+            <div style="font-size: 12px; color: #555; margin-top: 10px; line-height: 1.5; font-weight: 600;">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
         </div>
     </div>
 
@@ -999,58 +1031,25 @@
             }
         }
 
+        // تم تعديل الطباعة الفردية لتتم بأمان تام داخل نفس المستند دون فتح نافذة خارجية تسبب خطأ
         function printSingleQR(url, title) {
-            let printWin = window.open('', '_blank');
-            printWin.document.write(`
-                <html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
-                <head>
-                    <title>طباعة ${title}</title>
-                    <style>
-                        body { 
-                            font-family: 'Cairo', sans-serif; 
-                            text-align: center; 
-                            background: #fff; 
-                            margin: 0; 
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                        }
-                        .print-box { 
-                            border: 2px solid #333; 
-                            padding: 20px; 
-                            border-radius: 16px; 
-                            width: 260px; 
-                            text-align: center;
-                            margin: 0 auto;
-                        }
-                        h2 { margin: 0 0 6px 0; font-size: 18px; font-weight: 900; color: #000; }
-                        .table-tag { font-size: 14px; font-weight: 700; color: #FF4757; margin-bottom: 12px; background: #fff1f2; padding: 4px 10px; border-radius: 8px; display: inline-block; }
-                        .welcome { font-size: 12px; color: #555; margin-top: 10px; line-height: 1.5; font-weight: 600; }
-                        #singleQr { background: #fff; padding: 8px; border-radius: 10px; display: inline-block; margin: 5px 0 10px 0; }
-                        #singleQr img { display: block; margin: 0 auto; }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-box">
-                        <h2>${currentRestaurant.toUpperCase()}</h2>
-                        <div class="table-title-qr table-tag">${title}</div>
-                        <div>
-                            <div id="singleQr"></div>
-                        </div>
-                        <div class="welcome">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
-                    </div>
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-                    <script>
-                        new QRCode(document.getElementById('singleQr'), {
-                            text: "${url}", width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
-                        });
-                        setTimeout(() => { window.print(); window.close(); }, 800);
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWin.document.close();
+            document.getElementById('printModalRestName').innerText = currentRestaurant.toUpperCase();
+            document.getElementById('printModalTableTag').innerText = title;
+            
+            let container = document.getElementById('printModalQrContainer');
+            container.innerHTML = '';
+            
+            new QRCode(container, {
+                text: url, width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+            });
+
+            let modal = document.getElementById('singlePrintModal');
+            modal.style.display = 'flex';
+
+            setTimeout(() => {
+                window.print();
+                modal.style.display = 'none';
+            }, 500);
         }
 
         function printAllQRs() {
