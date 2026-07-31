@@ -221,10 +221,10 @@
             justify-content: center; align-items: center; color: #000;
         }
         .single-print-card {
-            border: 2px solid #333;
-            padding: 25px;
+            border: 2px solid #000;
+            padding: 20px;
             border-radius: 16px;
-            width: 280px;
+            width: 300px;
             text-align: center;
             background: #fff;
         }
@@ -233,8 +233,24 @@
             body * { visibility: hidden; }
             #singlePrintModal, #singlePrintModal * { visibility: visible; }
             #singlePrintModal {
-                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-                display: flex !important; background: #fff !important;
+                position: fixed !important; 
+                left: 0 !important; 
+                top: 0 !important; 
+                width: 100vw !important; 
+                height: 100vh !important; 
+                display: flex !important; 
+                background: #fff !important; 
+                justify-content: center !important;
+                align-items: center !important;
+                z-index: 999999 !important;
+            }
+            .single-print-card {
+                border: 2px solid #000 !important;
+                width: 300px !important;
+                padding: 20px !important;
+                text-align: center !important;
+                background: #fff !important;
+                box-shadow: none !important;
             }
             #qrResultsContainer, #qrResultsContainer * { visibility: visible; }
             #qrResultsContainer {
@@ -262,7 +278,6 @@
             .welcome-text-qr { font-size: 11px !important; margin-top: 6px !important; }
             .table-link { display: none !important; }
 
-            /* القواعد الإضافية المحدثة للطباعة لتجنب تداخل العناصر والأزرار */
             button, input, .no-print {
                 display: none !important;
             }
@@ -283,7 +298,6 @@
         </div>
     </div>
 
-    <!-- نافذة الطباعة الفردية الآمنة -->
     <div id="singlePrintModal">
         <div class="single-print-card">
             <h2 id="printModalRestName" style="margin: 0 0 6px 0; font-size: 18px; font-weight: 900; color: #000;"></h2>
@@ -295,7 +309,6 @@
         </div>
     </div>
 
-    <!-- شاشة تسجيل الدخول -->
     <div id="authSection" class="container" style="margin-top: 40px;">
         <div class="card" style="text-align: right;">
             <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
@@ -320,7 +333,6 @@
         </div>
     </div>
 
-    <!-- لوحة التحكم الرئيسية -->
     <div id="dashboardSection">
         <header>
             <div class="header-brand">
@@ -342,7 +354,6 @@
                 <a href="#" id="kitchenBtn" target="_blank" class="btn btn-success" style="flex: 1;"><i class="fa-solid fa-fire-burner"></i> <span data-i18n="btn_kitchen">شاشة المطبخ</span></a>
             </div>
 
-            <!-- قسم إعدادات البراند واللوجو -->
             <div class="card">
                 <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-palette" style="color: var(--primary);"></i> <span data-i18n="section_identity">إعدادات الهوية واللوجو</span></h3>
                 
@@ -360,7 +371,6 @@
                 </div>
             </div>
 
-            <!-- قسم استيراد المنيو الذكي -->
             <div class="card" style="border: 1px dashed var(--secondary);">
                 <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> <span data-i18n="section_smart_menu">استيراد المنيو الذكي (عربي / إنجليزي)</span>
@@ -380,7 +390,6 @@
                 <div id="aiProgressStatus" style="font-size: 12px; color: var(--secondary); margin-top: 10px; text-align: center;"></div>
             </div>
 
-            <!-- قسم إضافة أو تعديل صنف -->
             <div class="card">
                 <h3 id="formTitle" style="margin-bottom: 15px;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> <span data-i18n="section_add_item">إضافة صنف جديد للقائمة</span></h3>
                 <input type="hidden" id="editItemId" value="">
@@ -414,13 +423,11 @@
                 </div>
             </div>
 
-            <!-- إدارة التصنيفات الحالية -->
             <div class="card">
                 <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-tags" style="color: var(--primary);"></i> <span data-i18n="section_manage_cats">إدارة التصنيفات</span></h3>
                 <div id="categoriesManagementList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
             </div>
 
-            <!-- إدارة الأصناف الحالية -->
             <div class="card">
                 <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> <span data-i18n="section_manage_items">إدارة الأصناف الحالية</span> (<span id="itemsCount">0</span>)</h3>
                 <div id="currentItemsList"></div>
@@ -1023,24 +1030,36 @@
                 let tableUrl = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${i}`;
                 let box = document.createElement('div');
                 box.className = 'qr-box';
+                
+                let qrElementId = `qrcode-table-${i}`;
+                
                 box.innerHTML = `
                     <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
                     <div class="table-title-qr">Table ${i}</div>
                     <div style="display: flex; justify-content: center;">
-                        <div class="qr-img-container" id="qrcode-${i}" title="${currentLang === 'ar' ? 'اضغط للطباعة' : 'Click to print'}" onclick="printSingleQR('${tableUrl}', 'Table ${i}')"></div>
+                        <div class="qr-img-container" id="${qrElementId}" title="${currentLang === 'ar' ? 'اضغط للطباعة' : 'Click to print'}"></div>
                     </div>
                     <div class="welcome-text-qr">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> ${currentLang === 'ar' ? 'فتح الرابط' : 'Open Link'}</a>
                 `;
+                
+                box.querySelector('.qr-img-container').onclick = function() {
+                    printSingleQR(tableUrl, `Table ${i}`);
+                };
+
                 container.appendChild(box);
 
-                new QRCode(document.getElementById(`qrcode-${i}`), {
-                    text: tableUrl, width: 110, height: 110, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                new QRCode(document.getElementById(qrElementId), {
+                    text: tableUrl, 
+                    width: 110, 
+                    height: 110, 
+                    colorDark: "#000000", 
+                    colorLight: "#ffffff", 
+                    correctLevel: QRCode.CorrectLevel.H
                 });
             }
         }
 
-        // تم تعديل الطباعة الفردية لتتم بأمان تام داخل نفس المستند دون فتح نافذة خارجية تسبب خطأ
         function printSingleQR(url, title) {
             document.getElementById('printModalRestName').innerText = currentRestaurant.toUpperCase();
             document.getElementById('printModalTableTag').innerText = title;
@@ -1049,7 +1068,12 @@
             container.innerHTML = '';
             
             new QRCode(container, {
-                text: url, width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                text: url, 
+                width: 160, 
+                height: 160, 
+                colorDark: "#000000", 
+                colorLight: "#ffffff", 
+                correctLevel: QRCode.CorrectLevel.H
             });
 
             let modal = document.getElementById('singlePrintModal');
@@ -1058,7 +1082,7 @@
             setTimeout(() => {
                 window.print();
                 modal.style.display = 'none';
-            }, 500);
+            }, 400);
         }
 
         function printAllQRs() {
