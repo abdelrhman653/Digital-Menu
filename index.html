@@ -230,77 +230,81 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* ─── تعديل نظام الطباعة لضمان عدم ظهور صفحات بيضاء نهائياً ─── */
+        /* ─── تعديل نظام الطباعة جذرياً لمنع الصفحات البيضاء تماماً ─── */
         @media print {
+            /* إخفاء الصفحة بالكامل افتراضياً عند الطباعة */
             body * {
-                visibility: hidden !important;
+                display: none !important;
             }
 
-            body.printing-single #singlePrintModal,
-            body.printing-single #singlePrintModal * {
-                visibility: visible !important;
-            }
-
-            body.printing-all #qrResultsContainer,
-            body.printing-all #qrResultsContainer * {
-                visibility: visible !important;
-            }
-
-            body.printing-single {
-                background: #fff !important;
-            }
+            /* في حالة طباعة كود فردي */
+            body.printing-single,
             body.printing-single #singlePrintModal {
-                display: flex !important;
+                display: block !important;
+                background: #ffffff !important;
                 position: absolute !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
                 height: 100% !important;
-                background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 z-index: 999999 !important;
+            }
+
+            body.printing-single #singlePrintModal {
+                display: flex !important;
                 justify-content: center !important;
                 align-items: center !important;
             }
+
+            body.printing-single #singlePrintModal * {
+                display: block !important;
+                visibility: visible !important;
+                color: #000000 !important;
+            }
+
             body.printing-single .single-print-card {
-                border: 2px solid #000 !important;
-                background: #fff !important;
-                color: #000 !important;
+                border: 2px solid #000000 !important;
+                background: #ffffff !important;
                 box-shadow: none !important;
                 margin: auto !important;
             }
-            body.printing-single .single-print-card * {
-                color: #000 !important;
-            }
 
-            body.printing-all {
-                background: #fff !important;
-            }
+            /* في حالة طباعة كل الأكواد */
+            body.printing-all,
             body.printing-all #qrResultsContainer {
-                display: grid !important;
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 15px !important;
+                display: block !important;
+                background: #ffffff !important;
                 position: absolute !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
-                background: #fff !important;
                 margin: 0 !important;
                 padding: 10px !important;
+                z-index: 999999 !important;
             }
+
+            body.printing-all #qrResultsContainer {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 15px !important;
+            }
+
+            body.printing-all #qrResultsContainer * {
+                display: block !important;
+                visibility: visible !important;
+                color: #000000 !important;
+            }
+
             body.printing-all .qr-box {
-                background: #fff !important;
-                border: 2px solid #333 !important;
-                color: #000 !important;
+                background: #ffffff !important;
+                border: 2px solid #333333 !important;
+                box-shadow: none !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
-                box-shadow: none !important;
             }
-            body.printing-all .qr-box *,
-            body.printing-all .restaurant-title-qr,
-            body.printing-all .table-title-qr,
-            body.printing-all .welcome-text-qr {
-                color: #000 !important;
-            }
+
             body.printing-all .table-link {
                 display: none !important;
             }
