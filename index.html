@@ -228,58 +228,71 @@
             background: #fff;
         }
 
-        /* أنماط خاصة بالطباعة المفردة */
-        body.printing-single #singlePrintModal {
-            display: flex !important;
-        }
-        body.printing-single *:not(#singlePrintModal):not(#singlePrintModal *) {
-            visibility: hidden !important;
-        }
-
-        /* أنماط خاصة بطباعة الكل */
-        body.printing-all #qrResultsContainer {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            display: block !important;
-        }
-        body.printing-all *:not(#qrResultsContainer):not(#qrResultsContainer *) {
-            visibility: hidden !important;
-        }
-        body.printing-all #qrResultsContainer, 
-        body.printing-all #qrResultsContainer * {
-            visibility: visible !important;
-        }
-
+        /* ─── تعديلات حاسمة لمنع تداخل الطباعة ─── */
         @media print {
-            body {
-                background: white !important;
-                color: black !important;
+            body * {
+                visibility: hidden !important;
             }
-            button, input, .no-print, select, header {
-                display: none !important;
+
+            body.printing-single #singlePrintModal,
+            body.printing-single #singlePrintModal * {
+                visibility: visible !important;
             }
-            .qr-box { 
+            body.printing-single {
+                background: #fff !important;
+            }
+            body.printing-single #singlePrintModal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                display: flex !important;
+                background: #fff !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            body.printing-all #qrResultsContainer,
+            body.printing-all #qrResultsContainer * {
+                visibility: visible !important;
+            }
+            body.printing-all {
+                background: #fff !important;
+            }
+            body.printing-all #qrResultsContainer {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 20px !important;
+                background: #fff !important;
+            }
+
+            body.printing-all .qr-box { 
                 background: #fff !important; 
                 color: #000 !important; 
                 border: 2px solid #333 !important; 
                 page-break-inside: avoid !important; 
                 break-inside: avoid !important;
-                page-break-after: always !important;
-                break-after: page !important;
                 box-shadow: none !important; 
-                width: 240px !important;
-                margin: 0 auto 20px auto !important;
+                width: 100% !important;
+                margin: 0 auto !important;
                 padding: 15px !important;
                 text-align: center !important;
             }
-            .qr-box div, .restaurant-title-qr, .table-title-qr, .welcome-text-qr { color: #000 !important; }
-            .restaurant-title-qr { font-size: 16px !important; margin-bottom: 4px !important; }
-            .table-title-qr { font-size: 13px !important; margin-bottom: 8px !important; padding: 2px 8px !important; background: #fff1f2 !important; color: #FF4757 !important; }
-            .qr-img-container { padding: 5px !important; margin: 2px 0 6px 0 !important; background: #fff !important; }
-            .welcome-text-qr { font-size: 11px !important; margin-top: 6px !important; color: #555 !important; }
-            .table-link { display: none !important; }
+            body.printing-all .qr-box div, 
+            body.printing-all .restaurant-title-qr, 
+            body.printing-all .table-title-qr, 
+            body.printing-all .welcome-text-qr { color: #000 !important; }
+            
+            body.printing-all .restaurant-title-qr { font-size: 16px !important; margin-bottom: 4px !important; }
+            body.printing-all .table-title-qr { font-size: 13px !important; margin-bottom: 8px !important; padding: 2px 8px !important; background: #fff1f2 !important; color: #FF4757 !important; }
+            body.printing-all .qr-img-container { padding: 5px !important; margin: 2px 0 6px 0 !important; background: #fff !important; }
+            body.printing-all .welcome-text-qr { font-size: 11px !important; margin-top: 6px !important; color: #555 !important; }
+            body.printing-all .table-link { display: none !important; }
 
             .single-print-card {
                 border: 2px solid #000 !important;
@@ -1080,23 +1093,23 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            document.body.classList.remove('printing-all');
+            let modal = document.getElementById('singlePrintModal');
+            modal.style.display = 'flex';
             document.body.classList.add('printing-single');
 
             setTimeout(() => {
                 window.print();
                 document.body.classList.remove('printing-single');
-            }, 300);
+                modal.style.display = 'none';
+            }, 400);
         }
 
         function printAllQRs() {
-            document.body.classList.remove('printing-single');
             document.body.classList.add('printing-all');
-
             setTimeout(() => {
                 window.print();
                 document.body.classList.remove('printing-all');
-            }, 300);
+            }, 400);
         }
 
         function showCustomAlert(msg) {
