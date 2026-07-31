@@ -229,154 +229,6 @@
             color: var(--white);
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
-
-        /* ─── نظام الطباعة أبيض وأسود ─── */
-        @media print {
-            body * {
-                visibility: hidden !important;
-            }
-
-            /* 1️⃣ طباعة كود فردي */
-            body.printing-single,
-            body.printing-single #singlePrintModal,
-            body.printing-single #singlePrintModal * {
-                visibility: visible !important;
-            }
-
-            body.printing-single {
-                background: #FFF !important;
-            }
-
-            body.printing-single #singlePrintModal {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-                background: #FFF !important;
-                display: flex !important;
-                justify-content: center !important;
-                align-items: center !important;
-            }
-
-            body.printing-single .single-print-card {
-                border: 3px solid #000 !important;
-                background: #FFF !important;
-                color: #000 !important;
-                box-shadow: none !important;
-                width: 100% !important;
-                max-width: 400px !important;
-                padding: 30px !important;
-            }
-
-            body.printing-single .single-print-card * {
-                color: #000 !important;
-            }
-
-            body.printing-single #printModalRestName {
-                font-size: 32px !important;
-                font-weight: 900 !important;
-                margin-bottom: 15px !important;
-            }
-
-            body.printing-single #printModalTableTag {
-                font-size: 24px !important;
-                font-weight: bold !important;
-                border: 2px solid #000 !important;
-                padding: 5px 15px !important;
-                margin-bottom: 25px !important;
-                display: inline-block !important;
-                background: #FFF !important;
-            }
-
-            body.printing-single #printModalQrContainer {
-                border: 3px solid #000 !important;
-                padding: 15px !important;
-                background: #FFF !important;
-                display: inline-block !important;
-                margin-bottom: 15px !important;
-            }
-
-            /* 2️⃣ طباعة كل الأكواد */
-            body.printing-all,
-            body.printing-all #qrResultsContainer,
-            body.printing-all #qrResultsContainer * {
-                visibility: visible !important;
-            }
-
-            body.printing-all {
-                background: #FFF !important;
-            }
-
-            body.printing-all #qrResultsContainer {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                display: block !important;
-            }
-
-            body.printing-all .qr-box {
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                justify-content: center !important;
-                border: 3px solid #000 !important;
-                background: #FFF !important;
-                color: #000 !important;
-                page-break-after: always !important;
-                break-after: page !important;
-                height: 95vh !important;
-                margin: 0 auto 20px auto !important;
-                padding: 40px !important;
-                box-sizing: border-box !important;
-                box-shadow: none !important;
-            }
-
-            body.printing-all .qr-box * {
-                color: #000 !important;
-            }
-
-            body.printing-all .qr-box .restaurant-title-qr {
-                font-size: 36px !important;
-                font-weight: 900 !important;
-                margin-bottom: 20px !important;
-            }
-
-            body.printing-all .qr-box .table-title-qr {
-                font-size: 26px !important;
-                font-weight: bold !important;
-                border: 2px solid #000 !important;
-                padding: 8px 20px !important;
-                margin-bottom: 30px !important;
-                display: inline-block !important;
-                background: #FFF !important;
-            }
-
-            body.printing-all .qr-box .qr-img-container {
-                border: 3px solid #000 !important;
-                padding: 15px !important;
-                background: #FFF !important;
-            }
-
-            body.printing-all .qr-box .qr-img-container img,
-            body.printing-all .qr-box .qr-img-container canvas {
-                width: 250px !important;
-                height: 250px !important;
-            }
-
-            body.printing-single .single-print-card div:last-child,
-            body.printing-all .qr-box .welcome-text-qr {
-                font-size: 22px !important;
-                font-weight: bold !important;
-                margin-top: 30px !important;
-                line-height: 1.6 !important;
-            }
-
-            body.printing-all .table-link {
-                display: none !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -389,7 +241,7 @@
         </div>
     </div>
 
-    <div id="singlePrintModal">
+    <div id="singlePrintModal" style="display:none;">
         <div class="single-print-card">
             <h2 id="printModalRestName"></h2>
             <div id="printModalTableTag"></div>
@@ -1149,50 +1001,206 @@
 
                 container.appendChild(box);
 
-                new QRCode(document.getElementById(qrElementId), {
-                    text: tableUrl, 
-                    width: 150, 
-                    height: 150, 
-                    colorDark: "#000000", 
-                    colorLight: "#ffffff", 
-                    correctLevel: QRCode.CorrectLevel.H
-                });
+                try {
+                    new QRCode(document.getElementById(qrElementId), {
+                        text: tableUrl, 
+                        width: 150, 
+                        height: 150, 
+                        colorDark: "#000000", 
+                        colorLight: "#ffffff", 
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } catch (e) {
+                    console.error("QR Generation failed", e);
+                }
             }
         }
 
-        function printSingleQR(url, title) {
-            document.getElementById('printModalRestName').innerText = currentRestaurant.toUpperCase();
-            document.getElementById('printModalTableTag').innerText = title;
-            
-            let container = document.getElementById('printModalQrContainer');
-            container.innerHTML = '';
-            
-            new QRCode(container, {
-                text: url, 
-                width: 250, 
-                height: 250, 
-                colorDark: "#000000", 
-                colorLight: "#ffffff", 
-                correctLevel: QRCode.CorrectLevel.H
-            });
+        // ==========================================
+        // [مكان الإصلاح]: دوال طباعة الـ QR كود المحدثة (آمنة، عبر iframe مخفي، ومنع الصفحة البيضاء)
+        // ==========================================
 
-            let modal = document.getElementById('singlePrintModal');
-            modal.style.display = 'flex';
-            document.body.classList.add('printing-single');
-
-            setTimeout(() => {
-                window.print();
-                document.body.classList.remove('printing-single');
-                modal.style.display = 'none';
-            }, 300);
+        function getHtmlForPrinting(contentHTML) {
+            return `<!DOCTYPE html>
+<html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
+<head>
+    <meta charset="UTF-8">
+    <title>Print QR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { background: #FFF !important; color: #000 !important; font-family: 'Cairo', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .print-card {
+            border: 3px solid #000 !important;
+            background: #FFF !important;
+            color: #000 !important;
+            width: 100% !important;
+            max-width: 400px !important;
+            padding: 30px !important;
+            text-align: center;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            page-break-after: always;
+            break-after: page;
+        }
+        .restaurant-title-qr { font-size: 32px !important; font-weight: 900 !important; margin-bottom: 15px !important; }
+        .table-title-qr { font-size: 24px !important; font-weight: bold !important; border: 2px solid #000 !important; padding: 5px 15px !important; margin-bottom: 25px !important; display: inline-block !important; }
+        .qr-img-container { border: 3px solid #000 !important; padding: 15px !important; background: #FFF !important; display: inline-block !important; margin-bottom: 15px !important; }
+        .qr-img-container img, .qr-img-container canvas { width: 220px !important; height: 220px !important; display: block; margin: 0 auto; }
+        .welcome-text-qr { font-size: 20px !important; font-weight: bold !important; margin-top: 20px !important; line-height: 1.5 !important; }
+    </style>
+</head>
+<body>
+    ${contentHTML}
+</body>
+</html>`;
         }
 
-        function printAllQRs() {
-            document.body.classList.add('printing-all');
-            setTimeout(() => {
-                window.print();
-                document.body.classList.remove('printing-all');
-            }, 300);
+        async function processAndConvertQRToImage(url) {
+            return new Promise((resolve, reject) => {
+                try {
+                    let tempDiv = document.createElement('div');
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    document.body.appendChild(tempDiv);
+
+                    new QRCode(tempDiv, {
+                        text: url,
+                        width: 250,
+                        height: 250,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+
+                    setTimeout(() => {
+                        let canvas = tempDiv.querySelector('canvas');
+                        let imgTag = tempDiv.querySelector('img');
+                        let finalImgSrc = "";
+
+                        if (canvas) {
+                            finalImgSrc = canvas.toDataURL("image/png");
+                        } else if (imgTag && imgTag.src) {
+                            finalImgSrc = imgTag.src;
+                        }
+
+                        document.body.removeChild(tempDiv);
+
+                        if (finalImgSrc) {
+                            resolve(finalImgSrc);
+                        } else {
+                            reject("Failed to generate QR Code");
+                        }
+                    }, 350);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        async function printSingleQR(url, title) {
+            try {
+                let qrImageSrc = await processAndConvertQRToImage(url);
+
+                let cardHtml = `
+                    <div class="print-card">
+                        <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
+                        <div class="table-title-qr">${title}</div>
+                        <div class="qr-img-container">
+                            <img src="${qrImageSrc}" alt="QR Code">
+                        </div>
+                        <div class="welcome-text-qr">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
+                    </div>
+                `;
+
+                executeIframePrint(getHtmlForPrinting(cardHtml));
+            } catch (e) {
+                console.error(e);
+                showCustomAlert(currentLang === 'ar' ? 'فشل تحميل أو إنشاء الـ QR كود للطباعة!' : 'Failed to generate QR Code for printing!');
+            }
+        }
+
+        async function printAllQRs() {
+            try {
+                let count = parseInt(document.getElementById('tablesCountInput').value) || 2;
+                let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+                let allCardsHtml = '';
+
+                for (let i = 1; i <= count; i++) {
+                    let tableUrl = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${i}`;
+                    let qrImageSrc = await processAndConvertQRToImage(tableUrl);
+
+                    allCardsHtml += `
+                        <div class="print-card">
+                            <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
+                            <div class="table-title-qr">Table ${i}</div>
+                            <div class="qr-img-container">
+                                <img src="${qrImageSrc}" alt="QR Code">
+                            </div>
+                            <div class="welcome-text-qr">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
+                        </div>
+                    `;
+                }
+
+                executeIframePrint(getHtmlForPrinting(allCardsHtml));
+            } catch (e) {
+                console.error(e);
+                showCustomAlert(currentLang === 'ar' ? 'فشل إعداد الأكواد للطباعة!' : 'Failed to prepare QR codes for printing!');
+            }
+        }
+
+        function executeIframePrint(fullHtmlContent) {
+            let oldIframe = document.getElementById('hiddenPrintIframe');
+            if (oldIframe) oldIframe.remove();
+
+            let iframe = document.createElement('iframe');
+            iframe.id = 'hiddenPrintIframe';
+            iframe.style.position = 'fixed';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = 'none';
+            iframe.style.left = '-9999px';
+            iframe.style.top = '-9999px';
+            document.body.appendChild(iframe);
+
+            let doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(fullHtmlContent);
+            doc.close();
+
+            iframe.onload = async function() {
+                try {
+                    // الانتظار حتى يتم تحميل الخطوط بالكامل وتوافق المتصفحات
+                    if (document.fonts && document.fonts.ready) {
+                        await document.fonts.ready;
+                    }
+                    if (iframe.contentWindow.document.fonts && iframe.contentWindow.document.fonts.ready) {
+                        await iframe.contentWindow.document.fonts.ready;
+                    }
+
+                    // انتظار تحميل جميع الصور داخل الـ iframe
+                    let images = iframe.contentWindow.document.querySelectorAll('img');
+                    let promises = Array.from(images).map(img => {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise(resolve => {
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                        });
+                    });
+
+                    await Promise.all(promises);
+
+                    // تأخير إضافي بسيط لضمان الرسم التام قبل أمر الطباعة (خاصة على الهواتف والمتصفحات المختلفة)
+                    setTimeout(() => {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    }, 400);
+
+                } catch (err) {
+                    console.error("Printing error inside iframe:", err);
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }
+            };
         }
 
         function showCustomAlert(msg) {
