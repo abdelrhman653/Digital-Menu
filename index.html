@@ -261,6 +261,15 @@
             .qr-img-container { padding: 5px !important; margin: 2px 0 6px 0 !important; }
             .welcome-text-qr { font-size: 11px !important; margin-top: 6px !important; }
             .table-link { display: none !important; }
+
+            /* القواعد الإضافية المحدثة للطباعة لتجنب تداخل العناصر والأزرار */
+            button, input, .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
         }
     </style>
 </head>
