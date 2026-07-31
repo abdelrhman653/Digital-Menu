@@ -18,8 +18,11 @@
             --border: #30363D;
             --warning: #FFA502;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 120px; }
+
+        button { touch-action: manipulation; }
+        img { user-select: none; -webkit-user-drag: none; }
 
         header {
             background: var(--dark-card);
@@ -210,7 +213,7 @@
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
             z-index: 990;
         }
-        .cart-details { font-size: 11px; color: var(--gray); margin-bottom: 6px; }
+        .cart-details { font-size: 11px; color: var(--gray); margin-bottom: 6px; line-height: 1.5; }
         .cart-main-row { display: flex; justify-content: space-between; align-items: center; }
         .btn-submit {
             background: var(--secondary);
@@ -222,6 +225,7 @@
             cursor: pointer;
             font-size: 13px;
         }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
         #customAlertModal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -334,7 +338,11 @@
                 auth_title: "تسجيل بيانات العميل للطلب",
                 name_placeholder: "اسمك الكريم (مثال: أحمد)",
                 phone_placeholder: "رقم الموبايل (مثال: 01012345678)",
-                address_placeholder: "العنوان بالتفصيل"
+                address_placeholder: "العنوان بالتفصيل",
+                subtotal_text: "سعر المنتجات",
+                delivery_text: "رسوم التوصيل",
+                service_text: "خدمة الصالة",
+                final_total_text: "الإجمالي النهائي"
             },
             en: {
                 alert_title: "Alert",
@@ -350,9 +358,22 @@
                 auth_title: "Enter Client Data for Order",
                 name_placeholder: "Your Name (e.g., John)",
                 phone_placeholder: "Mobile Number (e.g., 01012345678)",
-                address_placeholder: "Detailed Address"
+                address_placeholder: "Detailed Address",
+                subtotal_text: "Subtotal",
+                delivery_text: "Delivery",
+                service_text: "Service Charge",
+                final_total_text: "Final Total"
             }
         };
+
+        function escapeHTML(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -372,6 +393,7 @@
             document.getElementById('clientAddress').placeholder = translations[lang].address_placeholder;
             loadCategoriesBar();
             loadMenu();
+            updateCartBar();
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -380,6 +402,7 @@
 
         let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
         let restData = db[restaurant] || {};
+        const menuItems = restData.items || [];
 
         let customColor = restData.primaryColor || '#FF4757';
         document.documentElement.style.setProperty('--primary', customColor);
@@ -447,29 +470,37 @@
             let html = '';
             myOrders.slice().reverse().forEach(ord => {
                 let itemsDetailsHtml = '';
-                ord.items.forEach(i => {
+                (ord.items || []).forEach(i => {
                     itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
-                        <span>${i.name} (x${i.qty})</span>
+                        <span>${escapeHTML(i.name)} (x${i.qty})</span>
                         <span style="color: var(--secondary);">${i.price * i.qty} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
                     </div>`;
                 });
 
-                let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز');
+                let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز' || ord.status === 'Preparing' || ord.status === 'Ready');
                 let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">${currentLang === 'ar' ? 'إلغاء الطلب' : 'Cancel'}</button>` : ``;
+
+                let isOnlineOrder = ord.type === 'أونلاين' || ord.type === 'Online';
+                let breakdownHtml = isOnlineOrder ? 
+                    `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].delivery_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م` :
+                    `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].service_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م`;
 
                 html += `
                     <div class="history-item-row">
                         <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 8px;">
-                            <span>${currentLang === 'ar' ? 'طلب' : 'Order'} #${ord.id} (${ord.type})</span>
-                            <span>${ord.date} - ${ord.time}</span>
+                            <span>${currentLang === 'ar' ? 'طلب' : 'Order'} #${ord.id} (${escapeHTML(ord.type)})</span>
+                            <span>${escapeHTML(ord.date)} - ${escapeHTML(ord.time)}</span>
                         </div>
                         <div style="border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 6px;">
                             ${itemsDetailsHtml}
                         </div>
+                        <div style="font-size: 11px; color: var(--gray); margin-bottom: 8px; line-height: 1.6;">
+                            ${breakdownHtml}
+                        </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
-                            <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">${currentLang === 'ar' ? 'الإجمالي النهائي' : 'Total'}: ${ord.total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                            <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">${translations[currentLang].final_total}: ${ord.total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${ord.status}</span>
+                                <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(ord.status)}</span>
                                 ${cancelBtnHtml}
                             </div>
                         </div>
@@ -502,12 +533,12 @@
             trackerContainer.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1f2937 11%, #111827 100%); border: 1px solid var(--warning); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
                     <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> ${currentLang === 'ar' ? 'متابعة طلبك' : 'Track Order'} (#${activeOrder.id})</span>
-                    <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${activeOrder.status}</span>
+                    <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(activeOrder.status)}</span>
                 </div>
             `;
         }
 
-        let cart = {};
+        let cart = JSON.parse(localStorage.getItem(`cart_${restaurant}`)) || {};
         let selectedCategory = 'All';
 
         function loadCategoriesBar() {
@@ -516,7 +547,7 @@
             
             let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">${translations[currentLang].all_cat}</button>`;
             cats.forEach(c => {
-                html += `<button class="cat-btn ${selectedCategory === c ? 'active' : ''}" onclick="filterCategory('${c}', this)">${c}</button>`;
+                html += `<button class="cat-btn ${selectedCategory === c ? 'active' : ''}" onclick="filterCategory('${escapeHTML(c)}', this)">${escapeHTML(c)}</button>`;
             });
             container.innerHTML = html;
         }
@@ -529,7 +560,7 @@
         }
 
         function loadMenu() {
-            let items = (restData && restData.items) ? restData.items : [];
+            let items = menuItems;
 
             if (selectedCategory !== 'All') {
                 items = items.filter(i => i.category === selectedCategory);
@@ -543,9 +574,9 @@
 
                 html += `
                     <div class="menu-card">
-                        <img src="${item.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'}" alt="${item.name}">
+                        <img src="${escapeHTML(item.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500')}" alt="${escapeHTML(item.name)}" loading="lazy" decoding="async">
                         <div class="menu-content">
-                            <div class="menu-title">${item.name}</div>
+                            <div class="menu-title">${escapeHTML(item.name)}</div>
                         </div>
                         <div class="menu-footer">
                             <div class="menu-price">
@@ -554,11 +585,11 @@
                             </div>
                             <div id="btn-container-${item.id}">
                                 ${qty === 0 ? 
-                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>` :
+                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>` :
                                     `<div class="qty-controls">
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
+                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
                                         <span class="qty-num">${qty}</span>
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${item.name}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
+                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
                                      </div>`
                                 }
                             </div>
@@ -570,6 +601,29 @@
             updateLiveTracker();
         }
 
+        function updateQtyUI(id) {
+            let container = document.getElementById(`btn-container-${id}`);
+            if (!container) return;
+
+            let item = menuItems.find(i => i.id === id);
+            if (!item) return;
+
+            let qty = cart[id] ? cart[id].qty : 0;
+            let finalPrice = item.discount ? (item.price - item.discount) : item.price;
+
+            if (qty === 0) {
+                container.innerHTML = `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>`;
+            } else {
+                container.innerHTML = `
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
+                        <span class="qty-num">${qty}</span>
+                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                `;
+            }
+        }
+
         function changeQty(id, name, price, change) {
             if (!cart[id]) {
                 if (change > 0) cart[id] = { id, name, price, qty: 1 };
@@ -577,7 +631,8 @@
                 cart[id].qty += change;
                 if (cart[id].qty <= 0) delete cart[id];
             }
-            loadMenu();
+            localStorage.setItem(`cart_${restaurant}`, JSON.stringify(cart));
+            updateQtyUI(id);
             updateCartBar();
         }
 
@@ -590,7 +645,11 @@
                 let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
                 let finalTotal = subtotal + serviceFee;
 
-                document.getElementById('cartBreakdown').innerText = isOnline ? `${currentLang === 'ar' ? 'المجموع' : 'Subtotal'}: ${subtotal} + ${currentLang === 'ar' ? 'توصيل' : 'Delivery'}: 40` : `${currentLang === 'ar' ? 'المجموع' : 'Subtotal'}: ${subtotal} + ${currentLang === 'ar' ? 'خدمة صالة' : 'Service'}`;
+                let breakdownText = isOnline ? 
+                    `${translations[currentLang].subtotal_text}: ${subtotal} ج.م<br>${translations[currentLang].delivery_text}: ${serviceFee} ج.م` :
+                    `${translations[currentLang].subtotal_text}: ${subtotal} ج.م<br>${translations[currentLang].service_text}: ${serviceFee} ج.م`;
+
+                document.getElementById('cartBreakdown').innerHTML = breakdownText;
                 document.getElementById('cartTotal').innerText = `${finalTotal} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`;
             } else {
                 document.getElementById('cartBar').classList.add('hidden');
@@ -598,6 +657,13 @@
         }
 
         function submitOrder() {
+            const btn = document.querySelector(".btn-submit");
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.disabled = false;
+            }, 1500);
+
             if (!currentUser) { document.getElementById('authModal').classList.remove('hidden'); return; }
             let itemsArray = Object.values(cart);
             if (itemsArray.length === 0) return;
@@ -615,7 +681,7 @@
                 items: itemsArray,
                 subtotal, serviceFee, total: finalTotal,
                 time: new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {hour: '2-digit', minute:'2-digit'}),
-                date: new Date().toISOString().split('T')[0],
+                date: new Date().toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US'),
                 status: currentLang === 'ar' ? 'قيد التحضير' : 'Preparing'
             };
 
@@ -624,6 +690,7 @@
 
             showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح!' : 'Order submitted successfully!');
             cart = {};
+            localStorage.removeItem(`cart_${restaurant}`);
             updateCartBar();
             loadMenu();
             updateLiveTracker();
@@ -637,9 +704,15 @@
             document.getElementById('customAlertModal').classList.add('hidden');
         }
 
-        setInterval(updateLiveTracker, 2000);
+        window.addEventListener("storage", (e) => {
+            if (e.key === `orders_${restaurant}`) {
+                updateLiveTracker();
+            }
+        });
+
         window.onload = function() {
             changeLanguage(currentLang);
+            updateCartBar();
         };
     </script>
     <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
