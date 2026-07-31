@@ -1134,7 +1134,8 @@
                     <a href="${tableUrl}" target="_blank" class="table-link"><i class="fa-solid fa-link"></i> ${currentLang === 'ar' ? 'فتح الرابط' : 'Open Link'}</a>
                 `;
                 
-                box.querySelector('.qr-img-container').onclick = function() {
+                let qrContainerDiv = box.querySelector('.qr-img-container');
+                qrContainerDiv.onclick = function() {
                     printSingleQR(tableUrl, `Table ${i}`);
                 };
 
