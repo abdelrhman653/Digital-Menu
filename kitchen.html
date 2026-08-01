@@ -6,6 +6,27 @@
     <title>شاشة المطبخ وإدارة الطلبات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+      import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+        authDomain: "digital-menu-8d2b4.firebaseapp.com",
+        projectId: "digital-menu-8d2b4",
+        storageBucket: "digital-menu-8d2b4.firebasestorage.app",
+        messagingSenderId: "436566477044",
+        appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      window.db = db;
+      window.firestoreModules = { collection, onSnapshot, doc, updateDoc };
+    </script>
+
     <style>
         :root {
             --primary: #FF4757;
@@ -326,8 +347,8 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-        let restData = db[restaurant] || {};
+        let dbLocal = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+        let restData = dbLocal[restaurant] || {};
 
         let customColor = restData.primaryColor || '#FF4757';
         document.documentElement.style.setProperty('--primary', customColor);
@@ -339,8 +360,9 @@
         }
 
         let currentTab = 'active';
+        let globalOrders = [];
         let previousOrdersJSON = "";
-        let lastRenderedStateKey = ""; // لتخزين حالة العرض بالكامل لمنع الوميض وإعادة الرسم غير الضرورية
+        let lastRenderedStateKey = "";
         let originalTitle = document.title;
         let isBlinking = false;
         let blinkInterval = null;
@@ -432,9 +454,8 @@
             return { text, class: 'time-danger' };
         }
 
-        // دالة التحميل المحدثة لمنع الوميض ومقارنة البيانات قبل التحديث
         function loadKitchenOrders(forceUpdate = false) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
+            let orders = globalOrders;
             let currentOrdersJSON = JSON.stringify(orders);
 
             if (previousOrdersJSON !== "" && currentOrdersJSON !== previousOrdersJSON) {
@@ -454,7 +475,6 @@
             let dateVal = document.getElementById('dateFilter').value;
             let timeVal = document.getElementById('timeFilter').value;
 
-            // تجميع الحالة الحالية بالكامل في مفتاح واحد للمقارنة الذكية
             let currentStateKey = JSON.stringify({
                 orders: orders,
                 tab: currentTab,
@@ -464,7 +484,6 @@
                 lang: currentLang
             });
 
-            // إذا لم تتغير أي بيانات أو فلاتر ولم يتم فرض التحديث، قم بالخروج فوراً لمنع وميض الشاشة
             if (!forceUpdate && currentStateKey === lastRenderedStateKey) {
                 return;
             }
@@ -569,11 +588,11 @@
                         </div>
 
                         <div class="status-actions">
-                            <button class="${btnPrepClass}" onclick="updateStatus(${order.id}, 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_prep}</button>
-                            <button class="${btnReadyClass}" onclick="updateStatus(${order.id}, 'جاهز')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_ready}</button>
-                            <button class="${btnDeliveryClass}" onclick="updateStatus(${order.id}, 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_delivery}</button>
-                            <button class="${btnSuccessClass}" onclick="updateStatus(${order.id}, 'تم التسليم')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_success}</button>
-                            <button class="${btnCancelClass}" onclick="updateStatus(${order.id}, 'ملغي')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_cancel}</button>
+                            <button class="${btnPrepClass}" onclick="updateStatus('${order.docId || order.id}', 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_prep}</button>
+                            <button class="${btnReadyClass}" onclick="updateStatus('${order.docId || order.id}', 'جاهز')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_ready}</button>
+                            <button class="${btnDeliveryClass}" onclick="updateStatus('${order.docId || order.id}', 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_delivery}</button>
+                            <button class="${btnSuccessClass}" onclick="updateStatus('${order.docId || order.id}', 'تم التسليم')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_success}</button>
+                            <button class="${btnCancelClass}" onclick="updateStatus('${order.docId || order.id}', 'ملغي')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_cancel}</button>
                         </div>
                     </div>
                 `;
@@ -602,12 +621,11 @@
             timeSelect.value = currentSelectedTime;
         }
 
-        function updateStatus(orderId, newStatus) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let order = orders.find(o => o.id === orderId);
-            if (order) {
-                order.status = newStatus;
-                localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
+        async function updateStatus(docId, newStatus) {
+            try {
+                const { doc, updateDoc } = window.firestoreModules;
+                const orderRef = doc(window.db, `restaurants/${restaurant}/orders`, String(docId));
+                await updateDoc(orderRef, { status: newStatus });
                 
                 if (newStatus === 'تم التسليم' || newStatus === 'Delivered') {
                     currentTab = 'delivered';
@@ -616,14 +634,15 @@
                     currentTab = 'cancelled';
                     switchTab('cancelled');
                 } else {
-                    loadKitchenOrders(true); // تحديث إجباري عند تغيير الحالة
+                    loadKitchenOrders(true);
                 }
+            } catch (e) {
+                console.error("Error updating status: ", e);
             }
         }
 
         function printReceipt(orderId) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let order = orders.find(o => o.id === orderId);
+            let order = globalOrders.find(o => o.id === orderId);
             if (!order) return;
 
             let logoImgHtml = restData.logo ? `<img src="${restData.logo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; display: block; margin: 0 auto 5px auto;">` : '';
@@ -697,11 +716,29 @@
             };
         }
 
-        // الاستدعاء التلقائي كل ثانيتين مع التحقق الذكي لمنع الوميض نهائياً
-        setInterval(() => loadKitchenOrders(false), 2000);
-
         window.onload = function() {
             changeLanguage(currentLang);
+            
+            // تهيئة الاستماع الفوري لـ Firebase Firestore عبر onSnapshot
+            const checkFirebaseInterval = setInterval(() => {
+                if (window.db && window.firestoreModules) {
+                    clearInterval(checkFirebaseInterval);
+                    const { collection, onSnapshot } = window.firestoreModules;
+                    const ordersCol = collection(window.db, `restaurants/${restaurant}/orders`);
+                    
+                    onSnapshot(ordersCol, (snapshot) => {
+                        globalOrders = [];
+                        snapshot.forEach((docSnap) => {
+                            let data = docSnap.data();
+                            data.docId = docSnap.id;
+                            globalOrders.push(data);
+                        });
+                        loadKitchenOrders(true);
+                    }, (error) => {
+                        console.error("Firestore error: ", error);
+                    });
+                }
+            }, 100);
         };
     </script>
     <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
