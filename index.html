@@ -598,7 +598,12 @@
                 return;
             }
 
-            usersDb[phoneInput] = { name: nameInput, phone: phoneInput, password: passwordInput };
+            usersDb[phoneInput] = {
+                name: nameInput,
+                phone: phoneInput,
+                password: passwordInput,
+                createdAt: new Date().toISOString()
+            };
             localStorage.setItem(usersKey, JSON.stringify(usersDb));
 
             currentRestaurant = nameInput;
@@ -631,8 +636,8 @@
             let usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
 
             if (!usersDb[phoneInput]) {
-                usersDb[phoneInput] = { name: nameInput, phone: phoneInput, password: passwordInput };
-                localStorage.setItem(usersKey, JSON.stringify(usersDb));
+                showCustomAlert(currentLang === 'ar' ? 'هذا الرقم غير مسجل.' : 'This phone number is not registered.');
+                return;
             }
 
             if (usersDb[phoneInput].password !== passwordInput) {
