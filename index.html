@@ -274,8 +274,8 @@
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;" data-i18n="label_password">كلمة المرور:</label>
             <input type="password" id="authPassword" placeholder="********">
 
-            <button class="btn" style="margin-top: 10px;" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login">تسجيل الدخول</span></button>
-            <button class="btn btn-secondary-action" onclick="handleRegister()"><i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_register">إنشاء حساب جديد</span></button>
+            <button class="btn" style="margin-top: 10px;" onclick="handleRegister()"><i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_register">إنشاء حساب جديد</span></button>
+            <button class="btn btn-secondary-action" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login">تسجيل الدخول</span></button>
         </div>
     </div>
 
@@ -590,36 +590,48 @@
                 return;
             }
 
-            let usersKey = `users_${nameInput}`;
-            let usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
+            if (!window.FB) return;
+            try {
+                let userDocRef = window.FB.doc(window.FB.db, "users", `${nameInput}_${phoneInput}`);
+                let userSnap = await window.FB.getDoc(userDocRef);
 
-            if (usersDb[phoneInput]) {
-                showCustomAlert(currentLang === 'ar' ? 'هذا الرقم مسجل بالفعل.' : 'This phone number is already registered.');
-                return;
+                if (userSnap.exists()) {
+                    showCustomAlert(currentLang === 'ar' ? 'هذا الرقم مسجل بالفعل.' : 'This phone number is already registered.');
+                    return;
+                }
+
+                await window.FB.setDoc(userDocRef, {
+                    name: nameInput,
+                    phone: phoneInput,
+                    password: passwordInput,
+                    createdAt: new Date().toISOString()
+                });
+
+                currentRestaurant = nameInput;
+                localStorage.setItem('current_restaurant', currentRestaurant);
+                
+                let restDocRef = window.FB.doc(window.FB.db, "restaurants", currentRestaurant);
+                let restSnap = await window.FB.getDoc(restDocRef);
+                
+                if (!restSnap.exists()) {
+                    restaurantDataCache = {
+                        phone: phoneInput,
+                        primaryColor: '#FF4757',
+                        logo: '',
+                        categories: [...defaultCategories],
+                        items: []
+                    };
+                    await window.FB.setDoc(restDocRef, restaurantDataCache);
+                } else {
+                    restaurantDataCache = restSnap.data();
+                }
+
+                showCustomAlert(currentLang === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!');
+                showDashboard();
+            } catch (e) {
+                console.error("Register error:", e);
+                showCustomAlert(currentLang === 'ar' ? 'حدث خطأ أثناء التسجيل. حاول مرة أخرى.' : 'Error during registration.');
             }
-
-            usersDb[phoneInput] = {
-                name: nameInput,
-                phone: phoneInput,
-                password: passwordInput,
-                createdAt: new Date().toISOString()
-            };
-            localStorage.setItem(usersKey, JSON.stringify(usersDb));
-
-            currentRestaurant = nameInput;
-            localStorage.setItem('current_restaurant', currentRestaurant);
-            
-            restaurantDataCache = {
-                phone: phoneInput,
-                primaryColor: '#FF4757',
-                logo: '',
-                categories: [...defaultCategories],
-                items: []
-            };
-            await saveRestaurantDataToCloud();
-
-            showCustomAlert(currentLang === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!');
-            showDashboard();
         }
 
         async function handleLogin() {
@@ -632,23 +644,30 @@
                 return;
             }
 
-            let usersKey = `users_${nameInput}`;
-            let usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
+            if (!window.FB) return;
+            try {
+                let userDocRef = window.FB.doc(window.FB.db, "users", `${nameInput}_${phoneInput}`);
+                let userSnap = await window.FB.getDoc(userDocRef);
 
-            if (!usersDb[phoneInput]) {
-                showCustomAlert(currentLang === 'ar' ? 'هذا الرقم غير مسجل.' : 'This phone number is not registered.');
-                return;
+                if (!userSnap.exists()) {
+                    showCustomAlert(currentLang === 'ar' ? 'هذا الرقم غير مسجل.' : 'This phone number is not registered.');
+                    return;
+                }
+
+                let userData = userSnap.data();
+                if (userData.password !== passwordInput) {
+                    showCustomAlert(currentLang === 'ar' ? 'كلمة المرور غير صحيحة.' : 'Incorrect password.');
+                    return;
+                }
+
+                currentRestaurant = nameInput;
+                localStorage.setItem('current_restaurant', currentRestaurant);
+                await fetchRestaurantDataFromCloud();
+                showDashboard();
+            } catch (e) {
+                console.error("Login error:", e);
+                showCustomAlert(currentLang === 'ar' ? 'حدث خطأ أثناء تسجيل الدخول.' : 'Login error.');
             }
-
-            if (usersDb[phoneInput].password !== passwordInput) {
-                showCustomAlert(currentLang === 'ar' ? 'كلمة المرور غير صحيحة.' : 'Incorrect password.');
-                return;
-            }
-
-            currentRestaurant = nameInput;
-            localStorage.setItem('current_restaurant', currentRestaurant);
-            await fetchRestaurantDataFromCloud();
-            showDashboard();
         }
 
         function handleLogoUpload(event) {
