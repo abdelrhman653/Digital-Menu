@@ -271,6 +271,9 @@
             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;" data-i18n="label_phone">رقم التليفون:</label>
             <input type="tel" id="authPhoneNumber" placeholder="مثال: 01012345678">
 
+            <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 5px;" data-i18n="label_password">كلمة المرور:</label>
+            <input type="password" id="authPassword" placeholder="********">
+
             <button class="btn" style="margin-top: 10px;" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login">تسجيل الدخول</span></button>
             <button class="btn btn-secondary-action" onclick="handleRegister()"><i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_register">إنشاء حساب جديد</span></button>
         </div>
@@ -400,6 +403,7 @@
                 portal_desc: "سجل دخولك لإدارة المنيو والأصناف بكل سهولة.",
                 label_store_name: "اسم النشاط أو كود الدخول:",
                 label_phone: "رقم التليفون:",
+                label_password: "كلمة المرور:",
                 btn_login: "تسجيل الدخول",
                 btn_register: "إنشاء حساب جديد",
                 btn_logout: "خروج",
@@ -440,6 +444,7 @@
                 portal_desc: "Login to easily manage your menu and items.",
                 label_store_name: "Store Name or Login Code:",
                 label_phone: "Phone Number:",
+                label_password: "Password:",
                 btn_login: "Login",
                 btn_register: "Create New Account",
                 btn_logout: "Logout",
@@ -523,26 +528,45 @@
         function handleRegister() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
+            let passwordInput = document.getElementById('authPassword').value;
 
-            if (!nameInput || !phoneInput) {
-                showCustomAlert(currentLang === 'ar' ? 'الرجاء كتابة اسم النشاط ورقم التليفون!' : 'Please enter store name and phone number!');
+            if (!nameInput || !phoneInput || !passwordInput) {
+                showCustomAlert(currentLang === 'ar' ? 'الرجاء كتابة اسم النشاط، رقم التليفون، وكلمة المرور!' : 'Please enter store name, phone number, and password!');
                 return;
             }
+
+            let usersKey = `users_${nameInput}`;
+            let usersDb = {};
+            try {
+                usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
+            } catch(e) {
+                usersDb = {};
+            }
+
+            if (usersDb[phoneInput]) {
+                showCustomAlert(currentLang === 'ar' ? 'هذا الرقم مسجل بالفعل.' : 'This phone number is already registered.');
+                return;
+            }
+
+            usersDb[phoneInput] = {
+                name: nameInput,
+                phone: phoneInput,
+                password: passwordInput,
+                createdAt: new Date().toISOString()
+            };
+            localStorage.setItem(usersKey, JSON.stringify(usersDb));
 
             let db = getAllRestaurants();
-            if (db[nameInput]) {
-                showCustomAlert(currentLang === 'ar' ? 'هذا النشاط مسجل مسبقاً! سجل دخولك مباشرة.' : 'This store is already registered! Please login directly.');
-                return;
+            if (!db[nameInput]) {
+                db[nameInput] = {
+                    phone: phoneInput,
+                    primaryColor: '#FF4757',
+                    logo: '',
+                    categories: [...defaultCategories],
+                    items: []
+                };
+                saveAllRestaurants(db);
             }
-
-            db[nameInput] = {
-                phone: phoneInput,
-                primaryColor: '#FF4757',
-                logo: '',
-                categories: [...defaultCategories],
-                items: []
-            };
-            saveAllRestaurants(db);
 
             currentRestaurant = nameInput;
             localStorage.setItem('current_restaurant', currentRestaurant);
@@ -555,19 +579,40 @@
         function handleLogin() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
+            let passwordInput = document.getElementById('authPassword').value;
 
-            if (!nameInput || !phoneInput) {
-                showCustomAlert(currentLang === 'ar' ? 'الرجاء إدخال اسم النشاط ورقم التليفون!' : 'Please enter store name and phone number!');
+            if (!nameInput || !phoneInput || !passwordInput) {
+                showCustomAlert(currentLang === 'ar' ? 'الرجاء إدخال اسم النشاط، رقم التليفون، وكلمة المرور!' : 'Please enter store name, phone number, and password!');
                 return;
             }
 
-            let db = getAllRestaurants();
-            if (!db[nameInput]) {
-                showCustomAlert(currentLang === 'ar' ? 'هذا النشاط غير موجود! أنشئ حساباً جديداً.' : 'Store not found! Create a new account.');
-                return;
+            let usersKey = `users_${nameInput}`;
+            let usersDb = {};
+            try {
+                usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
+            } catch(e) {
+                usersDb = {};
             }
-            if (db[nameInput].phone !== phoneInput) {
-                showCustomAlert(currentLang === 'ar' ? 'رقم التليفون غير صحيح!' : 'Incorrect phone number!');
+
+            if (!usersDb[phoneInput]) {
+                let db = getAllRestaurants();
+                if (db[nameInput] && db[nameInput].phone === phoneInput) {
+                    usersDb[phoneInput] = {
+                        name: nameInput,
+                        phone: phoneInput,
+                        password: passwordInput,
+                        createdAt: new Date().toISOString()
+                    };
+                    localStorage.setItem(usersKey, JSON.stringify(usersDb));
+                } else {
+                    showCustomAlert(currentLang === 'ar' ? 'هذا الرقم غير مسجل.' : 'This phone number is not registered.');
+                    return;
+                }
+            }
+
+            let userRecord = usersDb[phoneInput];
+            if (userRecord.password !== passwordInput) {
+                showCustomAlert(currentLang === 'ar' ? 'كلمة المرور غير صحيحة.' : 'Incorrect password.');
                 return;
             }
 
@@ -1016,10 +1061,6 @@
             }
         }
 
-        // ==========================================
-        // [مكان الإصلاح]: دوال طباعة الـ QR كود المحدثة (آمنة، عبر iframe مخفي، ومنع الصفحة البيضاء)
-        // ==========================================
-
         function getHtmlForPrinting(contentHTML) {
             return `<!DOCTYPE html>
 <html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
@@ -1169,7 +1210,6 @@
 
             iframe.onload = async function() {
                 try {
-                    // الانتظار حتى يتم تحميل الخطوط بالكامل وتوافق المتصفحات
                     if (document.fonts && document.fonts.ready) {
                         await document.fonts.ready;
                     }
@@ -1177,7 +1217,6 @@
                         await iframe.contentWindow.document.fonts.ready;
                     }
 
-                    // انتظار تحميل جميع الصور داخل الـ iframe
                     let images = iframe.contentWindow.document.querySelectorAll('img');
                     let promises = Array.from(images).map(img => {
                         if (img.complete) return Promise.resolve();
@@ -1189,7 +1228,6 @@
 
                     await Promise.all(promises);
 
-                    // تأخير إضافي بسيط لضمان الرسم التام قبل أمر الطباعة (خاصة على الهواتف والمتصفحات المختلفة)
                     setTimeout(() => {
                         iframe.contentWindow.focus();
                         iframe.contentWindow.print();
