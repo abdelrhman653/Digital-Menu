@@ -828,6 +828,10 @@
         }
 
         function logoutClient() {
+            if (activeOrderUnsubscribe) {
+                activeOrderUnsubscribe();
+                activeOrderUnsubscribe = null;
+            }
             localStorage.removeItem(`current_client_${restaurant}`);
             location.reload();
         }
@@ -859,11 +863,11 @@
                     <div class="history-item-row">
                         <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px;">
                             <span>طلب #${o.id.slice(-4)}</span>
-                            <span style="color: var(--warning);">${o.status || 'قيد المعالجة'}</span>
+                            <span style="color: var(--warning);">${escapeHTML(o.status || 'قيد المعالجة')}</span>
                         </div>
-                        <div style="color: var(--gray); font-size: 11px; margin-bottom: 6px;">${new Date(o.createdAt).toLocaleString()}</div>
+                        <div style="color: var(--gray); font-size: 11px; margin-bottom: 6px;">${o.createdAt ? new Date(o.createdAt).toLocaleString() : ''}</div>
                         <div style="border-top: 1px solid var(--border); padding-top: 6px; font-size: 12px;">
-                            ${(o.items || []).map(i => `${i.name} × ${i.quantity}`).join('، ')}
+                            ${(o.items || []).map(i => `${escapeHTML(i.name)} × ${i.quantity}`).join('، ')}
                         </div>
                         <div style="margin-top: 6px; font-weight: 700; color: var(--secondary);">الإجمالي: ${o.total} ج.م</div>
                     </div>
@@ -1010,7 +1014,7 @@
             };
 
             try {
-                let docRef = await window.firebaseModules.addDoc(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), orderData);
+                await window.firebaseModules.addDoc(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), orderData);
                 cart = {};
                 localStorage.removeItem(`cart_${restaurant}`);
                 updateCartBar();
@@ -1024,35 +1028,65 @@
 
         function listenLiveOrders() {
             if (!currentUser) return;
-            if (activeOrderUnsubscribe) activeOrderUnsubscribe();
+            if (activeOrderUnsubscribe) {
+                activeOrderUnsubscribe();
+                activeOrderUnsubscribe = null;
+            }
 
             try {
-                let q = window.firebaseModules.query(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), window.firebaseModules.where("client.phone", "==", currentUser.phone));
+                let q = window.firebaseModules.query(
+                    window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`),
+                    window.firebaseModules.where("client.phone", "==", currentUser.phone)
+                );
+                
                 activeOrderUnsubscribe = window.firebaseModules.onSnapshot(q, (snapshot) => {
+                    let tracker = document.getElementById('liveOrderTrackerContainer');
+                    if (!tracker) return;
+
                     let activeOrders = [];
                     snapshot.forEach(d => {
                         let data = d.data();
-                        if (data.status !== 'مكتمل' && data.status !== 'ملغي') {
+                        let rawStatus = data.status ? String(data.status).trim() : '';
+                        
+                        // توحيد مقارنة حالة الطلب وتجنب المسافات أو اختلافات النصوص
+                        if (rawStatus !== 'مكتمل' && rawStatus !== 'ملغي') {
                             activeOrders.push({ id: d.id, ...data });
                         }
                     });
 
-                    let tracker = document.getElementById('liveOrderTrackerContainer');
+                    // إذا لم تعد هناك أي طلبات نشطة
                     if (activeOrders.length === 0) {
-                        tracker.innerHTML = '';
+                        tracker.innerHTML = "";
                         return;
                     }
 
-                    let latest = activeOrders[activeOrders.length - 1];
+                    // ترتيب الطلبات بواسطة createdAt تنازلياً (أحدث طلب أولاً)
+                    activeOrders.sort((a, b) => {
+                        let timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        let timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        return timeB - timeA;
+                    });
+
+                    // اعرض أحدث طلب فقط
+                    let latest = activeOrders[0];
                     tracker.innerHTML = `
                         <div style="background: rgba(46, 213, 115, 0.15); border: 1px solid var(--secondary); padding: 12px; border-radius: 12px; margin-bottom: 12px; font-size: 13px;">
-                            <div style="font-weight: 700; color: var(--secondary); margin-bottom: 4px;"><i class="fa-solid fa-spinner fa-spin"></i> حالة طلبك الحالي: ${latest.status}</div>
-                            <div style="color: var(--gray); font-size: 11px;">رقم الطلب: #${latest.id.slice(-4)} | الإجمالي: ${latest.total} ج.م</div>
+                            <div style="font-weight: 700; color: var(--secondary); margin-bottom: 4px;"><i class="fa-solid fa-spinner fa-spin"></i> حالة طلبك الحالي: ${escapeHTML(latest.status || 'قيد المعالجة')}</div>
+                            <div style="color: var(--gray); font-size: 11px;">رقم الطلب: #${escapeHTML(latest.id.slice(-4))} | الإجمالي: ${escapeHTML(String(latest.total || 0))} ج.م</div>
                         </div>
                     `;
+                }, (error) => {
+                    console.error("Live orders snapshot error:", error);
                 });
             } catch(e) { console.error(e); }
         }
+
+        // إيقاف الـ listener عند إغلاق أو مغادرة الصفحة لمنع الـ Memory Leaks
+        window.addEventListener('beforeunload', () => {
+            if (activeOrderUnsubscribe) {
+                activeOrderUnsubscribe();
+            }
+        });
     </script>
 </body>
 </html>
