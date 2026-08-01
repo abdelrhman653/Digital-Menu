@@ -213,22 +213,6 @@
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
-        #singlePrintModal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85); z-index: 999999; display: none;
-            justify-content: center; align-items: center;
-        }
-        .single-print-card {
-            border: 2px solid var(--primary);
-            padding: 30px 25px;
-            border-radius: 20px;
-            width: 320px;
-            text-align: center;
-            background: var(--dark-card);
-            color: var(--white);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        }
     </style>
 </head>
 <body>
@@ -238,17 +222,6 @@
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> <span data-i18n="alert_title">تنبيه</span></h3>
             <p id="customAlertMessage">رسالة التنبيه هنا</p>
             <button class="btn" onclick="closeCustomAlert()" data-i18n="btn_ok">حسناً</button>
-        </div>
-    </div>
-
-    <div id="singlePrintModal" style="display:none;">
-        <div class="single-print-card">
-            <h2 id="printModalRestName"></h2>
-            <div id="printModalTableTag"></div>
-            <div style="display: flex; justify-content: center;">
-                <div id="printModalQrContainer"></div>
-            </div>
-            <div>سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
         </div>
     </div>
 
@@ -396,7 +369,7 @@
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 
         const firebaseConfig = {
-            apiKey: "YOUR_KEY",
+            apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
             authDomain: "digital-menu-8d2b4.firebaseapp.com",
             projectId: "digital-menu-8d2b4",
             storageBucket: "digital-menu-8d2b4.firebasestorage.app",
@@ -408,7 +381,6 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // إتاحة الدوال globally للاستخدام داخل السكربت العادي
         window.FB = { db, storage, doc, getDoc, setDoc, updateDoc, ref, uploadBytes, getDownloadURL };
     </script>
 
