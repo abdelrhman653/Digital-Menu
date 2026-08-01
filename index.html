@@ -255,7 +255,7 @@
     <div id="dashboardSection">
         <header>
             <div class="header-brand">
-                <img id="headerLogoImg" class="header-logo" src="" alt="شعار المكان">
+                <img id="headerLogoImg" class="header-logo" src="" alt="شعار المكان" loading="lazy" decoding="async">
                 <h1 id="headerRestaurantTitle">⚡ لوحة الإدارة</h1>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
@@ -365,7 +365,7 @@
     <!-- ربط فايربيس -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -381,7 +381,12 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        window.FB = { db, storage, doc, getDoc, setDoc, updateDoc, ref, uploadBytes, getDownloadURL };
+        window.FB = { 
+            db, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, ref, uploadBytes, getDownloadURL 
+        };
+
+        // تشغيل الحدث عند جاهزية الفايربيس لتفعيل المزامنة الفورية
+        window.dispatchEvent(new Event('firebase-ready'));
     </script>
 
     <script>
@@ -397,6 +402,7 @@
             categories: [...defaultCategories],
             items: []
         };
+        let unsubscribeRestaurant = null;
 
         const translations = {
             ar: {
@@ -483,6 +489,16 @@
             }
         };
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         function showCustomAlert(message) {
             document.getElementById('customAlertMessage').innerText = message;
             document.getElementById('customAlertModal').classList.remove('hidden');
@@ -497,8 +513,10 @@
             localStorage.setItem('app_lang', lang);
             document.documentElement.lang = lang;
             document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('langSelect').value = lang;
-            document.getElementById('langSelectDashboard').value = lang;
+            let langSelect = document.getElementById('langSelect');
+            let langSelectDashboard = document.getElementById('langSelectDashboard');
+            if (langSelect) langSelect.value = lang;
+            if (langSelectDashboard) langSelectDashboard.value = lang;
 
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 let key = el.getAttribute('data-i18n');
@@ -510,27 +528,42 @@
             renderCategoriesManagement();
         }
 
-        window.onload = async function() {
+        window.addEventListener('firebase-ready', async function() {
             changeLanguage(currentLang);
             if (currentRestaurant) {
-                await fetchRestaurantDataFromCloud();
+                startRestaurantListener();
                 showDashboard();
             }
-        }
+        });
 
-        async function fetchRestaurantDataFromCloud() {
-            if (!window.FB) return;
-            try {
-                let docRef = window.FB.doc(window.FB.db, "restaurants", currentRestaurant);
-                let docSnap = await window.FB.getDoc(docRef);
+        window.onload = function() {
+            changeLanguage(currentLang);
+            if (currentRestaurant && window.FB) {
+                startRestaurantListener();
+                showDashboard();
+            }
+        };
+
+        function startRestaurantListener() {
+            if (!window.FB || !currentRestaurant) return;
+            if (unsubscribeRestaurant) unsubscribeRestaurant();
+
+            let docRef = window.FB.doc(window.FB.db, "restaurants", currentRestaurant);
+            unsubscribeRestaurant = window.FB.onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     restaurantDataCache = docSnap.data();
                     if (!restaurantDataCache.categories) restaurantDataCache.categories = [...defaultCategories];
                     if (!restaurantDataCache.items) restaurantDataCache.items = [];
+                    
+                    applyThemeColor(restaurantDataCache.primaryColor || '#FF4757');
+                    loadLogoOnHeader(restaurantDataCache.logo);
+                    updateCategoryDropdown();
+                    renderCategoriesManagement();
+                    renderItems();
                 }
-            } catch (e) {
-                console.error("Error fetching data:", e);
-            }
+            }, (error) => {
+                console.error("Snapshot error:", error);
+            });
         }
 
         async function saveRestaurantDataToCloud() {
@@ -573,14 +606,20 @@
 
             if (!window.FB) return;
             try {
-                let userDocRef = window.FB.doc(window.FB.db, "users", `${nameInput}_${phoneInput}`);
-                let userSnap = await window.FB.getDoc(userDocRef);
+                // التحقق من أن رقم الهاتف لا يتكرر داخل نفس اسم النشاط فقط (مطعم A برقم 010 لا يتكرر، لكن مطعم B بنفس الرقم مسموح)
+                let q = window.FB.query(
+                    window.FB.collection(window.FB.db, "users"),
+                    window.FB.where("name", "==", nameInput),
+                    window.FB.where("phone", "==", phoneInput)
+                );
+                let querySnapshot = await window.FB.getDocs(q);
 
-                if (userSnap.exists()) {
-                    showCustomAlert(currentLang === 'ar' ? 'هذا الرقم مسجل بالفعل.' : 'This phone number is already registered.');
+                if (!querySnapshot.empty) {
+                    showCustomAlert(currentLang === 'ar' ? 'رقم الهاتف هذا مسجل بالفعل لهذا النشاط.' : 'This phone number is already registered for this store.');
                     return;
                 }
 
+                let userDocRef = window.FB.doc(window.FB.db, "users", `${nameInput}_${phoneInput}`);
                 await window.FB.setDoc(userDocRef, {
                     name: nameInput,
                     phone: phoneInput,
@@ -608,6 +647,7 @@
                 }
 
                 showCustomAlert(currentLang === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!');
+                startRestaurantListener();
                 showDashboard();
             } catch (e) {
                 console.error("Register error:", e);
@@ -631,7 +671,7 @@
                 let userSnap = await window.FB.getDoc(userDocRef);
 
                 if (!userSnap.exists()) {
-                    showCustomAlert(currentLang === 'ar' ? 'هذا الرقم غير مسجل.' : 'This phone number is not registered.');
+                    showCustomAlert(currentLang === 'ar' ? 'بيانات الدخول غير صحيحة أو هذا النشاط ورقم الهاتف غير مسجلين.' : 'Invalid credentials or store/phone not registered.');
                     return;
                 }
 
@@ -643,7 +683,7 @@
 
                 currentRestaurant = nameInput;
                 localStorage.setItem('current_restaurant', currentRestaurant);
-                await fetchRestaurantDataFromCloud();
+                startRestaurantListener();
                 showDashboard();
             } catch (e) {
                 console.error("Login error:", e);
@@ -684,13 +724,14 @@
         }
 
         function logout() {
+            if (unsubscribeRestaurant) unsubscribeRestaurant();
             localStorage.removeItem('current_restaurant');
             currentRestaurant = null;
             document.getElementById('authSection').style.display = 'block';
             document.getElementById('dashboardSection').style.display = 'none';
         }
 
-        async function showDashboard() {
+        function showDashboard() {
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
             document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
@@ -736,7 +777,7 @@
             let container = document.getElementById('categoriesManagementList');
             container.innerHTML = cats.map(cat => `
                 <div style="background: var(--dark-bg); border: 1px solid var(--border); padding: 6px 12px; border-radius: 10px; display: flex; align-items: center; gap: 8px; font-size: 13px;">
-                    <span>${cat}</span>
+                    <span>${escapeHtml(cat)}</span>
                     <button onclick="deleteCategory('${cat.replace(/'/g, "\\'")}')" style="background:none; border:none; color: var(--primary); cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             `).join('');
@@ -964,7 +1005,7 @@
             uploadedImageFile = null;
             document.getElementById('fileNameDisplay').innerText = currentLang === 'ar' ? 'تم تحميل صورة الصنف الحالي' : 'Current item image loaded';
 
-            document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: #1E90FF;"></i> ${currentLang === 'ar' ? 'تعديل الصنف: ' : 'Edit Item: '}${item.name}`;
+            document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: #1E90FF;"></i> ${currentLang === 'ar' ? 'تعديل الصنف: ' : 'Edit Item: '}${escapeHtml(item.name)}`;
             document.getElementById('saveItemBtn').innerHTML = `<i class="fa-solid fa-check"></i> ${currentLang === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}`;
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1001,12 +1042,13 @@
 
             container.innerHTML = items.map(item => {
                 let finalPrice = item.discount ? (item.price - item.discount) : item.price;
+                let safeImg = item.img || 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500';
                 return `
                     <div class="item-row">
                         <div class="item-info">
-                            <img src="${item.img}" alt="${item.name}">
+                            <img src="${escapeHtml(safeImg)}" alt="${escapeHtml(item.name)}" loading="lazy" decoding="async">
                             <div>
-                                <div style="font-weight: 700; font-size: 14px;">${item.name} <span style="font-size: 11px; color: var(--primary);">(${item.category})</span></div>
+                                <div style="font-weight: 700; font-size: 14px;">${escapeHtml(item.name)} <span style="font-size: 11px; color: var(--primary);">(${escapeHtml(item.category)})</span></div>
                                 <div style="color: var(--secondary); font-size: 13px; font-weight: 600;">
                                     ${finalPrice} ${currentLang === 'ar' ? 'ج.م' : 'EGP'} ${item.discount ? `<span style="color: var(--primary); font-size: 11px;">(${currentLang === 'ar' ? 'خصم' : 'Disc.'} ${item.discount})</span>` : ''}
                                 </div>
@@ -1035,7 +1077,7 @@
                 let qrElementId = `qrcode-table-${i}`;
                 
                 box.innerHTML = `
-                    <div class="restaurant-title-qr">${currentRestaurant ? currentRestaurant.toUpperCase() : ''}</div>
+                    <div class="restaurant-title-qr">${currentRestaurant ? escapeHtml(currentRestaurant.toUpperCase()) : ''}</div>
                     <div class="table-title-qr">Table ${i}</div>
                     <div style="display: flex; justify-content: center;">
                         <div class="qr-img-container" id="${qrElementId}" title="${currentLang === 'ar' ? 'اضغط للطباعة' : 'Click to print'}"></div>
@@ -1148,10 +1190,10 @@
                 let qrImageSrc = await processAndConvertQRToImage(url);
                 let cardHtml = `
                     <div class="print-card">
-                        <div class="restaurant-title-qr">${currentRestaurant ? currentRestaurant.toUpperCase() : ''}</div>
-                        <div class="table-title-qr">${title}</div>
+                        <div class="restaurant-title-qr">${currentRestaurant ? escapeHtml(currentRestaurant.toUpperCase()) : ''}</div>
+                        <div class="table-title-qr">${escapeHtml(title)}</div>
                         <div class="qr-img-container">
-                            <img src="${qrImageSrc}" alt="QR Code">
+                            <img src="${escapeHtml(qrImageSrc)}" alt="QR Code" loading="lazy" decoding="async">
                         </div>
                         <div class="welcome-text-qr">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
                     </div>
@@ -1175,10 +1217,10 @@
 
                     allCardsHtml += `
                         <div class="print-card">
-                            <div class="restaurant-title-qr">${currentRestaurant ? currentRestaurant.toUpperCase() : ''}</div>
+                            <div class="restaurant-title-qr">${currentRestaurant ? escapeHtml(currentRestaurant.toUpperCase()) : ''}</div>
                             <div class="table-title-qr">Table ${i}</div>
                             <div class="qr-img-container">
-                                <img src="${qrImageSrc}" alt="QR Code">
+                                <img src="${escapeHtml(qrImageSrc)}" alt="QR Code" loading="lazy" decoding="async">
                             </div>
                             <div class="welcome-text-qr">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
                         </div>
