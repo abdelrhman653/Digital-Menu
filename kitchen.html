@@ -25,6 +25,8 @@
       const db = getFirestore(app);
       window.db = db;
       window.firestoreModules = { collection, onSnapshot, doc, updateDoc };
+
+      window.dispatchEvent(new Event('firebase-loaded-kitchen'));
     </script>
 
     <style>
@@ -146,11 +148,7 @@
             padding: 15px;
             margin-bottom: 15px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            animation: fadeInCard 0.4s ease-out;
-        }
-        @keyframes fadeInCard {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            transition: transform 0.2s ease;
         }
         .order-header {
             display: flex;
@@ -244,7 +242,6 @@
 </head>
 <body>
 
-    <!-- عنصر الصوت المدمج للتنبيه -->
     <audio id="orderAlertSound" preload="auto">
         <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
     </audio>
@@ -347,18 +344,7 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        let dbLocal = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-        let restData = dbLocal[restaurant] || {};
-
-        let customColor = restData.primaryColor || '#FF4757';
-        document.documentElement.style.setProperty('--primary', customColor);
-
-        if (restData.logo) {
-            let logoImg = document.getElementById('headerLogoImg');
-            logoImg.src = restData.logo;
-            logoImg.style.display = 'block';
-        }
-
+        let restData = {};
         let currentTab = 'active';
         let globalOrdersMap = new Map();
         let isInitialSnapshot = true;
@@ -367,6 +353,37 @@
         let blinkInterval = null;
         let searchDebounceTimer = null;
         let isFirestoreInitialized = false;
+
+        function escapeHTML(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.addEventListener('firebase-loaded-kitchen', async () => {
+            try {
+                const restDocRef = window.firestoreModules.doc(window.db, "restaurants", restaurant);
+                // استخدام getDoc لجلب إعدادات المطعم
+                const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js");
+                const restSnap = await getDoc(restDocRef);
+                if (restSnap.exists()) {
+                    restData = restSnap.data();
+                    if (restData.primaryColor) {
+                        document.documentElement.style.setProperty('--primary', restData.primaryColor);
+                    }
+                    if (restData.logo) {
+                        let logoImg = document.getElementById('headerLogoImg');
+                        logoImg.src = restData.logo;
+                        logoImg.style.display = 'block';
+                    }
+                }
+            } catch(e) { console.error(e); }
+
+            initFirestoreListener();
+        });
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -394,51 +411,6 @@
             }
         }
 
-        function showBrowserNotification(title, body) {
-            if (!("Notification" in window)) return;
-            if (Notification.permission === "granted") {
-                new Notification(title, { body: body, icon: restData.logo || "" });
-            } else if (Notification.permission !== "denied") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        new Notification(title, { body: body, icon: restData.logo || "" });
-                    }
-                });
-            }
-        }
-
-        function startTitleBlinking(newOrderMsg) {
-            if (isBlinking) return;
-            isBlinking = true;
-            let toggle = false;
-            if (blinkInterval) clearInterval(blinkInterval);
-
-            blinkInterval = setInterval(() => {
-                document.title = toggle ? `🚨 ${newOrderMsg}` : originalTitle;
-                toggle = !toggle;
-            }, 1000);
-
-            const stopHandler = () => {
-                stopTitleBlinking();
-                window.removeEventListener('mousemove', stopHandler);
-                window.removeEventListener('keydown', stopHandler);
-                window.removeEventListener('click', stopHandler);
-            };
-
-            window.addEventListener('mousemove', stopHandler);
-            window.addEventListener('keydown', stopHandler);
-            window.addEventListener('click', stopHandler);
-        }
-
-        function stopTitleBlinking() {
-            if (blinkInterval) {
-                clearInterval(blinkInterval);
-                blinkInterval = null;
-            }
-            isBlinking = false;
-            document.title = originalTitle;
-        }
-
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab-btn').forEach(b => b.className = 'tab-btn');
@@ -455,7 +427,7 @@
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(() => {
                 renderKitchenOrders();
-            }, 300);
+            }, 200);
         }
 
         function getTimeAgo(timestamp) {
@@ -471,11 +443,6 @@
             let diffHour = Math.floor(diffMin / 60);
             let text = currentLang === 'ar' ? `منذ ${diffHour} ساعة` : `${diffHour}h ago`;
             return { text, class: 'time-danger' };
-        }
-
-        function loadKitchenOrders(forceUpdate = false) {
-            updateStatsAndFilters();
-            renderKitchenOrders();
         }
 
         function updateStatsAndFilters() {
@@ -501,10 +468,12 @@
             let itemsHtml = '';
             if (order.items && Array.isArray(order.items)) {
                 order.items.forEach(item => {
+                    let q = item.qty || item.quantity || 1;
+                    let p = item.price || 0;
                     itemsHtml += `
                         <div class="order-item-row">
-                            <span>x ${item.qty || item.quantity || 1} ${item.name || ''}</span>
-                            <span style="color: var(--secondary);">${(item.price || 0) * (item.qty || item.quantity || 1)} ${translations[currentLang].currency}</span>
+                            <span>x ${q} ${escapeHTML(item.name || '')}</span>
+                            <span style="color: var(--secondary);">${p * q} ${translations[currentLang].currency}</span>
                         </div>
                     `;
                 });
@@ -528,21 +497,23 @@
             let btnSuccessClass = (st === 'تم التسليم' || st === 'Delivered') ? 'status-btn success-current' : 'status-btn';
             let btnCancelClass = (st === 'ملغي' || st === 'Cancelled') ? 'status-btn cancel-current' : 'status-btn';
 
+            let shortId = escapeHTML(String(order.id || order.docId || '').slice(-4));
+
             return `
                 <div class="order-card" data-docid="${order.docId}">
                     <div class="order-header">
-                        <div class="table-title">${currentLang === 'ar' ? 'طلب' : 'Order'} ${order.type || ''} (${order.table || '-'})</div>
+                        <div class="table-title">${currentLang === 'ar' ? 'طلب' : 'Order'} ${escapeHTML(order.type || '')} (${escapeHTML(order.table || '-')})</div>
                         <div class="order-meta">
                             <span class="time-badge ${timeInfo.class}">${timeInfo.text}</span>
-                            <span><i class="fa-regular fa-calendar"></i> ${order.date || ''}</span>
-                            <span><i class="fa-regular fa-clock"></i> ${order.time || ''}</span>
-                            <span>#${order.id}</span>
+                            <span><i class="fa-regular fa-calendar"></i> ${escapeHTML(order.date || '')}</span>
+                            <span><i class="fa-regular fa-clock"></i> ${escapeHTML(order.time || '')}</span>
+                            <span>#${shortId}</span>
                         </div>
                     </div>
                     
                     <div class="customer-info">
-                        <div><i class="fa-solid fa-user" style="color: var(--primary);"></i> ${clientName} (${clientPhone})</div>
-                        ${clientAddress ? `<div style="margin-top: 4px; color: var(--gray);"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${clientAddress}</div>` : ''}
+                        <div><i class="fa-solid fa-user" style="color: var(--primary);"></i> ${escapeHTML(clientName)} (${escapeHTML(clientPhone)})</div>
+                        ${clientAddress ? `<div style="margin-top: 4px; color: var(--gray);"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${escapeHTML(clientAddress)}</div>` : ''}
                     </div>
 
                     <div>
@@ -589,6 +560,7 @@
             if (searchVal) {
                 filtered = filtered.filter(o => 
                     String(o.id || '').toLowerCase().includes(searchVal) ||
+                    String(o.docId || '').toLowerCase().includes(searchVal) ||
                     (o.client && String(o.client.name || '').toLowerCase().includes(searchVal)) ||
                     String(o.table || '').toLowerCase().includes(searchVal) ||
                     (o.client && String(o.client.phone || '').includes(searchVal))
@@ -598,7 +570,11 @@
             if (dateVal !== 'all') filtered = filtered.filter(o => o.date === dateVal);
             if (timeVal !== 'all') filtered = filtered.filter(o => o.time === timeVal);
 
-            filtered = filtered.slice().reverse();
+            filtered.sort((a, b) => {
+                let timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                let timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return timeB - timeA; // الأحدث أولاً
+            });
 
             if (filtered.length === 0) {
                 container.innerHTML = `<p class="empty-state">${translations[currentLang].no_orders}</p>`;
@@ -611,6 +587,7 @@
 
             const targetDocIds = new Set(filtered.map(o => String(o.docId)));
 
+            // إزالة البطاقات التي لم تعد مطابقة للفلتر أو القسم الحالي
             const existingCards = Array.from(container.querySelectorAll('.order-card'));
             existingCards.forEach(card => {
                 const docId = card.getAttribute('data-docid');
@@ -619,6 +596,7 @@
                 }
             });
 
+            // تحديث البطاقات أو إضافتها بشكل ذكي (بدون إعادة رسم القائمة بالكامل)
             filtered.forEach((order, index) => {
                 const docId = String(order.docId);
                 let card = container.querySelector(`.order-card[data-docid="${docId}"]`);
@@ -649,6 +627,8 @@
                     }
                 }
             });
+
+            updateStatsAndFilters();
         }
 
         function updateDateAndTimeFilters(orders) {
@@ -686,7 +666,7 @@
             let oldStatus = order.status;
             if (oldStatus === newStatus) return;
 
-            // Optimistic update
+            // Optimistic Update لتغيير لون الزر فورياً وعدم وجود أي تأخير
             order.status = newStatus;
             updateStatsAndFilters();
             renderKitchenOrders();
@@ -697,7 +677,7 @@
                 await updateDoc(orderRef, { status: newStatus });
             } catch (e) {
                 console.error("Error updating status: ", e);
-                // Rollback on failure
+                // Rollback في حال الفشل
                 order.status = oldStatus;
                 updateStatsAndFilters();
                 renderKitchenOrders();
@@ -718,7 +698,7 @@
                 <html dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
                 <head>
                     <meta charset="UTF-8">
-                    <title>Receipt #${order.id}</title>
+                    <title>Receipt #${order.id || order.docId}</title>
                     <style>
                         body { font-family: 'Cairo', sans-serif; padding: 5px; font-size: 12px; color: #000; width: 72mm; margin: 0 auto; text-align: center; }
                         h2 { margin: 2px 0; font-size: 14px; }
@@ -734,18 +714,18 @@
                     ${logoImgHtml}
                     <h2>${restaurant.toUpperCase()}</h2>
                     <div class="info">
-                        <strong>Order:</strong> #${order.id}<br>
-                        <strong>Date:</strong> ${order.date || ''} - ${order.time || ''}<br>
-                        <strong>Client:</strong> ${clientName} (${clientPhone})<br>
-                        ${clientAddress ? `<strong>Address:</strong> ${clientAddress}<br>` : ''}
-                        <strong>Type:</strong> ${order.type || ''} (${order.table || '-'})
+                        <strong>Order:</strong> #${escapeHTML(String(order.id || order.docId).slice(-4))}<br>
+                        <strong>Date:</strong> ${escapeHTML(order.date || '')} - ${escapeHTML(order.time || '')}<br>
+                        <strong>Client:</strong> ${escapeHTML(clientName)} (${escapeHTML(clientPhone)})<br>
+                        ${clientAddress ? `<strong>Address:</strong> ${escapeHTML(clientAddress)}<br>` : ''}
+                        <strong>Type:</strong> ${escapeHTML(order.type || '')} (${escapeHTML(order.table || '-')})
                     </div>
                     <table>
                         <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
-                        ${(order.items || []).map(i => `<tr><td>${i.name || ''}</td><td>${i.qty || i.quantity || 1}</td><td>${(i.price || 0) * (i.qty || i.quantity || 1)}</td></tr>`).join('')}
+                        ${(order.items || []).map(i => `<tr><td>${escapeHTML(i.name || '')}</td><td>${i.qty || i.quantity || 1}</td><td>${(i.price || 0) * (i.qty || i.quantity || 1)}</td></tr>`).join('')}
                     </table>
                     <div class="totals-section">
-                        <div>Service Fee: ${order.serviceFee || order.fees || 0} ${translations[currentLang].currency}</div>
+                        <div>Fee: ${order.serviceFee || order.fees || 0} ${translations[currentLang].currency}</div>
                         <div class="total-final">Total: ${order.total || 0} ${translations[currentLang].currency}</div>
                     </div>
                     <div class="footer-note">
@@ -810,38 +790,17 @@
                         }
                     });
 
-                    if (isInitialSnapshot) {
-                        isInitialSnapshot = false;
-                    } else if (hasNewOrderAdded) {
+                    if (hasNewOrderAdded) {
                         playOrderSound();
-                        showBrowserNotification(
-                            currentLang === 'ar' ? 'طلب جديد بالمطعم!' : 'New Order Received!',
-                            currentLang === 'ar' ? 'تم استلام طلب جديد، يرجى المراجعة.' : 'A new order has been placed.'
-                        );
-                        startTitleBlinking(currentLang === 'ar' ? 'طلب جديد بانتظارك!' : 'New Order!');
                     }
 
-                    updateStatsAndFilters();
+                    isInitialSnapshot = false;
                     renderKitchenOrders();
                 }, (error) => {
-                    console.error("Firestore error: ", error);
+                    console.error("Kitchen orders snapshot error:", error);
                 });
             }
         }
-
-        window.onload = function() {
-            changeLanguage(currentLang);
-            
-            const checkFirebaseInterval = setInterval(() => {
-                if (window.db && window.firestoreModules) {
-                    clearInterval(checkFirebaseInterval);
-                    initFirestoreListener();
-                }
-            }, 100);
-        };
     </script>
-    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-        تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-    </div>
 </body>
 </html>
