@@ -56,6 +56,8 @@
             width: 100%;
             max-width: 380px;
             text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .auth-box h3 { margin-bottom: 15px; font-size: 15px; color: var(--white); }
         .auth-input {
@@ -262,11 +264,57 @@
 
     <div id="authModal">
         <div class="auth-box">
-            <h3 id="authModalTitle">تسجيل بيانات العميل للطلب</h3>
-            <input type="text" id="clientName" class="auth-input" placeholder="اسمك الكريم (مثال: أحمد / John)">
-            <input type="tel" id="clientPhone" class="auth-input" placeholder="رقم الموبايل (مثال: 01012345678)">
-            <input type="text" id="clientAddress" class="auth-input" placeholder="العنوان بالتفصيل / Address">
-            <button class="auth-btn" onclick="saveClientData()"><span data-i18n="btn_save_client">حفظ ودخول للمنيو</span> <i class="fa-solid fa-arrow-left"></i></button>
+            <div id="authChoiceView">
+                <h3 id="authModalTitle" style="margin-bottom: 20px;" data-i18n="welcome_auth">مرحباً بك في المنيو</h3>
+                <button class="auth-btn" style="margin-bottom: 10px;" onclick="showAuthForm('login')" data-i18n="login_btn">تسجيل الدخول</button>
+                <button class="auth-btn" style="background: transparent; border: 1px solid var(--primary); color: var(--white); margin-bottom: 10px;" onclick="showAuthForm('register')" data-i18n="register_btn">إنشاء حساب جديد</button>
+                <button class="auth-btn" style="background: transparent; border: 1px solid var(--gray); color: var(--gray);" onclick="showAuthForm('forgot')" data-i18n="forgot_password_btn">نسيت كلمة المرور</button>
+            </div>
+
+            <div id="loginFormView" class="hidden">
+                <h3 style="margin-bottom: 15px;" data-i18n="login_title">تسجيل الدخول</h3>
+                <input type="tel" id="loginPhone" class="auth-input" placeholder="رقم الموبايل" data-i18n-placeholder="phone_placeholder">
+                <input type="password" id="loginPassword" class="auth-input" placeholder="كلمة المرور" data-i18n-placeholder="password_placeholder">
+                <button class="auth-btn" onclick="processLogin()" data-i18n="enter_btn">دخول</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
+            </div>
+
+            <div id="registerFormView" class="hidden">
+                <h3 style="margin-bottom: 15px;" data-i18n="register_title">إنشاء حساب جديد</h3>
+                <input type="text" id="regName" class="auth-input" placeholder="اسمك الكريم" data-i18n-placeholder="name_placeholder">
+                <input type="tel" id="regPhone" class="auth-input" placeholder="رقم الموبايل" data-i18n-placeholder="phone_placeholder">
+                <input type="password" id="regPassword" class="auth-input" placeholder="كلمة المرور" data-i18n-placeholder="password_placeholder">
+                <input type="password" id="regConfirmPassword" class="auth-input" placeholder="تأكيد كلمة المرور" data-i18n-placeholder="confirm_password_placeholder">
+                <input type="text" id="regAddress" class="auth-input" placeholder="العنوان بالتفصيل (للأونلاين فقط)" data-i18n-placeholder="address_placeholder">
+                <button class="auth-btn" onclick="processRegister()" data-i18n="create_account_btn">إنشاء الحساب</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
+            </div>
+
+            <div id="forgotFormView" class="hidden">
+                <h3 style="margin-bottom: 15px;" data-i18n="forgot_title">استعادة كلمة المرور</h3>
+                <input type="tel" id="forgotPhone" class="auth-input" placeholder="رقم الموبايل المسجل" data-i18n-placeholder="phone_placeholder">
+                <input type="password" id="forgotNewPassword" class="auth-input" placeholder="كلمة المرور الجديدة" data-i18n-placeholder="new_password_placeholder">
+                <input type="password" id="forgotConfirmPassword" class="auth-input" placeholder="تأكيد كلمة المرور الجديدة" data-i18n-placeholder="confirm_new_password_placeholder">
+                <button class="auth-btn" onclick="processForgotPassword()" data-i18n="reset_password_btn">تحديث كلمة المرور</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
+            </div>
+
+            <div id="editProfileFormView" class="hidden">
+                <h3 style="margin-bottom: 15px;" data-i18n="edit_profile_title">تعديل البيانات الشخصية</h3>
+                <input type="text" id="editName" class="auth-input" placeholder="الاسم الكريم" data-i18n-placeholder="name_placeholder">
+                <input type="text" id="editAddress" class="auth-input" placeholder="العنوان بالتفصيل" data-i18n-placeholder="address_placeholder">
+                <button class="auth-btn" onclick="processEditProfile()" data-i18n="save_changes_btn">حفظ التعديلات</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="toggleEditProfile(false)" data-i18n="back_btn">الرجوع</button>
+            </div>
+
+            <div id="changePasswordFormView" class="hidden">
+                <h3 style="margin-bottom: 15px;" data-i18n="change_password_title">تغيير كلمة المرور</h3>
+                <input type="password" id="currentPassword" class="auth-input" placeholder="كلمة المرور الحالية" data-i18n-placeholder="current_password_placeholder">
+                <input type="password" id="newPassword" class="auth-input" placeholder="كلمة المرور الجديدة" data-i18n-placeholder="new_password_placeholder">
+                <input type="password" id="confirmNewPassword" class="auth-input" placeholder="تأكيد كلمة المرور الجديدة" data-i18n-placeholder="confirm_new_password_placeholder">
+                <button class="auth-btn" onclick="processChangePassword()" data-i18n="update_password_btn">تحديث كلمة المرور</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="toggleChangePassword(false)" data-i18n="back_btn">الرجوع</button>
+            </div>
         </div>
     </div>
 
@@ -275,6 +323,10 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="font-size: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> <span data-i18n="my_orders">سجل طلباتي السابقة</span></h3>
                 <button onclick="toggleHistory(false)" style="background: none; border: none; color: var(--white); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="display: flex; gap: 6px; margin-bottom: 15px;">
+                <button onclick="toggleEditProfile(true)" style="flex: 1; background: rgba(255, 165, 2, 0.2); color: var(--warning); border: 1px solid var(--warning); padding: 8px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_edit_profile">تعديل البيانات</button>
+                <button onclick="toggleChangePassword(true)" style="flex: 1; background: rgba(46, 213, 115, 0.2); color: var(--secondary); border: 1px solid var(--secondary); padding: 8px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_change_password">تغيير كلمة المرور</button>
             </div>
             <div id="historyListContainer"></div>
             <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;" data-i18n="btn_logout_client">تسجيل خروج</button>
@@ -327,42 +379,98 @@
             ar: {
                 alert_title: "تنبيه",
                 btn_ok: "حسناً",
-                btn_save_client: "حفظ ودخول للمنيو",
                 my_orders: "سجل طلباتي السابقة",
                 btn_logout_client: "تسجيل خروج",
                 btn_my_orders: "طلباتي",
+                btn_edit_profile: "تعديل البيانات",
+                btn_change_password: "تغيير كلمة المرور",
                 all_cat: "الكل",
                 final_total: "الإجمالي النهائي",
                 btn_submit_order: "إرسال الطلب",
                 add_btn: "إضافة",
-                auth_title: "تسجيل بيانات العميل للطلب",
+                welcome_auth: "مرحباً بك في المنيو",
+                login_btn: "تسجيل الدخول",
+                register_btn: "إنشاء حساب جديد",
+                forgot_password_btn: "نسيت كلمة المرور",
+                login_title: "تسجيل الدخول",
+                register_title: "إنشاء حساب جديد",
+                forgot_title: "استعادة كلمة المرور",
+                edit_profile_title: "تعديل البيانات الشخصية",
+                change_password_title: "تغيير كلمة المرور",
+                enter_btn: "دخول",
+                back_btn: "الرجوع",
+                create_account_btn: "إنشاء الحساب",
+                reset_password_btn: "تحديث كلمة المرور",
+                save_changes_btn: "حفظ التعديلات",
+                update_password_btn: "تحديث كلمة المرور",
                 name_placeholder: "اسمك الكريم (مثال: أحمد)",
                 phone_placeholder: "رقم الموبايل (مثال: 01012345678)",
-                address_placeholder: "العنوان بالتفصيل",
+                password_placeholder: "كلمة المرور",
+                confirm_password_placeholder: "تأكيد كلمة المرور",
+                confirm_new_password_placeholder: "تأكيد كلمة المرور الجديدة",
+                new_password_placeholder: "كلمة المرور الجديدة",
+                current_password_placeholder: "كلمة المرور الحالية",
+                address_placeholder: "العنوان بالتفصيل (للأونلاين فقط)",
                 subtotal_text: "سعر المنتجات",
                 delivery_text: "رسوم التوصيل",
                 service_text: "خدمة الصالة",
-                final_total_text: "الإجمالي النهائي"
+                final_total_text: "الإجمالي النهائي",
+                phone_already_registered: "هذا الرقم مسجل بالفعل.",
+                phone_not_registered: "هذا الرقم غير مسجل.",
+                wrong_password: "كلمة المرور غير صحيحة.",
+                passwords_not_match: "كلمة المرور وتأكيدها غير متطابقين.",
+                fill_all_fields: "الرجاء إدخال جميع الحقول المطلوبة بشكل صحيح.",
+                profile_updated: "تم تعديل البيانات بنجاح.",
+                password_updated: "تم تحديث كلمة المرور بنجاح.",
+                current_password_incorrect: "كلمة المرور الحالية غير صحيحة."
             },
             en: {
                 alert_title: "Alert",
                 btn_ok: "OK",
-                btn_save_client: "Save & Enter Menu",
                 my_orders: "My Order History",
                 btn_logout_client: "Logout",
                 btn_my_orders: "My Orders",
+                btn_edit_profile: "Edit Profile",
+                btn_change_password: "Change Password",
                 all_cat: "All",
                 final_total: "Final Total",
                 btn_submit_order: "Submit Order",
                 add_btn: "Add",
-                auth_title: "Enter Client Data for Order",
+                welcome_auth: "Welcome to Menu",
+                login_btn: "Login",
+                register_btn: "Create Account",
+                forgot_password_btn: "Forgot Password",
+                login_title: "Login",
+                register_title: "Create New Account",
+                forgot_title: "Recover Password",
+                edit_profile_title: "Edit Profile",
+                change_password_title: "Change Password",
+                enter_btn: "Login",
+                back_btn: "Back",
+                create_account_btn: "Create Account",
+                reset_password_btn: "Update Password",
+                save_changes_btn: "Save Changes",
+                update_password_btn: "Update Password",
                 name_placeholder: "Your Name (e.g., John)",
                 phone_placeholder: "Mobile Number (e.g., 01012345678)",
+                password_placeholder: "Password",
+                confirm_password_placeholder: "Confirm Password",
+                confirm_new_password_placeholder: "Confirm New Password",
+                new_password_placeholder: "New Password",
+                current_password_placeholder: "Current Password",
                 address_placeholder: "Detailed Address",
                 subtotal_text: "Subtotal",
                 delivery_text: "Delivery",
                 service_text: "Service Charge",
-                final_total_text: "Final Total"
+                final_total_text: "Final Total",
+                phone_already_registered: "This number is already registered.",
+                phone_not_registered: "This number is not registered.",
+                wrong_password: "Incorrect password.",
+                passwords_not_match: "Passwords do not match.",
+                fill_all_fields: "Please fill all required fields correctly.",
+                profile_updated: "Profile updated successfully.",
+                password_updated: "Password updated successfully.",
+                current_password_incorrect: "Current password is incorrect."
             }
         };
 
@@ -388,9 +496,14 @@
                     el.innerText = translations[lang][key];
                 }
             });
-            document.getElementById('clientName').placeholder = translations[lang].name_placeholder;
-            document.getElementById('clientPhone').placeholder = translations[lang].phone_placeholder;
-            document.getElementById('clientAddress').placeholder = translations[lang].address_placeholder;
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                let key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
+
             loadCategoriesBar();
             loadMenu();
             updateCartBar();
@@ -419,31 +532,238 @@
         document.getElementById('orderTypeBadge').innerText = `${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}: ${orderType}`;
         document.getElementById('tableDisplayBadge').innerText = isOnline ? (currentLang === 'ar' ? 'توصيل دليفري' : 'Delivery') : `Table: ${table}`;
 
-        if (!isOnline) {
-            document.getElementById('authModalTitle').innerText = `${currentLang === 'ar' ? 'تسجيل بيانات طاولة' : 'Enter data for Table'} ${table}`;
-            document.getElementById('clientAddress').style.display = 'none';
-        }
-
+        let usersDB = JSON.parse(localStorage.getItem(`users_${restaurant}`)) || [];
         let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`));
         if (currentUser) {
             document.getElementById('authModal').classList.add('hidden');
+            if (isOnline && !currentUser.address) {
+                let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
+                if (promptAddress) {
+                    currentUser.address = promptAddress;
+                    let uIndex = usersDB.findIndex(u => u.phone === currentUser.phone);
+                    if (uIndex !== -1) {
+                        usersDB[uIndex].address = promptAddress;
+                        localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+                    }
+                    localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+                }
+            }
         }
 
-        function saveClientData() {
-            let name = document.getElementById('clientName').value.trim();
-            let phone = document.getElementById('clientPhone').value.trim();
-            let address = isOnline ? document.getElementById('clientAddress').value.trim() : `Dine-In Table ${table}`;
-            
-            if(!name || phone.length < 10 || (isOnline && !address)) {
-                showCustomAlert(currentLang === 'ar' ? 'الرجاء إدخال الاسم، رقم الهاتف، والعنوان بالتفصيل.' : 'Please enter name, phone, and address.');
+        function showAuthForm(view) {
+            document.getElementById('authChoiceView').classList.add('hidden');
+            document.getElementById('loginFormView').classList.add('hidden');
+            document.getElementById('registerFormView').classList.add('hidden');
+            document.getElementById('forgotFormView').classList.add('hidden');
+            document.getElementById('editProfileFormView').classList.add('hidden');
+            document.getElementById('changePasswordFormView').classList.add('hidden');
+
+            if (view === 'choice') {
+                document.getElementById('authChoiceView').classList.remove('hidden');
+            } else if (view === 'login') {
+                document.getElementById('loginFormView').classList.remove('hidden');
+            } else if (view === 'register') {
+                document.getElementById('registerFormView').classList.remove('hidden');
+                if (!isOnline) {
+                    document.getElementById('regAddress').style.display = 'none';
+                }
+            } else if (view === 'forgot') {
+                document.getElementById('forgotFormView').classList.remove('hidden');
+            }
+        }
+
+        function toggleEditProfile(show) {
+            if (show) {
+                document.getElementById('authModal').classList.remove('hidden');
+                document.getElementById('authChoiceView').classList.add('hidden');
+                document.getElementById('editProfileFormView').classList.remove('hidden');
+                document.getElementById('editName').value = currentUser.name || '';
+                document.getElementById('editAddress').value = currentUser.address || '';
+                toggleHistory(false);
+            } else {
+                document.getElementById('editProfileFormView').classList.add('hidden');
+                document.getElementById('authModal').classList.add('hidden');
+            }
+        }
+
+        function toggleChangePassword(show) {
+            if (show) {
+                document.getElementById('authModal').classList.remove('hidden');
+                document.getElementById('authChoiceView').classList.add('hidden');
+                document.getElementById('changePasswordFormView').classList.remove('hidden');
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmNewPassword').value = '';
+                toggleHistory(false);
+            } else {
+                document.getElementById('changePasswordFormView').classList.add('hidden');
+                document.getElementById('authModal').classList.add('hidden');
+            }
+        }
+
+        function processRegister() {
+            let name = document.getElementById('regName').value.trim();
+            let phone = document.getElementById('regPhone').value.trim();
+            let password = document.getElementById('regPassword').value.trim();
+            let confirmPassword = document.getElementById('regConfirmPassword').value.trim();
+            let address = isOnline ? document.getElementById('regAddress').value.trim() : `Dine-In Table ${table}`;
+
+            if (!name || phone.length < 10 || !password || !confirmPassword) {
+                showCustomAlert(translations[currentLang].fill_all_fields);
                 return;
             }
+
+            if (password !== confirmPassword) {
+                showCustomAlert(translations[currentLang].passwords_not_match);
+                return;
+            }
+
+            let existingUser = usersDB.find(u => u.phone === phone);
+            if (existingUser) {
+                showCustomAlert(translations[currentLang].phone_already_registered);
+                return;
+            }
+
+            let newUser = {
+                id: Math.floor(100000 + Math.random() * 900000),
+                name,
+                phone,
+                password,
+                address,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            };
+            usersDB.push(newUser);
+            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+
             currentUser = { name, phone, address };
+            localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+            
+            document.getElementById('authModal').classList.add('hidden');
+            loadCategoriesBar();
+            loadMenu();
+            updateLiveTracker();
+        }
+
+        function processLogin() {
+            let phone = document.getElementById('loginPhone').value.trim();
+            let password = document.getElementById('loginPassword').value.trim();
+
+            if (!phone || !password) {
+                showCustomAlert(translations[currentLang].fill_all_fields);
+                return;
+            }
+
+            let user = usersDB.find(u => u.phone === phone);
+            if (!user) {
+                showCustomAlert(translations[currentLang].phone_not_registered);
+                return;
+            }
+
+            if (user.password !== password) {
+                showCustomAlert(translations[currentLang].wrong_password);
+                return;
+            }
+
+            user.lastLogin = new Date().toISOString();
+            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+
+            currentUser = { name: user.name, phone: user.phone, address: user.address || (isOnline ? '' : `Dine-In Table ${table}`) };
+            
+            if (isOnline && !currentUser.address) {
+                let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
+                if (promptAddress) {
+                    currentUser.address = promptAddress;
+                    user.address = promptAddress;
+                    localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+                }
+            }
+
             localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
             document.getElementById('authModal').classList.add('hidden');
             loadCategoriesBar();
             loadMenu();
             updateLiveTracker();
+        }
+
+        function processForgotPassword() {
+            let phone = document.getElementById('forgotPhone').value.trim();
+            let newPassword = document.getElementById('forgotNewPassword').value.trim();
+            let confirmNewPassword = document.getElementById('forgotConfirmPassword').value.trim();
+
+            if (!phone || !newPassword || !confirmNewPassword) {
+                showCustomAlert(translations[currentLang].fill_all_fields);
+                return;
+            }
+
+            if (newPassword !== confirmNewPassword) {
+                showCustomAlert(translations[currentLang].passwords_not_match);
+                return;
+            }
+
+            let user = usersDB.find(u => u.phone === phone);
+            if (!user) {
+                showCustomAlert(translations[currentLang].phone_not_registered);
+                return;
+            }
+
+            user.password = newPassword;
+            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+
+            showCustomAlert(translations[currentLang].password_updated);
+            showAuthForm('login');
+        }
+
+        function processEditProfile() {
+            let name = document.getElementById('editName').value.trim();
+            let address = document.getElementById('editAddress').value.trim();
+
+            if (!name) {
+                showCustomAlert(translations[currentLang].fill_all_fields);
+                return;
+            }
+
+            let user = usersDB.find(u => u.phone === currentUser.phone);
+            if (user) {
+                user.name = name;
+                user.address = address;
+                localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+            }
+
+            currentUser.name = name;
+            currentUser.address = address;
+            localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+
+            showCustomAlert(translations[currentLang].profile_updated);
+            toggleEditProfile(false);
+        }
+
+        function processChangePassword() {
+            let currentPassword = document.getElementById('currentPassword').value.trim();
+            let newPassword = document.getElementById('newPassword').value.trim();
+            let confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
+
+            if (!currentPassword || !newPassword || !confirmNewPassword) {
+                showCustomAlert(translations[currentLang].fill_all_fields);
+                return;
+            }
+
+            if (newPassword !== confirmNewPassword) {
+                showCustomAlert(translations[currentLang].passwords_not_match);
+                return;
+            }
+
+            let user = usersDB.find(u => u.phone === currentUser.phone);
+            if (!user || user.password !== currentPassword) {
+                showCustomAlert(translations[currentLang].current_password_incorrect);
+                return;
+            }
+
+            user.password = newPassword;
+            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+
+            showCustomAlert(translations[currentLang].password_updated);
+            toggleChangePassword(false);
         }
 
         function logoutClient() {
