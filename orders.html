@@ -6,6 +6,29 @@
     <title>المنيو والطلب</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+            authDomain: "digital-menu-8d2b4.firebaseapp.com",
+            projectId: "digital-menu-8d2b4",
+            storageBucket: "digital-menu-8d2b4.firebasestorage.app",
+            messagingSenderId: "436566477044",
+            appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+        window.firebaseModules = { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, onSnapshot, query, where };
+        
+        window.dispatchEvent(new Event('firebase-loaded'));
+    </script>
+
     <style>
         :root {
             --primary: #FF4757;
@@ -262,7 +285,7 @@
         </div>
     </div>
 
-    <div id="authModal">
+    <div id="authModal" class="hidden">
         <div class="auth-box">
             <div id="authChoiceView">
                 <h3 id="authModalTitle" style="margin-bottom: 20px;" data-i18n="welcome_auth">مرحباً بك في المنيو</h3>
@@ -504,8 +527,8 @@
                 }
             });
 
-            loadCategoriesBar();
-            loadMenu();
+            if (typeof categories !== 'undefined') loadCategoriesBar();
+            if (typeof menuItems !== 'undefined') loadMenu();
             updateCartBar();
         }
 
@@ -513,41 +536,83 @@
         const restaurant = urlParams.get('restaurant') || 'default';
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        let db = JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
-        let restData = db[restaurant] || {};
-        const menuItems = restData.items || [];
-
-        let customColor = restData.primaryColor || '#FF4757';
-        document.documentElement.style.setProperty('--primary', customColor);
-
-        if (restData.logo) {
-            let logoImg = document.getElementById('headerLogoImg');
-            logoImg.src = restData.logo;
-            logoImg.style.display = 'block';
-        }
-
         const table = urlParams.get('table');
         const isOnline = !table || table === 'online';
         let orderType = isOnline ? (currentLang === 'ar' ? 'أونلاين' : 'Online') : (currentLang === 'ar' ? 'صالة' : 'Dine-In');
         document.getElementById('orderTypeBadge').innerText = `${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}: ${orderType}`;
         document.getElementById('tableDisplayBadge').innerText = isOnline ? (currentLang === 'ar' ? 'توصيل دليفري' : 'Delivery') : `Table: ${table}`;
 
-        let usersDB = JSON.parse(localStorage.getItem(`users_${restaurant}`)) || [];
-        let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`));
-        if (currentUser) {
-            document.getElementById('authModal').classList.add('hidden');
-            if (isOnline && !currentUser.address) {
-                let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
-                if (promptAddress) {
-                    currentUser.address = promptAddress;
-                    let uIndex = usersDB.findIndex(u => u.phone === currentUser.phone);
-                    if (uIndex !== -1) {
-                        usersDB[uIndex].address = promptAddress;
-                        localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+        let menuItems = [];
+        let categories = [];
+        let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`)) || null;
+        let cart = JSON.parse(localStorage.getItem(`cart_${restaurant}`)) || {};
+        let selectedCategory = 'All';
+        let activeOrderUnsubscribe = null;
+
+        window.addEventListener('firebase-loaded', async () => {
+            const { collection, doc, getDoc, getDocs, onSnapshot, query, where } = window.firebaseModules;
+            
+            // Load Restaurant Info
+            try {
+                const restDocRef = doc(window.db, "restaurants", restaurant);
+                const restSnap = await getDoc(restDocRef);
+                if (restSnap.exists()) {
+                    let restData = restSnap.data();
+                    if (restData.primaryColor) {
+                        document.documentElement.style.setProperty('--primary', restData.primaryColor);
                     }
-                    localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+                    if (restData.logo) {
+                        let logoImg = document.getElementById('headerLogoImg');
+                        logoImg.src = restData.logo;
+                        logoImg.style.display = 'block';
+                    }
                 }
+            } catch(e) { console.error(e); }
+
+            // Load Categories from Firestore
+            try {
+                const catSnap = await getDocs(collection(window.db, `restaurants/${restaurant}/categories`));
+                categories = [];
+                catSnap.forEach(d => categories.push(d.data().name || d.id));
+                if(categories.length === 0) categories = ["مشروبات / Drinks", "أكلات / Foods"];
+            } catch(e) {
+                categories = ["مشروبات / Drinks", "أكلات / Foods"];
             }
+            loadCategoriesBar();
+
+            // Load Menu from Firestore
+            try {
+                const menuSnap = await getDocs(collection(window.db, `restaurants/${restaurant}/menu`));
+                menuItems = [];
+                menuSnap.forEach(d => menuItems.push({ id: d.id, ...d.data() }));
+            } catch(e) {
+                menuItems = [];
+            }
+            loadMenu();
+
+            // Check Auth & Current User
+            if (!currentUser) {
+                document.getElementById('authModal').classList.remove('hidden');
+            } else {
+                document.getElementById('authModal').classList.add('hidden');
+                if (isOnline && !currentUser.address) {
+                    let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
+                    if (promptAddress) {
+                        currentUser.address = promptAddress;
+                        localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+                        updateUserInFirestore(currentUser);
+                    }
+                }
+                listenLiveOrders();
+            }
+            updateCartBar();
+        });
+
+        async function updateUserInFirestore(userObj) {
+            try {
+                const { doc, setDoc } = window.firebaseModules;
+                await setDoc(doc(window.db, `restaurants/${restaurant}/users`, userObj.phone), userObj, { merge: true });
+            } catch(e) { console.error(e); }
         }
 
         function showAuthForm(view) {
@@ -601,7 +666,7 @@
             }
         }
 
-        function processRegister() {
+        async function processRegister() {
             let name = document.getElementById('regName').value.trim();
             let phone = document.getElementById('regPhone').value.trim();
             let password = document.getElementById('regPassword').value.trim();
@@ -618,34 +683,41 @@
                 return;
             }
 
-            let existingUser = usersDB.find(u => u.phone === phone);
-            if (existingUser) {
-                showCustomAlert(translations[currentLang].phone_already_registered);
-                return;
+            try {
+                const { doc, getDoc, setDoc } = window.firebaseModules;
+                let userRef = doc(window.db, `restaurants/${restaurant}/users`, phone);
+                let userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    showCustomAlert(translations[currentLang].phone_already_registered);
+                    return;
+                }
+
+                let newUser = {
+                    id: Math.floor(100000 + Math.random() * 900000),
+                    name,
+                    phone,
+                    password,
+                    address,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                };
+
+                await setDoc(userRef, newUser);
+
+                currentUser = { name, phone, address };
+                localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+                
+                document.getElementById('authModal').classList.add('hidden');
+                loadCategoriesBar();
+                loadMenu();
+                listenLiveOrders();
+            } catch(e) {
+                showCustomAlert(e.message);
             }
-
-            let newUser = {
-                id: Math.floor(100000 + Math.random() * 900000),
-                name,
-                phone,
-                password,
-                address,
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString()
-            };
-            usersDB.push(newUser);
-            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
-
-            currentUser = { name, phone, address };
-            localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
-            
-            document.getElementById('authModal').classList.add('hidden');
-            loadCategoriesBar();
-            loadMenu();
-            updateLiveTracker();
         }
 
-        function processLogin() {
+        async function processLogin() {
             let phone = document.getElementById('loginPhone').value.trim();
             let password = document.getElementById('loginPassword').value.trim();
 
@@ -654,39 +726,45 @@
                 return;
             }
 
-            let user = usersDB.find(u => u.phone === phone);
-            if (!user) {
-                showCustomAlert(translations[currentLang].phone_not_registered);
-                return;
-            }
+            try {
+                const { doc, getDoc, updateDoc } = window.firebaseModules;
+                let userRef = doc(window.db, `restaurants/${restaurant}/users`, phone);
+                let userSnap = await getDoc(userRef);
 
-            if (user.password !== password) {
-                showCustomAlert(translations[currentLang].wrong_password);
-                return;
-            }
-
-            user.lastLogin = new Date().toISOString();
-            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
-
-            currentUser = { name: user.name, phone: user.phone, address: user.address || (isOnline ? '' : `Dine-In Table ${table}`) };
-            
-            if (isOnline && !currentUser.address) {
-                let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
-                if (promptAddress) {
-                    currentUser.address = promptAddress;
-                    user.address = promptAddress;
-                    localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+                if (!userSnap.exists()) {
+                    showCustomAlert(translations[currentLang].phone_not_registered);
+                    return;
                 }
-            }
 
-            localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
-            document.getElementById('authModal').classList.add('hidden');
-            loadCategoriesBar();
-            loadMenu();
-            updateLiveTracker();
+                let userData = userSnap.data();
+                if (userData.password !== password) {
+                    showCustomAlert(translations[currentLang].wrong_password);
+                    return;
+                }
+
+                await updateDoc(userRef, { lastLogin: new Date().toISOString() });
+
+                currentUser = { name: userData.name, phone: userData.phone, address: userData.address || (isOnline ? '' : `Dine-In Table ${table}`) };
+                
+                if (isOnline && !currentUser.address) {
+                    let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
+                    if (promptAddress) {
+                        currentUser.address = promptAddress;
+                        await updateDoc(userRef, { address: promptAddress });
+                    }
+                }
+
+                localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+                document.getElementById('authModal').classList.add('hidden');
+                loadCategoriesBar();
+                loadMenu();
+                listenLiveOrders();
+            } catch(e) {
+                showCustomAlert(e.message);
+            }
         }
 
-        function processForgotPassword() {
+        async function processForgotPassword() {
             let phone = document.getElementById('forgotPhone').value.trim();
             let newPassword = document.getElementById('forgotNewPassword').value.trim();
             let confirmNewPassword = document.getElementById('forgotConfirmPassword').value.trim();
@@ -701,20 +779,26 @@
                 return;
             }
 
-            let user = usersDB.find(u => u.phone === phone);
-            if (!user) {
-                showCustomAlert(translations[currentLang].phone_not_registered);
-                return;
+            try {
+                const { doc, getDoc, updateDoc } = window.firebaseModules;
+                let userRef = doc(window.db, `restaurants/${restaurant}/users`, phone);
+                let userSnap = await getDoc(userRef);
+
+                if (!userSnap.exists()) {
+                    showCustomAlert(translations[currentLang].phone_not_registered);
+                    return;
+                }
+
+                await updateDoc(userRef, { password: newPassword });
+
+                showCustomAlert(translations[currentLang].password_updated);
+                showAuthForm('login');
+            } catch(e) {
+                showCustomAlert(e.message);
             }
-
-            user.password = newPassword;
-            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
-
-            showCustomAlert(translations[currentLang].password_updated);
-            showAuthForm('login');
         }
 
-        function processEditProfile() {
+        async function processEditProfile() {
             let name = document.getElementById('editName').value.trim();
             let address = document.getElementById('editAddress').value.trim();
 
@@ -723,22 +807,23 @@
                 return;
             }
 
-            let user = usersDB.find(u => u.phone === currentUser.phone);
-            if (user) {
-                user.name = name;
-                user.address = address;
-                localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
+            try {
+                const { doc, updateDoc } = window.firebaseModules;
+                let userRef = doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
+                await updateDoc(userRef, { name, address });
+
+                currentUser.name = name;
+                currentUser.address = address;
+                localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+
+                showCustomAlert(translations[currentLang].profile_updated);
+                toggleEditProfile(false);
+            } catch(e) {
+                showCustomAlert(e.message);
             }
-
-            currentUser.name = name;
-            currentUser.address = address;
-            localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
-
-            showCustomAlert(translations[currentLang].profile_updated);
-            toggleEditProfile(false);
         }
 
-        function processChangePassword() {
+        async function processChangePassword() {
             let currentPassword = document.getElementById('currentPassword').value.trim();
             let newPassword = document.getElementById('newPassword').value.trim();
             let confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
@@ -753,17 +838,23 @@
                 return;
             }
 
-            let user = usersDB.find(u => u.phone === currentUser.phone);
-            if (!user || user.password !== currentPassword) {
-                showCustomAlert(translations[currentLang].current_password_incorrect);
-                return;
+            try {
+                const { doc, getDoc, updateDoc } = window.firebaseModules;
+                let userRef = doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
+                let userSnap = await getDoc(userRef);
+
+                if (!userSnap.exists() || userSnap.data().password !== currentPassword) {
+                    showCustomAlert(translations[currentLang].current_password_incorrect);
+                    return;
+                }
+
+                await updateDoc(userRef, { password: newPassword });
+
+                showCustomAlert(translations[currentLang].password_updated);
+                toggleChangePassword(false);
+            } catch(e) {
+                showCustomAlert(e.message);
             }
-
-            user.password = newPassword;
-            localStorage.setItem(`users_${restaurant}`, JSON.stringify(usersDB));
-
-            showCustomAlert(translations[currentLang].password_updated);
-            toggleChangePassword(false);
         }
 
         function logoutClient() {
@@ -777,96 +868,110 @@
             else { modal.classList.add('hidden'); }
         }
 
-        function renderClientHistory() {
+        async function renderClientHistory() {
             let container = document.getElementById('historyListContainer');
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let myOrders = orders.filter(o => currentUser && o.client && o.client.phone === currentUser.phone);
+            container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">جاري التحميل...</p>`;
 
-            if (myOrders.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">${currentLang === 'ar' ? 'لا توجد طلبات سابقة برقم هاتفك.' : 'No previous orders found.'}</p>`;
-                return;
-            }
+            try {
+                const { collection, getDocs, query, where } = window.firebaseModules;
+                let q = query(collection(window.db, `restaurants/${restaurant}/orders`), where("client.phone", "==", currentUser.phone));
+                let querySnapshot = await getDocs(q);
+                let myOrders = [];
+                querySnapshot.forEach(d => myOrders.push({ id: d.id, ...d.data() }));
 
-            let html = '';
-            myOrders.slice().reverse().forEach(ord => {
-                let itemsDetailsHtml = '';
-                (ord.items || []).forEach(i => {
-                    itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
-                        <span>${escapeHTML(i.name)} (x${i.qty})</span>
-                        <span style="color: var(--secondary);">${i.price * i.qty} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
-                    </div>`;
-                });
+                if (myOrders.length === 0) {
+                    container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">${currentLang === 'ar' ? 'لا توجد طلبات سابقة برقم هاتفك.' : 'No previous orders found.'}</p>`;
+                    return;
+                }
 
-                let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز' || ord.status === 'Preparing' || ord.status === 'Ready');
-                let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder(${ord.id})" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">${currentLang === 'ar' ? 'إلغاء الطلب' : 'Cancel'}</button>` : ``;
+                let html = '';
+                myOrders.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach(ord => {
+                    let itemsDetailsHtml = '';
+                    (ord.items || []).forEach(i => {
+                        itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
+                            <span>${escapeHTML(i.name)} (x${i.qty})</span>
+                            <span style="color: var(--secondary);">${i.price * i.qty} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                        </div>`;
+                    });
 
-                let isOnlineOrder = ord.type === 'أونلاين' || ord.type === 'Online';
-                let breakdownHtml = isOnlineOrder ? 
-                    `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].delivery_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م` :
-                    `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].service_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م`;
+                    let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز' || ord.status === 'Preparing' || ord.status === 'Ready');
+                    let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder('${ord.id}')" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">${currentLang === 'ar' ? 'إلغاء الطلب' : 'Cancel'}</button>` : ``;
 
-                html += `
-                    <div class="history-item-row">
-                        <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 8px;">
-                            <span>${currentLang === 'ar' ? 'طلب' : 'Order'} #${ord.id} (${escapeHTML(ord.type)})</span>
-                            <span>${escapeHTML(ord.date)} - ${escapeHTML(ord.time)}</span>
-                        </div>
-                        <div style="border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 6px;">
-                            ${itemsDetailsHtml}
-                        </div>
-                        <div style="font-size: 11px; color: var(--gray); margin-bottom: 8px; line-height: 1.6;">
-                            ${breakdownHtml}
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
-                            <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">${translations[currentLang].final_total}: ${ord.total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(ord.status)}</span>
-                                ${cancelBtnHtml}
+                    let isOnlineOrder = ord.type === 'أونلاين' || ord.type === 'Online';
+                    let breakdownHtml = isOnlineOrder ? 
+                        `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].delivery_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م` :
+                        `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].service_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م`;
+
+                    html += `
+                        <div class="history-item-row">
+                            <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 8px;">
+                                <span>${currentLang === 'ar' ? 'طلب' : 'Order'} #${ord.id.slice(-6)} (${escapeHTML(ord.type)})</span>
+                                <span>${escapeHTML(ord.date || '')} - ${escapeHTML(ord.time || '')}</span>
+                            </div>
+                            <div style="border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 6px;">
+                                ${itemsDetailsHtml}
+                            </div>
+                            <div style="font-size: 11px; color: var(--gray); margin-bottom: 8px; line-height: 1.6;">
+                                ${breakdownHtml}
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
+                                <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">${translations[currentLang].final_total}: ${ord.total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(ord.status)}</span>
+                                    ${cancelBtnHtml}
+                                </div>
                             </div>
                         </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = `<p style="color: var(--primary); text-align: center; padding: 20px;">خطأ في تحميل السجل</p>`;
+            }
+        }
+
+        async function cancelOrder(orderId) {
+            try {
+                const { doc, updateDoc } = window.firebaseModules;
+                await updateDoc(doc(window.db, `restaurants/${restaurant}/orders`, orderId), {
+                    status: currentLang === 'ar' ? 'ملغي' : 'Cancelled'
+                });
+                renderClientHistory();
+                showCustomAlert(currentLang === 'ar' ? 'تم إلغاء الطلب بنجاح.' : 'Order cancelled successfully.');
+            } catch(e) {
+                showCustomAlert(e.message);
+            }
+        }
+
+        function listenLiveOrders() {
+            if (!currentUser) return;
+            if (activeOrderUnsubscribe) activeOrderUnsubscribe();
+
+            const { collection, onSnapshot, query, where } = window.firebaseModules;
+            let q = query(collection(window.db, `restaurants/${restaurant}/orders`), where("client.phone", "==", currentUser.phone));
+            
+            activeOrderUnsubscribe = onSnapshot(q, (snapshot) => {
+                let orders = [];
+                snapshot.forEach(d => orders.push({ id: d.id, ...d.data() }));
+                
+                let activeOrder = orders.slice().reverse().find(o => o.status !== 'تم التسليم' && o.status !== 'ملغي' && o.status !== 'Delivered' && o.status !== 'Cancelled');
+                let trackerContainer = document.getElementById('liveOrderTrackerContainer');
+
+                if (!activeOrder) { trackerContainer.innerHTML = ''; return; }
+
+                trackerContainer.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1f2937 11%, #111827 100%); border: 1px solid var(--warning); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
+                        <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> ${currentLang === 'ar' ? 'متابعة طلبك' : 'Track Order'} (#${activeOrder.id.slice(-6)})</span>
+                        <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(activeOrder.status)}</span>
                     </div>
                 `;
             });
-            container.innerHTML = html;
         }
-
-        function cancelOrder(orderId) {
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let order = orders.find(o => o.id === orderId);
-            if (order) {
-                order.status = currentLang === 'ar' ? 'ملغي' : 'Cancelled';
-                localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
-                renderClientHistory();
-                updateLiveTracker();
-                showCustomAlert(currentLang === 'ar' ? 'تم إلغاء الطلب بنجاح.' : 'Order cancelled successfully.');
-            }
-        }
-
-        function updateLiveTracker() {
-            let trackerContainer = document.getElementById('liveOrderTrackerContainer');
-            if (!currentUser) { trackerContainer.innerHTML = ''; return; }
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
-            let activeOrder = orders.slice().reverse().find(o => o.client && o.client.phone === currentUser.phone && o.status !== 'تم التسليم' && o.status !== 'ملغي' && o.status !== 'Delivered' && o.status !== 'Cancelled');
-
-            if (!activeOrder) { trackerContainer.innerHTML = ''; return; }
-
-            trackerContainer.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1f2937 11%, #111827 100%); border: 1px solid var(--warning); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
-                    <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> ${currentLang === 'ar' ? 'متابعة طلبك' : 'Track Order'} (#${activeOrder.id})</span>
-                    <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(activeOrder.status)}</span>
-                </div>
-            `;
-        }
-
-        let cart = JSON.parse(localStorage.getItem(`cart_${restaurant}`)) || {};
-        let selectedCategory = 'All';
 
         function loadCategoriesBar() {
-            let cats = (restData && restData.categories) ? restData.categories : ["مشروبات / Drinks", "أكلات / Foods"];
             let container = document.getElementById('categoriesRowContainer');
-            
             let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">${translations[currentLang].all_cat}</button>`;
-            cats.forEach(c => {
+            categories.forEach(c => {
                 html += `<button class="cat-btn ${selectedCategory === c ? 'active' : ''}" onclick="filterCategory('${escapeHTML(c)}', this)">${escapeHTML(c)}</button>`;
             });
             container.innerHTML = html;
@@ -905,11 +1010,11 @@
                             </div>
                             <div id="btn-container-${item.id}">
                                 ${qty === 0 ? 
-                                    `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>` :
+                                    `<button class="add-initial-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>` :
                                     `<div class="qty-controls">
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
+                                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
                                         <span class="qty-num">${qty}</span>
-                                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
+                                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
                                      </div>`
                                 }
                             </div>
@@ -918,7 +1023,6 @@
                 `;
             });
             grid.innerHTML = html;
-            updateLiveTracker();
         }
 
         function updateQtyUI(id) {
@@ -932,13 +1036,13 @@
             let finalPrice = item.discount ? (item.price - item.discount) : item.price;
 
             if (qty === 0) {
-                container.innerHTML = `<button class="add-initial-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>`;
+                container.innerHTML = `<button class="add-initial-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>`;
             } else {
                 container.innerHTML = `
                     <div class="qty-controls">
-                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
+                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
                         <span class="qty-num">${qty}</span>
-                        <button class="qty-btn" onclick="changeQty(${item.id}, '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
+                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
                     </div>
                 `;
             }
@@ -976,7 +1080,7 @@
             }
         }
 
-        function submitOrder() {
+        async function submitOrder() {
             const btn = document.querySelector(".btn-submit");
             btn.disabled = true;
 
@@ -992,9 +1096,7 @@
             let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
             let finalTotal = subtotal + serviceFee;
 
-            let orders = JSON.parse(localStorage.getItem(`orders_${restaurant}`)) || [];
             let newOrder = {
-                id: Math.floor(100000 + Math.random() * 900000),
                 client: currentUser,
                 type: orderType,
                 table: isOnline ? (currentLang === 'ar' ? 'أونلاين (دليفري)' : 'Online (Delivery)') : table,
@@ -1002,18 +1104,22 @@
                 subtotal, serviceFee, total: finalTotal,
                 time: new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {hour: '2-digit', minute:'2-digit'}),
                 date: new Date().toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US'),
+                createdAt: Date.now(),
                 status: currentLang === 'ar' ? 'قيد التحضير' : 'Preparing'
             };
 
-            orders.push(newOrder);
-            localStorage.setItem(`orders_${restaurant}`, JSON.stringify(orders));
+            try {
+                const { collection, addDoc } = window.firebaseModules;
+                await addDoc(collection(window.db, `restaurants/${restaurant}/orders`), newOrder);
 
-            showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح!' : 'Order submitted successfully!');
-            cart = {};
-            localStorage.removeItem(`cart_${restaurant}`);
-            updateCartBar();
-            loadMenu();
-            updateLiveTracker();
+                showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح!' : 'Order submitted successfully!');
+                cart = {};
+                localStorage.removeItem(`cart_${restaurant}`);
+                updateCartBar();
+                loadMenu();
+            } catch(e) {
+                showCustomAlert(e.message);
+            }
         }
 
         function showCustomAlert(msg) {
@@ -1023,12 +1129,6 @@
         function closeCustomAlert() {
             document.getElementById('customAlertModal').classList.add('hidden');
         }
-
-        window.addEventListener("storage", (e) => {
-            if (e.key === `orders_${restaurant}`) {
-                updateLiveTracker();
-            }
-        });
 
         window.onload = function() {
             changeLanguage(currentLang);
