@@ -506,6 +506,15 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function showCustomAlert(msg) {
+            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
+
         function changeLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('app_lang', lang);
@@ -550,12 +559,9 @@
         let activeOrderUnsubscribe = null;
 
         window.addEventListener('firebase-loaded', async () => {
-            const { collection, doc, getDoc, getDocs, onSnapshot, query, where } = window.firebaseModules;
-            
-            // Load Restaurant Info
             try {
-                const restDocRef = doc(window.db, "restaurants", restaurant);
-                const restSnap = await getDoc(restDocRef);
+                const restDocRef = window.firebaseModules.doc(window.db, "restaurants", restaurant);
+                const restSnap = await window.firebaseModules.getDoc(restDocRef);
                 if (restSnap.exists()) {
                     let restData = restSnap.data();
                     if (restData.primaryColor) {
@@ -566,31 +572,15 @@
                         logoImg.src = restData.logo;
                         logoImg.style.display = 'block';
                     }
+                    if (restData.categories) categories = restData.categories;
+                    if (restData.items) menuItems = restData.items;
                 }
             } catch(e) { console.error(e); }
 
-            // Load Categories from Firestore
-            try {
-                const catSnap = await getDocs(collection(window.db, `restaurants/${restaurant}/categories`));
-                categories = [];
-                catSnap.forEach(d => categories.push(d.data().name || d.id));
-                if(categories.length === 0) categories = ["مشروبات / Drinks", "أكلات / Foods"];
-            } catch(e) {
-                categories = ["مشروبات / Drinks", "أكلات / Foods"];
-            }
+            if(categories.length === 0) categories = ["مشروبات / Drinks", "أكلات / Foods"];
             loadCategoriesBar();
-
-            // Load Menu from Firestore
-            try {
-                const menuSnap = await getDocs(collection(window.db, `restaurants/${restaurant}/menu`));
-                menuItems = [];
-                menuSnap.forEach(d => menuItems.push({ id: d.id, ...d.data() }));
-            } catch(e) {
-                menuItems = [];
-            }
             loadMenu();
 
-            // Check Auth & Current User
             if (!currentUser) {
                 document.getElementById('authModal').classList.remove('hidden');
             } else {
@@ -610,8 +600,7 @@
 
         async function updateUserInFirestore(userObj) {
             try {
-                const { doc, setDoc } = window.firebaseModules;
-                await setDoc(doc(window.db, `restaurants/${restaurant}/users`, userObj.phone), userObj, { merge: true });
+                await window.firebaseModules.setDoc(window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, userObj.phone), userObj, { merge: true });
             } catch(e) { console.error(e); }
         }
 
@@ -684,9 +673,8 @@
             }
 
             try {
-                const { doc, getDoc, setDoc } = window.firebaseModules;
-                let userRef = doc(window.db, `restaurants/${restaurant}/users`, phone);
-                let userSnap = await getDoc(userRef);
+                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, phone);
+                let userSnap = await window.firebaseModules.getDoc(userRef);
 
                 if (userSnap.exists()) {
                     showCustomAlert(translations[currentLang].phone_already_registered);
@@ -694,16 +682,14 @@
                 }
 
                 let newUser = {
-                    id: Math.floor(100000 + Math.random() * 900000),
                     name,
                     phone,
                     password,
                     address,
-                    createdAt: new Date().toISOString(),
-                    lastLogin: new Date().toISOString()
+                    createdAt: new Date().toISOString()
                 };
 
-                await setDoc(userRef, newUser);
+                await window.firebaseModules.setDoc(userRef, newUser);
 
                 currentUser = { name, phone, address };
                 localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
@@ -727,9 +713,8 @@
             }
 
             try {
-                const { doc, getDoc, updateDoc } = window.firebaseModules;
-                let userRef = doc(window.db, `restaurants/${restaurant}/users`, phone);
-                let userSnap = await getDoc(userRef);
+                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, phone);
+                let userSnap = await window.firebaseModules.getDoc(userRef);
 
                 if (!userSnap.exists()) {
                     showCustomAlert(translations[currentLang].phone_not_registered);
@@ -742,19 +727,9 @@
                     return;
                 }
 
-                await updateDoc(userRef, { lastLogin: new Date().toISOString() });
-
                 currentUser = { name: userData.name, phone: userData.phone, address: userData.address || (isOnline ? '' : `Dine-In Table ${table}`) };
-                
-                if (isOnline && !currentUser.address) {
-                    let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
-                    if (promptAddress) {
-                        currentUser.address = promptAddress;
-                        await updateDoc(userRef, { address: promptAddress });
-                    }
-                }
-
                 localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
+                
                 document.getElementById('authModal').classList.add('hidden');
                 loadCategoriesBar();
                 loadMenu();
@@ -780,17 +755,15 @@
             }
 
             try {
-                const { doc, getDoc, updateDoc } = window.firebaseModules;
-                let userRef = doc(window.db, `restaurants/${restaurant}/users`, phone);
-                let userSnap = await getDoc(userRef);
+                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, phone);
+                let userSnap = await window.firebaseModules.getDoc(userRef);
 
                 if (!userSnap.exists()) {
                     showCustomAlert(translations[currentLang].phone_not_registered);
                     return;
                 }
 
-                await updateDoc(userRef, { password: newPassword });
-
+                await window.firebaseModules.updateDoc(userRef, { password: newPassword });
                 showCustomAlert(translations[currentLang].password_updated);
                 showAuthForm('login');
             } catch(e) {
@@ -808,9 +781,8 @@
             }
 
             try {
-                const { doc, updateDoc } = window.firebaseModules;
-                let userRef = doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
-                await updateDoc(userRef, { name, address });
+                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
+                await window.firebaseModules.updateDoc(userRef, { name, address });
 
                 currentUser.name = name;
                 currentUser.address = address;
@@ -839,17 +811,15 @@
             }
 
             try {
-                const { doc, getDoc, updateDoc } = window.firebaseModules;
-                let userRef = doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
-                let userSnap = await getDoc(userRef);
+                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
+                let userSnap = await window.firebaseModules.getDoc(userRef);
 
                 if (!userSnap.exists() || userSnap.data().password !== currentPassword) {
                     showCustomAlert(translations[currentLang].current_password_incorrect);
                     return;
                 }
 
-                await updateDoc(userRef, { password: newPassword });
-
+                await window.firebaseModules.updateDoc(userRef, { password: newPassword });
                 showCustomAlert(translations[currentLang].password_updated);
                 toggleChangePassword(false);
             } catch(e) {
@@ -873,106 +843,41 @@
             container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">جاري التحميل...</p>`;
 
             try {
-                const { collection, getDocs, query, where } = window.firebaseModules;
-                let q = query(collection(window.db, `restaurants/${restaurant}/orders`), where("client.phone", "==", currentUser.phone));
-                let querySnapshot = await getDocs(q);
+                let q = window.firebaseModules.query(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), window.firebaseModules.where("client.phone", "==", currentUser.phone));
+                let querySnapshot = await window.firebaseModules.getDocs(q);
                 let myOrders = [];
                 querySnapshot.forEach(d => myOrders.push({ id: d.id, ...d.data() }));
 
                 if (myOrders.length === 0) {
-                    container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">${currentLang === 'ar' ? 'لا توجد طلبات سابقة برقم هاتفك.' : 'No previous orders found.'}</p>`;
+                    container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">لا توجد طلبات سابقة.</p>`;
                     return;
                 }
 
-                let html = '';
-                myOrders.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach(ord => {
-                    let itemsDetailsHtml = '';
-                    (ord.items || []).forEach(i => {
-                        itemsDetailsHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--white); margin-bottom: 3px;">
-                            <span>${escapeHTML(i.name)} (x${i.qty})</span>
-                            <span style="color: var(--secondary);">${i.price * i.qty} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
-                        </div>`;
-                    });
+                myOrders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-                    let canCancel = (ord.status === 'قيد التحضير' || ord.status === 'جاهز' || ord.status === 'Preparing' || ord.status === 'Ready');
-                    let cancelBtnHtml = canCancel ? `<button onclick="cancelOrder('${ord.id}')" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">${currentLang === 'ar' ? 'إلغاء الطلب' : 'Cancel'}</button>` : ``;
-
-                    let isOnlineOrder = ord.type === 'أونلاين' || ord.type === 'Online';
-                    let breakdownHtml = isOnlineOrder ? 
-                        `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].delivery_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م` :
-                        `${translations[currentLang].subtotal_text}: ${ord.subtotal} ج.م<br>${translations[currentLang].service_text}: ${ord.serviceFee} ج.م<br>--------------------<br>${translations[currentLang].final_total_text}: ${ord.total} ج.م`;
-
-                    html += `
-                        <div class="history-item-row">
-                            <div style="display: flex; justify-content: space-between; color: var(--gray); font-size: 11px; margin-bottom: 8px;">
-                                <span>${currentLang === 'ar' ? 'طلب' : 'Order'} #${ord.id.slice(-6)} (${escapeHTML(ord.type)})</span>
-                                <span>${escapeHTML(ord.date || '')} - ${escapeHTML(ord.time || '')}</span>
-                            </div>
-                            <div style="border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 6px;">
-                                ${itemsDetailsHtml}
-                            </div>
-                            <div style="font-size: 11px; color: var(--gray); margin-bottom: 8px; line-height: 1.6;">
-                                ${breakdownHtml}
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
-                                <span style="color: var(--secondary); font-weight: 700; font-size: 14px;">${translations[currentLang].final_total}: ${ord.total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</span>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="background: rgba(46, 213, 115, 0.15); color: var(--secondary); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(ord.status)}</span>
-                                    ${cancelBtnHtml}
-                                </div>
-                            </div>
+                container.innerHTML = myOrders.map(o => `
+                    <div class="history-item-row">
+                        <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px;">
+                            <span>طلب #${o.id.slice(-4)}</span>
+                            <span style="color: var(--warning);">${o.status || 'قيد المعالجة'}</span>
                         </div>
-                    `;
-                });
-                container.innerHTML = html;
-            } catch(e) {
-                container.innerHTML = `<p style="color: var(--primary); text-align: center; padding: 20px;">خطأ في تحميل السجل</p>`;
-            }
-        }
-
-        async function cancelOrder(orderId) {
-            try {
-                const { doc, updateDoc } = window.firebaseModules;
-                await updateDoc(doc(window.db, `restaurants/${restaurant}/orders`, orderId), {
-                    status: currentLang === 'ar' ? 'ملغي' : 'Cancelled'
-                });
-                renderClientHistory();
-                showCustomAlert(currentLang === 'ar' ? 'تم إلغاء الطلب بنجاح.' : 'Order cancelled successfully.');
-            } catch(e) {
-                showCustomAlert(e.message);
-            }
-        }
-
-        function listenLiveOrders() {
-            if (!currentUser) return;
-            if (activeOrderUnsubscribe) activeOrderUnsubscribe();
-
-            const { collection, onSnapshot, query, where } = window.firebaseModules;
-            let q = query(collection(window.db, `restaurants/${restaurant}/orders`), where("client.phone", "==", currentUser.phone));
-            
-            activeOrderUnsubscribe = onSnapshot(q, (snapshot) => {
-                let orders = [];
-                snapshot.forEach(d => orders.push({ id: d.id, ...d.data() }));
-                
-                let activeOrder = orders.slice().reverse().find(o => o.status !== 'تم التسليم' && o.status !== 'ملغي' && o.status !== 'Delivered' && o.status !== 'Cancelled');
-                let trackerContainer = document.getElementById('liveOrderTrackerContainer');
-
-                if (!activeOrder) { trackerContainer.innerHTML = ''; return; }
-
-                trackerContainer.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1f2937 11%, #111827 100%); border: 1px solid var(--warning); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
-                        <span style="font-size: 12px; font-weight: 700; color: var(--warning);"><i class="fa-solid fa-bell fa-bounce"></i> ${currentLang === 'ar' ? 'متابعة طلبك' : 'Track Order'} (#${activeOrder.id.slice(-6)})</span>
-                        <span style="background: rgba(255, 165, 2, 0.2); color: var(--warning); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHTML(activeOrder.status)}</span>
+                        <div style="color: var(--gray); font-size: 11px; margin-bottom: 6px;">${new Date(o.createdAt).toLocaleString()}</div>
+                        <div style="border-top: 1px solid var(--border); padding-top: 6px; font-size: 12px;">
+                            ${(o.items || []).map(i => `${i.name} × ${i.quantity}`).join('، ')}
+                        </div>
+                        <div style="margin-top: 6px; font-weight: 700; color: var(--secondary);">الإجمالي: ${o.total} ج.م</div>
                     </div>
-                `;
-            });
+                `).join('');
+            } catch(e) {
+                container.innerHTML = `<p style="color: var(--primary); text-align: center; padding: 20px; font-size: 13px;">فشل تحميل الطلبات.</p>`;
+            }
         }
 
         function loadCategoriesBar() {
             let container = document.getElementById('categoriesRowContainer');
             let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">${translations[currentLang].all_cat}</button>`;
-            categories.forEach(c => {
-                html += `<button class="cat-btn ${selectedCategory === c ? 'active' : ''}" onclick="filterCategory('${escapeHTML(c)}', this)">${escapeHTML(c)}</button>`;
+            categories.forEach(cat => {
+                html += `<button class="cat-btn ${selectedCategory === cat ? 'active' : ''}" onclick="filterCategory('${escapeHTML(cat)}', this)">${escapeHTML(cat)}</button>`;
             });
             container.innerHTML = html;
         }
@@ -985,158 +890,169 @@
         }
 
         function loadMenu() {
-            let items = menuItems;
+            let container = document.getElementById('customerMenuGrid');
+            let filtered = selectedCategory === 'All' ? menuItems : menuItems.filter(i => i.category === selectedCategory);
 
-            if (selectedCategory !== 'All') {
-                items = items.filter(i => i.category === selectedCategory);
+            if (filtered.length === 0) {
+                container.innerHTML = `<p style="color: var(--gray); grid-column: span 2; text-align: center; padding: 20px; font-size: 13px;">لا توجد أصناف متاحة.</p>`;
+                return;
             }
 
-            let grid = document.getElementById('customerMenuGrid');
-            let html = '';
-            items.forEach(item => {
-                let qty = cart[item.id] ? cart[item.id].qty : 0;
-                let finalPrice = item.discount ? (item.price - item.discount) : item.price;
+            container.innerHTML = filtered.map(item => {
+                let price = item.discount ? (item.price - item.discount) : item.price;
+                let qty = cart[item.id] ? cart[item.id].quantity : 0;
 
-                html += `
+                return `
                     <div class="menu-card">
-                        <img src="${escapeHTML(item.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500')}" alt="${escapeHTML(item.name)}" loading="lazy" decoding="async">
+                        <img src="${escapeHTML(item.img || 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500')}" alt="${escapeHTML(item.name)}">
                         <div class="menu-content">
                             <div class="menu-title">${escapeHTML(item.name)}</div>
+                            <div class="menu-price">${price} ج.م</div>
                         </div>
                         <div class="menu-footer">
-                            <div class="menu-price">
-                                ${item.discount ? `<span style="text-decoration: line-through; color: var(--gray); font-size: 10px; display:block;">${item.price}</span>` : ''}
-                                ${finalPrice} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}
-                            </div>
-                            <div id="btn-container-${item.id}">
-                                ${qty === 0 ? 
-                                    `<button class="add-initial-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>` :
-                                    `<div class="qty-controls">
-                                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
-                                        <span class="qty-num">${qty}</span>
-                                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
-                                     </div>`
-                                }
-                            </div>
+                            ${qty === 0 ? `
+                                <button class="add-initial-btn" onclick="updateCartItem('${item.id}', 1)">${translations[currentLang].add_btn}</button>
+                            ` : `
+                                <div class="qty-controls">
+                                    <button class="qty-btn" onclick="updateCartItem('${item.id}', -1)"><i class="fa-solid fa-minus"></i></button>
+                                    <span class="qty-num">${qty}</span>
+                                    <button class="qty-btn" onclick="updateCartItem('${item.id}', 1)"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+                            `}
                         </div>
                     </div>
                 `;
-            });
-            grid.innerHTML = html;
+            }).join('');
         }
 
-        function updateQtyUI(id) {
-            let container = document.getElementById(`btn-container-${id}`);
-            if (!container) return;
-
-            let item = menuItems.find(i => i.id === id);
+        function updateCartItem(itemId, change) {
+            let item = menuItems.find(i => i.id == itemId);
             if (!item) return;
 
-            let qty = cart[id] ? cart[id].qty : 0;
-            let finalPrice = item.discount ? (item.price - item.discount) : item.price;
-
-            if (qty === 0) {
-                container.innerHTML = `<button class="add-initial-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)">${translations[currentLang].add_btn}</button>`;
+            if (!cart[itemId]) {
+                if (change > 0) {
+                    cart[itemId] = {
+                        id: item.id,
+                        name: item.name,
+                        price: item.discount ? (item.price - item.discount) : item.price,
+                        quantity: 1
+                    };
+                }
             } else {
-                container.innerHTML = `
-                    <div class="qty-controls">
-                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, -1)"><i class="fa-solid fa-minus"></i></button>
-                        <span class="qty-num">${qty}</span>
-                        <button class="qty-btn" onclick="changeQty('${item.id}', '${escapeHTML(item.name).replace(/'/g, "\\'")}', ${finalPrice}, 1)"><i class="fa-solid fa-plus"></i></button>
-                    </div>
-                `;
+                cart[itemId].quantity += change;
+                if (cart[itemId].quantity <= 0) {
+                    delete cart[itemId];
+                }
             }
-        }
 
-        function changeQty(id, name, price, change) {
-            if (!cart[id]) {
-                if (change > 0) cart[id] = { id, name, price, qty: 1 };
-            } else {
-                cart[id].qty += change;
-                if (cart[id].qty <= 0) delete cart[id];
-            }
             localStorage.setItem(`cart_${restaurant}`, JSON.stringify(cart));
-            updateQtyUI(id);
+            loadMenu();
             updateCartBar();
         }
 
         function updateCartBar() {
-            let itemsArray = Object.values(cart);
-            let subtotal = itemsArray.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let cartBar = document.getElementById('cartBar');
+            let breakdown = document.getElementById('cartBreakdown');
+            let totalElem = document.getElementById('cartTotal');
 
-            if (itemsArray.length > 0) {
-                document.getElementById('cartBar').classList.remove('hidden');
-                let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
-                let finalTotal = subtotal + serviceFee;
-
-                let breakdownText = isOnline ? 
-                    `${translations[currentLang].subtotal_text}: ${subtotal} ج.م<br>${translations[currentLang].delivery_text}: ${serviceFee} ج.م` :
-                    `${translations[currentLang].subtotal_text}: ${subtotal} ج.م<br>${translations[currentLang].service_text}: ${serviceFee} ج.م`;
-
-                document.getElementById('cartBreakdown').innerHTML = breakdownText;
-                document.getElementById('cartTotal').innerText = `${finalTotal} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`;
-            } else {
-                document.getElementById('cartBar').classList.add('hidden');
+            let keys = Object.keys(cart);
+            if (keys.length === 0) {
+                cartBar.classList.add('hidden');
+                return;
             }
+
+            cartBar.classList.remove('hidden');
+            let subtotal = 0;
+            let itemsCount = 0;
+
+            keys.forEach(k => {
+                subtotal += cart[k].price * cart[k].quantity;
+                itemsCount += cart[k].quantity;
+            });
+
+            let deliveryFee = isOnline ? 15 : 0;
+            let serviceFee = !isOnline ? subtotal * 0.1 : 0;
+            let finalTotal = subtotal + deliveryFee + serviceFee;
+
+            breakdown.innerHTML = `
+                ${itemsCount} أصناف | ${translations[currentLang].subtotal_text}: ${subtotal.toFixed(1)} ج.م<br>
+                ${isOnline ? `${translations[currentLang].delivery_text}: ${deliveryFee} ج.م` : `${translations[currentLang].service_text} (10%): ${serviceFee.toFixed(1)} ج.م`}
+            `;
+            totalElem.innerText = `${finalTotal.toFixed(1)} ج.م`;
         }
 
         async function submitOrder() {
-            const btn = document.querySelector(".btn-submit");
-            btn.disabled = true;
+            let keys = Object.keys(cart);
+            if (keys.length === 0) return;
 
-            setTimeout(() => {
-                btn.disabled = false;
-            }, 1500);
+            let subtotal = 0;
+            let orderItemsList = [];
+            keys.forEach(k => {
+                subtotal += cart[k].price * cart[k].quantity;
+                orderItemsList.push(cart[k]);
+            });
 
-            if (!currentUser) { document.getElementById('authModal').classList.remove('hidden'); return; }
-            let itemsArray = Object.values(cart);
-            if (itemsArray.length === 0) return;
+            let deliveryFee = isOnline ? 15 : 0;
+            let serviceFee = !isOnline ? subtotal * 0.1 : 0;
+            let finalTotal = subtotal + deliveryFee + serviceFee;
 
-            let subtotal = itemsArray.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            let serviceFee = isOnline ? 40 : Math.round(subtotal * 0.10);
-            let finalTotal = subtotal + serviceFee;
-
-            let newOrder = {
+            let orderData = {
+                restaurant,
                 client: currentUser,
-                type: orderType,
-                table: isOnline ? (currentLang === 'ar' ? 'أونلاين (دليفري)' : 'Online (Delivery)') : table,
-                items: itemsArray,
-                subtotal, serviceFee, total: finalTotal,
-                time: new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {hour: '2-digit', minute:'2-digit'}),
-                date: new Date().toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US'),
-                createdAt: Date.now(),
-                status: currentLang === 'ar' ? 'قيد التحضير' : 'Preparing'
+                items: orderItemsList,
+                orderType: isOnline ? 'Delivery' : 'Dine-In',
+                table: table || 'Online',
+                subtotal,
+                fees: isOnline ? deliveryFee : serviceFee,
+                total: finalTotal,
+                status: 'قيد المعالجة',
+                createdAt: new Date().toISOString()
             };
 
             try {
-                const { collection, addDoc } = window.firebaseModules;
-                await addDoc(collection(window.db, `restaurants/${restaurant}/orders`), newOrder);
-
-                showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح!' : 'Order submitted successfully!');
+                let docRef = await window.firebaseModules.addDoc(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), orderData);
                 cart = {};
                 localStorage.removeItem(`cart_${restaurant}`);
                 updateCartBar();
                 loadMenu();
+                showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح! تابع حالته من قسم طلباتي.' : 'Order submitted successfully!');
+                listenLiveOrders();
             } catch(e) {
-                showCustomAlert(e.message);
+                showCustomAlert(currentLang === 'ar' ? 'حدث خطأ أثناء إرسال الطلب.' : 'Error submitting order.');
             }
         }
 
-        function showCustomAlert(msg) {
-            document.getElementById('customAlertMessage').innerText = msg;
-            document.getElementById('customAlertModal').classList.remove('hidden');
-        }
-        function closeCustomAlert() {
-            document.getElementById('customAlertModal').classList.add('hidden');
-        }
+        function listenLiveOrders() {
+            if (!currentUser) return;
+            if (activeOrderUnsubscribe) activeOrderUnsubscribe();
 
-        window.onload = function() {
-            changeLanguage(currentLang);
-            updateCartBar();
-        };
+            try {
+                let q = window.firebaseModules.query(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), window.firebaseModules.where("client.phone", "==", currentUser.phone));
+                activeOrderUnsubscribe = window.firebaseModules.onSnapshot(q, (snapshot) => {
+                    let activeOrders = [];
+                    snapshot.forEach(d => {
+                        let data = d.data();
+                        if (data.status !== 'مكتمل' && data.status !== 'ملغي') {
+                            activeOrders.push({ id: d.id, ...data });
+                        }
+                    });
+
+                    let tracker = document.getElementById('liveOrderTrackerContainer');
+                    if (activeOrders.length === 0) {
+                        tracker.innerHTML = '';
+                        return;
+                    }
+
+                    let latest = activeOrders[activeOrders.length - 1];
+                    tracker.innerHTML = `
+                        <div style="background: rgba(46, 213, 115, 0.15); border: 1px solid var(--secondary); padding: 12px; border-radius: 12px; margin-bottom: 12px; font-size: 13px;">
+                            <div style="font-weight: 700; color: var(--secondary); margin-bottom: 4px;"><i class="fa-solid fa-spinner fa-spin"></i> حالة طلبك الحالي: ${latest.status}</div>
+                            <div style="color: var(--gray); font-size: 11px;">رقم الطلب: #${latest.id.slice(-4)} | الإجمالي: ${latest.total} ج.م</div>
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
     </script>
-    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-        تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-    </div>
 </body>
 </html>
