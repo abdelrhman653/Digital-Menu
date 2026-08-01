@@ -511,6 +511,15 @@
             }
         };
 
+        function showCustomAlert(message) {
+            document.getElementById('customAlertMessage').innerText = message;
+            document.getElementById('customAlertModal').classList.remove('hidden');
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').classList.add('hidden');
+        }
+
         function changeLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('app_lang', lang);
@@ -1054,7 +1063,7 @@
                 let qrElementId = `qrcode-table-${i}`;
                 
                 box.innerHTML = `
-                    <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
+                    <div class="restaurant-title-qr">${currentRestaurant ? currentRestaurant.toUpperCase() : ''}</div>
                     <div class="table-title-qr">Table ${i}</div>
                     <div style="display: flex; justify-content: center;">
                         <div class="qr-img-container" id="${qrElementId}" title="${currentLang === 'ar' ? 'اضغط للطباعة' : 'Click to print'}"></div>
@@ -1167,7 +1176,7 @@
                 let qrImageSrc = await processAndConvertQRToImage(url);
                 let cardHtml = `
                     <div class="print-card">
-                        <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
+                        <div class="restaurant-title-qr">${currentRestaurant ? currentRestaurant.toUpperCase() : ''}</div>
                         <div class="table-title-qr">${title}</div>
                         <div class="qr-img-container">
                             <img src="${qrImageSrc}" alt="QR Code">
@@ -1194,7 +1203,7 @@
 
                     allCardsHtml += `
                         <div class="print-card">
-                            <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
+                            <div class="restaurant-title-qr">${currentRestaurant ? currentRestaurant.toUpperCase() : ''}</div>
                             <div class="table-title-qr">Table ${i}</div>
                             <div class="qr-img-container">
                                 <img src="${qrImageSrc}" alt="QR Code">
@@ -1232,42 +1241,15 @@
             iframe.onload = async function() {
                 try {
                     if (document.fonts && document.fonts.ready) await document.fonts.ready;
-                    if (iframe.contentWindow.document.fonts && iframe.contentWindow.document.fonts.ready) await iframe.contentWindow.document.fonts.ready;
-
-                    let images = iframe.contentWindow.document.querySelectorAll('img');
-                    let promises = Array.from(images).map(img => {
-                        if (img.complete) return Promise.resolve();
-                        return new Promise(resolve => {
-                            img.onload = resolve;
-                            img.onerror = resolve;
-                        });
-                    });
-
-                    await Promise.all(promises);
-
                     setTimeout(() => {
                         iframe.contentWindow.focus();
                         iframe.contentWindow.print();
-                    }, 400);
-
+                    }, 500);
                 } catch (err) {
-                    console.error("Printing error inside iframe:", err);
-                    iframe.contentWindow.focus();
-                    iframe.contentWindow.print();
+                    console.error("Print execution error:", err);
                 }
             };
         }
-
-        function showCustomAlert(msg) {
-            document.getElementById('customAlertMessage').innerText = msg;
-            document.getElementById('customAlertModal').classList.remove('hidden');
-        }
-        function closeCustomAlert() {
-            document.getElementById('customAlertModal').classList.add('hidden');
-        }
     </script>
-    <div style="text-align: center; padding: 20px 0; background: var(--dark-card, #151B22); border-top: 1px solid var(--border, #30363D); margin-top: 40px; color: var(--gray, #8B949E); font-size: 13px; font-family: 'Cairo', sans-serif;">
-        تم التطوير بواسطة <span style="color: var(--primary, #FF4757); font-weight: 700;">Abdelrhman Mohamed | Web Developer</span>
-    </div>
 </body>
 </html>
