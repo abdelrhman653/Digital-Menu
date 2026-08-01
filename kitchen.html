@@ -366,7 +366,6 @@
         window.addEventListener('firebase-loaded-kitchen', async () => {
             try {
                 const restDocRef = window.firestoreModules.doc(window.db, "restaurants", restaurant);
-                // استخدام getDoc لجلب إعدادات المطعم
                 const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js");
                 const restSnap = await getDoc(restDocRef);
                 if (restSnap.exists()) {
@@ -573,7 +572,7 @@
             filtered.sort((a, b) => {
                 let timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
                 let timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                return timeB - timeA; // الأحدث أولاً
+                return timeB - timeA;
             });
 
             if (filtered.length === 0) {
@@ -587,7 +586,6 @@
 
             const targetDocIds = new Set(filtered.map(o => String(o.docId)));
 
-            // إزالة البطاقات التي لم تعد مطابقة للفلتر أو القسم الحالي
             const existingCards = Array.from(container.querySelectorAll('.order-card'));
             existingCards.forEach(card => {
                 const docId = card.getAttribute('data-docid');
@@ -596,7 +594,6 @@
                 }
             });
 
-            // تحديث البطاقات أو إضافتها بشكل ذكي (بدون إعادة رسم القائمة بالكامل)
             filtered.forEach((order, index) => {
                 const docId = String(order.docId);
                 let card = container.querySelector(`.order-card[data-docid="${docId}"]`);
@@ -666,7 +663,6 @@
             let oldStatus = order.status;
             if (oldStatus === newStatus) return;
 
-            // Optimistic Update لتغيير لون الزر فورياً وعدم وجود أي تأخير
             order.status = newStatus;
             updateStatsAndFilters();
             renderKitchenOrders();
@@ -677,7 +673,6 @@
                 await updateDoc(orderRef, { status: newStatus });
             } catch (e) {
                 console.error("Error updating status: ", e);
-                // Rollback في حال الفشل
                 order.status = oldStatus;
                 updateStatsAndFilters();
                 renderKitchenOrders();
@@ -795,6 +790,7 @@
                     }
 
                     isInitialSnapshot = false;
+                    updateStatsAndFilters();
                     renderKitchenOrders();
                 }, (error) => {
                     console.error("Kitchen orders snapshot error:", error);
