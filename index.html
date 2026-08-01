@@ -389,13 +389,42 @@
         </div>
     </div>
 
+    <!-- ربط فايربيس -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_KEY",
+            authDomain: "digital-menu-8d2b4.firebaseapp.com",
+            projectId: "digital-menu-8d2b4",
+            storageBucket: "digital-menu-8d2b4.firebasestorage.app",
+            messagingSenderId: "436566477044",
+            appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // إتاحة الدوال globally للاستخدام داخل السكربت العادي
+        window.FB = { db, storage, doc, getDoc, setDoc, updateDoc, ref, uploadBytes, getDownloadURL };
+    </script>
+
     <script>
         let currentRestaurant = localStorage.getItem('current_restaurant');
         let currentLang = localStorage.getItem('app_lang') || 'ar';
-        let uploadedImageBase64 = "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
-        let uploadedLogoBase64 = "";
+        let uploadedImageFile = null;
+        let uploadedLogoFile = null;
         let aiMenuImageFile = null;
         let defaultCategories = ["مشروبات / Drinks", "أكلات / Foods", "حلويات / Desserts"];
+        let restaurantDataCache = {
+            primaryColor: '#FF4757',
+            logo: '',
+            categories: [...defaultCategories],
+            items: []
+        };
 
         const translations = {
             ar: {
@@ -500,23 +529,49 @@
             renderCategoriesManagement();
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             changeLanguage(currentLang);
             if (currentRestaurant) {
+                await fetchRestaurantDataFromCloud();
                 showDashboard();
             }
         }
 
-        function getAllRestaurants() {
+        async function fetchRestaurantDataFromCloud() {
+            if (!window.FB) return;
             try {
-                return JSON.parse(localStorage.getItem('all_restaurants_db')) || {};
+                let docRef = window.FB.doc(window.FB.db, "restaurants", currentRestaurant);
+                let docSnap = await window.FB.getDoc(docRef);
+                if (docSnap.exists()) {
+                    restaurantDataCache = docSnap.data();
+                    if (!restaurantDataCache.categories) restaurantDataCache.categories = [...defaultCategories];
+                    if (!restaurantDataCache.items) restaurantDataCache.items = [];
+                }
             } catch (e) {
-                return {};
+                console.error("Error fetching data:", e);
             }
         }
 
-        function saveAllRestaurants(db) {
-            localStorage.setItem('all_restaurants_db', JSON.stringify(db));
+        async function saveRestaurantDataToCloud() {
+            if (!window.FB) return;
+            try {
+                let docRef = window.FB.doc(window.FB.db, "restaurants", currentRestaurant);
+                await window.FB.setDoc(docRef, restaurantDataCache, { merge: true });
+            } catch (e) {
+                console.error("Error saving data:", e);
+            }
+        }
+
+        async function uploadFileToStorage(file, folder) {
+            if (!window.FB || !file) return "";
+            try {
+                let fileRef = window.FB.ref(window.FB.storage, `${folder}/${currentRestaurant}_${Date.now()}_${file.name}`);
+                await window.FB.uploadBytes(fileRef, file);
+                return await window.FB.getDownloadURL(fileRef);
+            } catch (e) {
+                console.error("Storage upload error:", e);
+                return "";
+            }
         }
 
         function applyThemeColor(color) {
@@ -525,7 +580,7 @@
             document.documentElement.style.setProperty('--primary-gradient', `linear-gradient(135deg, ${color}cc 0%, ${color} 100%)`);
         }
 
-        function handleRegister() {
+        async function handleRegister() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
             let passwordInput = document.getElementById('authPassword').value;
@@ -536,47 +591,33 @@
             }
 
             let usersKey = `users_${nameInput}`;
-            let usersDb = {};
-            try {
-                usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
-            } catch(e) {
-                usersDb = {};
-            }
+            let usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
 
             if (usersDb[phoneInput]) {
                 showCustomAlert(currentLang === 'ar' ? 'هذا الرقم مسجل بالفعل.' : 'This phone number is already registered.');
                 return;
             }
 
-            usersDb[phoneInput] = {
-                name: nameInput,
-                phone: phoneInput,
-                password: passwordInput,
-                createdAt: new Date().toISOString()
-            };
+            usersDb[phoneInput] = { name: nameInput, phone: phoneInput, password: passwordInput };
             localStorage.setItem(usersKey, JSON.stringify(usersDb));
-
-            let db = getAllRestaurants();
-            if (!db[nameInput]) {
-                db[nameInput] = {
-                    phone: phoneInput,
-                    primaryColor: '#FF4757',
-                    logo: '',
-                    categories: [...defaultCategories],
-                    items: []
-                };
-                saveAllRestaurants(db);
-            }
 
             currentRestaurant = nameInput;
             localStorage.setItem('current_restaurant', currentRestaurant);
-            localStorage.setItem('current_phone', phoneInput);
             
+            restaurantDataCache = {
+                phone: phoneInput,
+                primaryColor: '#FF4757',
+                logo: '',
+                categories: [...defaultCategories],
+                items: []
+            };
+            await saveRestaurantDataToCloud();
+
             showCustomAlert(currentLang === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!');
             showDashboard();
         }
 
-        function handleLogin() {
+        async function handleLogin() {
             let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
             let phoneInput = document.getElementById('authPhoneNumber').value.trim();
             let passwordInput = document.getElementById('authPassword').value;
@@ -587,63 +628,44 @@
             }
 
             let usersKey = `users_${nameInput}`;
-            let usersDb = {};
-            try {
-                usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
-            } catch(e) {
-                usersDb = {};
-            }
+            let usersDb = JSON.parse(localStorage.getItem(usersKey)) || {};
 
             if (!usersDb[phoneInput]) {
-                let db = getAllRestaurants();
-                if (db[nameInput] && db[nameInput].phone === phoneInput) {
-                    usersDb[phoneInput] = {
-                        name: nameInput,
-                        phone: phoneInput,
-                        password: passwordInput,
-                        createdAt: new Date().toISOString()
-                    };
-                    localStorage.setItem(usersKey, JSON.stringify(usersDb));
-                } else {
-                    showCustomAlert(currentLang === 'ar' ? 'هذا الرقم غير مسجل.' : 'This phone number is not registered.');
-                    return;
-                }
+                usersDb[phoneInput] = { name: nameInput, phone: phoneInput, password: passwordInput };
+                localStorage.setItem(usersKey, JSON.stringify(usersDb));
             }
 
-            let userRecord = usersDb[phoneInput];
-            if (userRecord.password !== passwordInput) {
+            if (usersDb[phoneInput].password !== passwordInput) {
                 showCustomAlert(currentLang === 'ar' ? 'كلمة المرور غير صحيحة.' : 'Incorrect password.');
                 return;
             }
 
             currentRestaurant = nameInput;
             localStorage.setItem('current_restaurant', currentRestaurant);
-            localStorage.setItem('current_phone', phoneInput);
+            await fetchRestaurantDataFromCloud();
             showDashboard();
         }
 
         function handleLogoUpload(event) {
-            let file = event.target.files[0];
-            if (!file) return;
-            document.getElementById('logoFileNameDisplay').innerText = file.name;
-            let reader = new FileReader();
-            reader.onload = function(e) { uploadedLogoBase64 = e.target.result; };
-            reader.readAsDataURL(file);
+            uploadedLogoFile = event.target.files[0];
+            if (uploadedLogoFile) {
+                document.getElementById('logoFileNameDisplay').innerText = uploadedLogoFile.name;
+            }
         }
 
-        function updateRestaurantIdentity() {
+        async function updateRestaurantIdentity() {
             let newColor = document.getElementById('adminPrimaryColor').value;
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                db[currentRestaurant].primaryColor = newColor;
-                if (uploadedLogoBase64) {
-                    db[currentRestaurant].logo = uploadedLogoBase64;
-                }
-                saveAllRestaurants(db);
-                applyThemeColor(newColor);
-                loadLogoOnHeader(db[currentRestaurant].logo);
-                showCustomAlert(currentLang === 'ar' ? 'تم تحديث إعدادات الهوية واللون بنجاح!' : 'Identity settings updated successfully!');
+            restaurantDataCache.primaryColor = newColor;
+
+            if (uploadedLogoFile) {
+                let logoUrl = await uploadFileToStorage(uploadedLogoFile, "logos");
+                if (logoUrl) restaurantDataCache.logo = logoUrl;
             }
+
+            await saveRestaurantDataToCloud();
+            applyThemeColor(newColor);
+            loadLogoOnHeader(restaurantDataCache.logo);
+            showCustomAlert(currentLang === 'ar' ? 'تم تحديث إعدادات الهوية واللون بنجاح!' : 'Identity settings updated successfully!');
         }
 
         function loadLogoOnHeader(logoUrl) {
@@ -658,27 +680,20 @@
 
         function logout() {
             localStorage.removeItem('current_restaurant');
-            localStorage.removeItem('current_phone');
             currentRestaurant = null;
             document.getElementById('authSection').style.display = 'block';
             document.getElementById('dashboardSection').style.display = 'none';
         }
 
-        function showDashboard() {
+        async function showDashboard() {
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
             document.getElementById('headerRestaurantTitle').innerText = `⚡ لوحة إدارة: ${currentRestaurant.toUpperCase()}`;
 
-            let db = getAllRestaurants();
-            let brandColor = '#FF4757';
-            let logoUrl = '';
-            if (db[currentRestaurant]) {
-                if (db[currentRestaurant].primaryColor) brandColor = db[currentRestaurant].primaryColor;
-                if (db[currentRestaurant].logo) logoUrl = db[currentRestaurant].logo;
-            }
+            let brandColor = restaurantDataCache.primaryColor || '#FF4757';
             document.getElementById('adminPrimaryColor').value = brandColor;
             applyThemeColor(brandColor);
-            loadLogoOnHeader(logoUrl);
+            loadLogoOnHeader(restaurantDataCache.logo);
 
             let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             document.getElementById('onlineMenuBtn').href = `${baseUrl}orders.html?restaurant=${currentRestaurant}`;
@@ -691,22 +706,12 @@
         }
 
         function getCategories() {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                if (!db[currentRestaurant].categories) {
-                    db[currentRestaurant].categories = [...defaultCategories];
-                }
-                return db[currentRestaurant].categories;
-            }
-            return [...defaultCategories];
+            return restaurantDataCache.categories || [...defaultCategories];
         }
 
-        function saveCategories(cats) {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                db[currentRestaurant].categories = [...new Set(cats)];
-                saveAllRestaurants(db);
-            }
+        async function saveCategories(cats) {
+            restaurantDataCache.categories = [...new Set(cats)];
+            await saveRestaurantDataToCloud();
         }
 
         function updateCategoryDropdown() {
@@ -732,7 +737,7 @@
             `).join('');
         }
 
-        function addNewCategoryToList() {
+        async function addNewCategoryToList() {
             let customInput = document.getElementById('customCategoryInput');
             let val = customInput.value.trim();
             if (!val) {
@@ -742,7 +747,7 @@
             let cats = getCategories();
             if (!cats.includes(val)) {
                 cats.push(val);
-                saveCategories(cats);
+                await saveCategories(cats);
                 updateCategoryDropdown();
                 renderCategoriesManagement();
                 document.getElementById('newItemCategory').value = val;
@@ -753,21 +758,19 @@
             }
         }
 
-        function deleteCategory(catName) {
+        async function deleteCategory(catName) {
             let cats = getCategories().filter(c => c !== catName);
-            saveCategories(cats);
+            await saveCategories(cats);
             updateCategoryDropdown();
             renderCategoriesManagement();
             showCustomAlert(currentLang === 'ar' ? 'تم حذف التصنيف بنجاح.' : 'Category deleted successfully.');
         }
 
         function handleImageUpload(event) {
-            let file = event.target.files[0];
-            if (!file) return;
-            document.getElementById('fileNameDisplay').innerText = file.name;
-            let reader = new FileReader();
-            reader.onload = function(e) { uploadedImageBase64 = e.target.result; };
-            reader.readAsDataURL(file);
+            uploadedImageFile = event.target.files[0];
+            if (uploadedImageFile) {
+                document.getElementById('fileNameDisplay').innerText = uploadedImageFile.name;
+            }
         }
 
         function handleAiMenuUpload(event) {
@@ -823,17 +826,13 @@
                     let line = lines[i];
                     let cleanLine = line.toLowerCase();
                     
-                    if (cleanLine.includes('menu') || cleanLine.includes('قائمة') || cleanLine.length < 2) {
-                        continue;
-                    }
+                    if (cleanLine.includes('menu') || cleanLine.includes('قائمة') || cleanLine.length < 2) continue;
 
                     let hasNumbers = /\d/.test(line);
                     
                     if (!hasNumbers && line.length >= 2 && line.length < 30) {
                         currentCategory = line;
-                        if (!categories.includes(currentCategory)) {
-                            categories.push(currentCategory);
-                        }
+                        if (!categories.includes(currentCategory)) categories.push(currentCategory);
                         continue;
                     }
 
@@ -863,8 +862,10 @@
                     }
                 }
 
-                saveCategories(categories);
-                saveItems(currentItems);
+                restaurantDataCache.categories = categories;
+                restaurantDataCache.items = currentItems;
+                await saveRestaurantDataToCloud();
+
                 updateCategoryDropdown();
                 renderCategoriesManagement();
                 renderItems();
@@ -884,22 +885,15 @@
         }
 
         function getItems() {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                return db[currentRestaurant].items || [];
-            }
-            return [];
+            return restaurantDataCache.items || [];
         }
 
-        function saveItems(items) {
-            let db = getAllRestaurants();
-            if (db[currentRestaurant]) {
-                db[currentRestaurant].items = items;
-                saveAllRestaurants(db);
-            }
+        async function saveItems(items) {
+            restaurantDataCache.items = items;
+            await saveRestaurantDataToCloud();
         }
 
-        function saveItemAction() {
+        async function saveItemAction() {
             let editId = document.getElementById('editItemId').value;
             let name = document.getElementById('newItemName').value.trim();
             let category = document.getElementById('newItemCategory').value;
@@ -912,6 +906,12 @@
             }
 
             let items = getItems();
+            let imageUrl = "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
+
+            if (uploadedImageFile) {
+                let uploadedUrl = await uploadFileToStorage(uploadedImageFile, "items");
+                if (uploadedUrl) imageUrl = uploadedUrl;
+            }
 
             if (editId) {
                 let item = items.find(i => i.id == editId);
@@ -920,7 +920,7 @@
                     item.category = category;
                     item.price = price;
                     item.discount = discount;
-                    if (uploadedImageBase64) item.img = uploadedImageBase64;
+                    if (uploadedImageFile) item.img = imageUrl;
                 }
                 showCustomAlert(currentLang === 'ar' ? 'تم تعديل الصنف بنجاح!' : 'Item updated successfully!');
             } else {
@@ -935,13 +935,13 @@
                     category,
                     price,
                     discount,
-                    img: uploadedImageBase64 !== "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500" ? uploadedImageBase64 : getSmartFoodImage(name)
+                    img: uploadedImageFile ? imageUrl : getSmartFoodImage(name)
                 };
                 items.push(newItem);
                 showCustomAlert(currentLang === 'ar' ? 'تم إضافة الصنف للمنيو بنجاح!' : 'Item added successfully!');
             }
 
-            saveItems(items);
+            await saveItems(items);
             resetItemForm();
             renderItems();
         }
@@ -956,7 +956,7 @@
             document.getElementById('newItemCategory').value = item.category;
             document.getElementById('newItemPrice').value = item.price;
             document.getElementById('newItemDiscount').value = item.discount || 0;
-            uploadedImageBase64 = item.img;
+            uploadedImageFile = null;
             document.getElementById('fileNameDisplay').innerText = currentLang === 'ar' ? 'تم تحميل صورة الصنف الحالي' : 'Current item image loaded';
 
             document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: #1E90FF;"></i> ${currentLang === 'ar' ? 'تعديل الصنف: ' : 'Edit Item: '}${item.name}`;
@@ -971,16 +971,16 @@
             document.getElementById('newItemPrice').value = '';
             document.getElementById('newItemDiscount').value = '';
             document.getElementById('fileNameDisplay').innerText = translations[currentLang].choose_item_img;
-            uploadedImageBase64 = "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
+            uploadedImageFile = null;
 
             document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> ${translations[currentLang].section_add_item}`;
             document.getElementById('saveItemBtn').innerHTML = `<i class="fa-solid fa-rocket"></i> ${translations[currentLang].btn_save_item}`;
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
-        function deleteItem(id) {
+        async function deleteItem(id) {
             let items = getItems().filter(i => i.id !== id);
-            saveItems(items);
+            await saveItems(items);
             renderItems();
         }
 
@@ -1141,7 +1141,6 @@
         async function printSingleQR(url, title) {
             try {
                 let qrImageSrc = await processAndConvertQRToImage(url);
-
                 let cardHtml = `
                     <div class="print-card">
                         <div class="restaurant-title-qr">${currentRestaurant.toUpperCase()}</div>
@@ -1152,7 +1151,6 @@
                         <div class="welcome-text-qr">سعداء بوجودك معنا،<br>امسح الكود للطلب 🌟</div>
                     </div>
                 `;
-
                 executeIframePrint(getHtmlForPrinting(cardHtml));
             } catch (e) {
                 console.error(e);
@@ -1181,7 +1179,6 @@
                         </div>
                     `;
                 }
-
                 executeIframePrint(getHtmlForPrinting(allCardsHtml));
             } catch (e) {
                 console.error(e);
@@ -1210,12 +1207,8 @@
 
             iframe.onload = async function() {
                 try {
-                    if (document.fonts && document.fonts.ready) {
-                        await document.fonts.ready;
-                    }
-                    if (iframe.contentWindow.document.fonts && iframe.contentWindow.document.fonts.ready) {
-                        await iframe.contentWindow.document.fonts.ready;
-                    }
+                    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+                    if (iframe.contentWindow.document.fonts && iframe.contentWindow.document.fonts.ready) await iframe.contentWindow.document.fonts.ready;
 
                     let images = iframe.contentWindow.document.querySelectorAll('img');
                     let promises = Array.from(images).map(img => {
