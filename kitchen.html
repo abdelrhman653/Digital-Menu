@@ -1,16 +1,17 @@
+<!-- Source: 3 -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شاشة المطبخ وإدارة الطلبات</title>
+    <title>شاشة المطبخ وإدارة الطلبات الذكية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-      import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+      import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -24,7 +25,7 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
       window.db = db;
-      window.firestoreModules = { collection, onSnapshot, doc, updateDoc };
+      window.firestoreModules = { collection, onSnapshot, doc, updateDoc, getDoc };
 
       window.dispatchEvent(new Event('firebase-loaded-kitchen'));
     </script>
@@ -34,160 +35,269 @@
             --primary: #FF4757;
             --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
             --secondary: #2ED573;
+            --secondary-gradient: linear-gradient(135deg, #2ed573 0%, #26af5f 100%);
             --warning: #FFA502;
-            --dark-card: #151B22;
+            --warning-gradient: linear-gradient(135deg, #ffa502 0%, #ff8c00 100%);
+            --info: #1E90FF;
+            --info-gradient: linear-gradient(135deg, #1e90ff 0%, #3742fa 100%);
+            --dark-card: rgba(21, 27, 34, 0.75);
+            --dark-card-solid: #151B22;
             --dark-bg: #0D1117;
             --white: #FFFFFF;
             --gray: #8B949E;
-            --border: #30363D;
-            --info: #1E90FF;
+            --border: rgba(48, 54, 61, 0.8);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 50px; }
+        
+        body { 
+            background-color: var(--dark-bg); 
+            color: var(--white); 
+            padding-bottom: 60px; 
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 71, 87, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(46, 213, 115, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
 
+        /* Sticky Header Glassmorphism */
         header {
-            background: var(--dark-card);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(21, 27, 34, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border);
-            padding: 15px 20px;
+            padding: 15px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
-        .header-brand { display: flex; align-items: center; gap: 10px; }
-        .header-logo { width: 35px; height: 35px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); display: none; }
-        header h1 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        #headerRestaurantTitle { color: var(--warning); font-size: 14px; }
 
-        .container { max-width: 500px; margin: 15px auto; padding: 0 10px; }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-logo { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        header h1 { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
+        #headerRestaurantTitle { color: var(--warning); font-size: 15px; font-weight: 700; background: rgba(255, 165, 2, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255, 165, 2, 0.2); }
 
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+
+        /* Stats Bar */
         .stats-bar {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
             background: var(--dark-card);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 10px;
-            margin-bottom: 12px;
-            align-items: center;
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: var(--glass-shadow);
         }
-        .total-badge { font-size: 12px; color: var(--gray); text-align: center; }
-        .total-badge span { display: block; font-size: 16px; font-weight: 900; color: var(--white); }
+        .total-badge { font-size: 11px; color: var(--gray); text-align: center; font-weight: 600; }
+        .total-badge span { display: block; font-size: 18px; font-weight: 900; color: var(--white); margin-top: 2px; }
 
+        /* Tabs Row */
         .tabs-row {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             margin-bottom: 15px;
         }
         .tab-btn {
             background: var(--dark-card);
+            backdrop-filter: blur(10px);
             color: var(--gray);
             border: 1px solid var(--border);
-            padding: 8px 12px;
-            border-radius: 12px;
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
             font-weight: 700;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
             flex: 1;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 6px;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        .tab-btn:hover { border-color: var(--gray); color: var(--white); transform: translateY(-1px); }
         .tab-btn.active {
             background: rgba(255, 165, 2, 0.15);
             color: var(--warning);
             border-color: var(--warning);
+            box-shadow: 0 4px 15px rgba(255, 165, 2, 0.2);
         }
         .tab-btn.active.delivered {
             background: rgba(46, 213, 115, 0.15);
             color: var(--secondary);
             border-color: var(--secondary);
+            box-shadow: 0 4px 15px rgba(46, 213, 115, 0.2);
         }
         .tab-btn.active.cancelled {
             background: rgba(255, 71, 87, 0.15);
             color: var(--primary);
             border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.2);
         }
 
+        /* Filter Box */
         .filter-box {
             background: var(--dark-card);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 10px;
-            margin-bottom: 15px;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--glass-shadow);
         }
         .search-input {
             width: 100%;
             background: var(--dark-bg);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
             color: var(--white);
-            font-size: 12px;
-            margin-bottom: 8px;
+            font-size: 13px;
+            margin-bottom: 10px;
+            transition: var(--transition);
         }
-        .filter-row {
-            display: flex;
-            gap: 6px;
-        }
+        .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.15); }
+        .filter-row { display: flex; gap: 8px; }
         .filter-select {
             flex: 1;
             background: var(--dark-bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 6px;
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
             color: var(--white);
-            font-size: 11px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .filter-select:focus { outline: none; border-color: var(--primary); }
+
+        /* Modern Order Cards */
+        #kitchenOrdersList {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
         }
 
         .order-card {
             background: var(--dark-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            transition: transform 0.2s ease;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInCard 0.4s ease forwards;
         }
+
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .order-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        }
+
         .order-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-            margin-bottom: 10px;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            gap: 10px;
         }
-        .table-title { font-size: 14px; font-weight: 700; color: var(--primary); }
-        .order-meta { font-size: 11px; color: var(--gray); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .table-title { font-size: 15px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+        .order-meta { font-size: 11px; color: var(--gray); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
         .time-badge {
-            padding: 2px 6px;
+            padding: 3px 8px;
             border-radius: 6px;
             font-size: 10px;
             font-weight: 700;
         }
-        .time-fresh { background: rgba(46, 213, 115, 0.2); color: var(--secondary); }
-        .time-warning { background: rgba(255, 165, 2, 0.2); color: var(--warning); }
-        .time-danger { background: rgba(255, 71, 87, 0.2); color: var(--primary); }
+        .time-fresh { background: rgba(46, 213, 115, 0.15); color: var(--secondary); border: 1px solid rgba(46, 213, 115, 0.3); }
+        .time-warning { background: rgba(255, 165, 2, 0.15); color: var(--warning); border: 1px solid rgba(255, 165, 2, 0.3); }
+        .time-danger { background: rgba(255, 71, 87, 0.15); color: var(--primary); border: 1px solid rgba(255, 71, 87, 0.3); }
 
-        .customer-info {
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-            font-size: 12px;
+        /* Customer & Details Grid */
+        .order-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
         }
 
+        .info-box {
+            background: rgba(13, 17, 23, 0.6);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            font-size: 12px;
+        }
+        .info-box-title { font-size: 10px; font-weight: 700; color: var(--gray); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-box-content { font-weight: 600; color: var(--white); word-break: break-word; }
+
+        /* Items List */
+        .order-items-container {
+            background: rgba(13, 17, 23, 0.4);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 12px;
+        }
         .order-item-row {
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px dashed var(--border);
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(48, 54, 61, 0.6);
             font-size: 12px;
         }
+        .order-item-row:last-child { border-bottom: none; }
+        .item-name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .item-qty { background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; color: var(--warning); }
+        .item-price { font-weight: 700; color: var(--secondary); }
 
+        /* Payment Breakdown Box */
+        .payment-breakdown {
+            background: rgba(30, 144, 255, 0.05);
+            border: 1px solid rgba(30, 144, 255, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .payment-row:last-child { margin-bottom: 0; }
+        .payment-label { color: var(--gray); font-size: 11px; }
+        .payment-val { font-weight: 700; color: var(--white); }
+
+        /* Order Footer & Actions */
         .order-footer {
             display: flex;
             justify-content: space-between;
@@ -196,48 +306,61 @@
             padding-top: 10px;
             border-top: 1px solid var(--border);
         }
-        .total-price { font-weight: 700; color: var(--secondary); font-size: 13px; }
+        .total-price-box { font-size: 14px; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 6px; }
+        .total-price-box span { font-size: 16px; }
 
         .print-btn {
             background: rgba(30, 144, 255, 0.15);
             color: var(--info);
-            border: 1px solid var(--info);
-            padding: 5px 12px;
-            border-radius: 8px;
+            border: 1px solid rgba(30, 144, 255, 0.3);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
             font-size: 11px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            transition: var(--transition);
         }
+        .print-btn:hover { background: rgba(30, 144, 255, 0.25); transform: translateY(-1px); }
 
+        /* Status Action Buttons */
         .status-actions {
-            display: flex;
-            gap: 5px;
-            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-top: 12px;
         }
         .status-btn {
             background: var(--dark-bg);
             color: var(--white);
             border: 1px solid var(--border);
-            padding: 6px 8px;
-            border-radius: 8px;
+            padding: 8px 4px;
+            border-radius: var(--radius-sm);
             font-weight: 700;
             cursor: pointer;
-            font-size: 10px;
-            flex: 1;
+            font-size: 11px;
             text-align: center;
-            transition: all 0.2s;
+            transition: var(--transition);
         }
-        .status-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .status-btn.active-current { background: var(--warning); color: #000; border-color: var(--warning); box-shadow: 0 0 10px rgba(255, 165, 2, 0.4); }
-        .status-btn.ready-current { background: var(--info); color: #fff; border-color: var(--info); box-shadow: 0 0 10px rgba(30, 144, 255, 0.4); }
-        .status-btn.delivery-current { background: #9b59b6; color: #fff; border-color: #9b59b6; box-shadow: 0 0 10px rgba(155, 89, 182, 0.4); }
-        .status-btn.success-current { background: var(--secondary); color: #000; border-color: var(--secondary); box-shadow: 0 0 10px rgba(46, 213, 115, 0.4); }
-        .status-btn.cancel-current { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
+        .status-btn:hover:not(:disabled) { border-color: var(--gray); transform: translateY(-1px); }
+        .status-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        .status-btn.active-current { background: var(--warning); color: #000; border-color: var(--warning); box-shadow: 0 0 12px rgba(255, 165, 2, 0.4); font-weight: 900; }
+        .status-btn.ready-current { background: var(--info); color: #fff; border-color: var(--info); box-shadow: 0 0 12px rgba(30, 144, 255, 0.4); font-weight: 900; }
+        .status-btn.delivery-current { background: #9b59b6; color: #fff; border-color: #9b59b6; box-shadow: 0 0 12px rgba(155, 89, 182, 0.4); font-weight: 900; }
+        .status-btn.success-current { background: var(--secondary); color: #000; border-color: var(--secondary); box-shadow: 0 0 12px rgba(46, 213, 115, 0.4); font-weight: 900; }
+        .status-btn.cancel-current { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 0 12px rgba(255, 71, 87, 0.4); font-weight: 900; }
 
-        .empty-state { color: var(--gray); text-align: center; padding: 40px; font-size: 13px; }
+        .empty-state { color: var(--gray); text-align: center; padding: 50px 20px; font-size: 14px; background: var(--dark-card); border-radius: var(--radius-lg); border: 1px solid var(--border); }
+
+        @media (max-width: 600px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .order-info-grid { grid-template-columns: 1fr; }
+            .status-actions { grid-template-columns: repeat(3, 1fr); }
+            header { padding: 12px 15px; }
+        }
     </style>
 </head>
 <body>
@@ -252,7 +375,7 @@
             <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> <span data-i18n="kitchen_title">شاشة المطبخ</span></h1>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <select id="langSelectKitchen" onchange="changeLanguage(this.value)" style="width: 100px; padding: 4px; font-size: 11px; background: var(--dark-bg); color: #fff; border: 1px solid var(--border); border-radius: 6px;">
+            <select id="langSelectKitchen" onchange="changeLanguage(this.value)" style="width: 100px; padding: 5px 8px; font-size: 12px; background: var(--dark-bg); color: #fff; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                 <option value="ar">العربية 🇸🇦</option>
                 <option value="en">English 🇺🇸</option>
             </select>
@@ -312,6 +435,13 @@
                 status_cancel: "إلغاء",
                 subtotal: "المجموع الفرعي",
                 total_final: "الإجمالي النهائي",
+                payment_method: "طريقة الدفع",
+                cod_fee: "رسوم الدفع عند الاستلام",
+                yes: "نعم",
+                no: "لا",
+                fee_amount: "قيمة الرسوم",
+                customer_info: "بيانات العميل",
+                order_details: "تفاصيل الطلب",
                 no_orders: "لا توجد طلبات في هذا القسم.",
                 currency: "ج.م"
             },
@@ -335,6 +465,13 @@
                 status_cancel: "Cancel",
                 subtotal: "Subtotal",
                 total_final: "Final Total",
+                payment_method: "Payment Method",
+                cod_fee: "Cash on Delivery Fee",
+                yes: "Yes",
+                no: "No",
+                fee_amount: "Fee Amount",
+                customer_info: "Customer Info",
+                order_details: "Order Details",
                 no_orders: "No orders in this section.",
                 currency: "EGP"
             }
@@ -348,9 +485,6 @@
         let currentTab = 'active';
         let globalOrdersMap = new Map();
         let isInitialSnapshot = true;
-        let originalTitle = document.title;
-        let isBlinking = false;
-        let blinkInterval = null;
         let searchDebounceTimer = null;
         let isFirestoreInitialized = false;
 
@@ -366,8 +500,7 @@
         window.addEventListener('firebase-loaded-kitchen', async () => {
             try {
                 const restDocRef = window.firestoreModules.doc(window.db, "restaurants", restaurant);
-                const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js");
-                const restSnap = await getDoc(restDocRef);
+                const restSnap = await window.firestoreModules.getDoc(restDocRef);
                 if (restSnap.exists()) {
                     restData = restSnap.data();
                     if (restData.primaryColor) {
@@ -471,8 +604,8 @@
                     let p = item.price || 0;
                     itemsHtml += `
                         <div class="order-item-row">
-                            <span>x ${q} ${escapeHTML(item.name || '')}</span>
-                            <span style="color: var(--secondary);">${p * q} ${translations[currentLang].currency}</span>
+                            <span class="item-name"><span class="item-qty">x${q}</span> ${escapeHTML(item.name || '')}</span>
+                            <span class="item-price">${p * q} ${translations[currentLang].currency}</span>
                         </div>
                     `;
                 });
@@ -484,9 +617,11 @@
 
             let st = order.status || '';
             let isLocked = (st === 'تم التسليم' || st === 'ملغي' || st === 'Delivered' || st === 'Cancelled');
-            let serviceText = (order.type === 'صالة' || order.type === 'Dine-In') ? 
-                `${currentLang === 'ar' ? 'خدمة صالة' : 'Dine-In Fee'}: ${order.serviceFee || order.fees || 0} ${translations[currentLang].currency}` : 
-                `${currentLang === 'ar' ? 'توصيل' : 'Delivery'}: ${order.serviceFee || order.fees || 0} ${translations[currentLang].currency}`;
+            
+            // Payment details extraction
+            let paymentMethod = escapeHTML(order.paymentMethod || order.payment || (currentLang === 'ar' ? 'نقدي (كاش)' : 'Cash'));
+            let feeVal = Number(order.serviceFee || order.fees || order.codFee || 0);
+            let hasCodFeeVal = feeVal > 0 ? (currentLang === 'ar' ? 'نعم' : 'Yes') : (currentLang === 'ar' ? 'لا' : 'No');
 
             let timeInfo = getTimeAgo(order.timestamp || (order.createdAt ? new Date(order.createdAt).getTime() : null));
 
@@ -497,40 +632,68 @@
             let btnCancelClass = (st === 'ملغي' || st === 'Cancelled') ? 'status-btn cancel-current' : 'status-btn';
 
             let shortId = escapeHTML(String(order.id || order.docId || '').slice(-4));
+            let orderType = escapeHTML(order.type || (currentLang === 'ar' ? 'صالة' : 'Dine-In'));
+            let tableNum = escapeHTML(order.table || '-');
 
             return `
-                <div class="order-card" data-docid="${order.docId}">
+                <div class="order-card" data-docid="${escapeHTML(order.docId)}">
                     <div class="order-header">
-                        <div class="table-title">${currentLang === 'ar' ? 'طلب' : 'Order'} ${escapeHTML(order.type || '')} (${escapeHTML(order.table || '-')})</div>
+                        <div class="table-title">
+                            <i class="fa-solid fa-receipt"></i> ${orderType} (${tableNum})
+                        </div>
                         <div class="order-meta">
                             <span class="time-badge ${timeInfo.class}">${timeInfo.text}</span>
                             <span><i class="fa-regular fa-calendar"></i> ${escapeHTML(order.date || '')}</span>
                             <span><i class="fa-regular fa-clock"></i> ${escapeHTML(order.time || '')}</span>
-                            <span>#${shortId}</span>
+                            <span style="font-weight: 800; color: var(--white);">#${shortId}</span>
                         </div>
                     </div>
                     
-                    <div class="customer-info">
-                        <div><i class="fa-solid fa-user" style="color: var(--primary);"></i> ${escapeHTML(clientName)} (${escapeHTML(clientPhone)})</div>
-                        ${clientAddress ? `<div style="margin-top: 4px; color: var(--gray);"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> ${escapeHTML(clientAddress)}</div>` : ''}
+                    <div class="order-info-grid">
+                        <div class="info-box">
+                            <div class="info-box-title"><i class="fa-solid fa-user"></i> ${translations[currentLang].customer_info}</div>
+                            <div class="info-box-content">${escapeHTML(clientName)}<br><span style="color: var(--gray); font-size: 11px;">${escapeHTML(clientPhone)}</span></div>
+                        </div>
+                        ${clientAddress ? `
+                        <div class="info-box">
+                            <div class="info-box-title"><i class="fa-solid fa-location-dot"></i> العنوان</div>
+                            <div class="info-box-content" style="font-size: 11px;">${escapeHTML(clientAddress)}</div>
+                        </div>` : `
+                        <div class="info-box">
+                            <div class="info-box-title"><i class="fa-solid fa-bookmark"></i> الحالة الحالية</div>
+                            <div class="info-box-content" style="color: var(--warning);">${escapeHTML(st || (currentLang === 'ar' ? 'جديد' : 'New'))}</div>
+                        </div>`}
                     </div>
 
-                    <div>
+                    <div class="order-items-container">
+                        <div style="font-size: 11px; font-weight: 700; color: var(--gray); margin-bottom: 6px;"><i class="fa-solid fa-utensils"></i> ${translations[currentLang].order_details}</div>
                         ${itemsHtml}
-                        <div style="font-size: 11px; color: var(--gray); margin-top: 6px;">${serviceText}</div>
+                    </div>
+
+                    <div class="payment-breakdown">
+                        <div class="payment-row">
+                            <span class="payment-label">${translations[currentLang].payment_method}:</span>
+                            <span class="payment-val">${paymentMethod}</span>
+                        </div>
+                        <div class="payment-row">
+                            <span class="payment-label">${translations[currentLang].cod_fee} (${hasCodFeeVal}):</span>
+                            <span class="payment-val">${feeVal} ${translations[currentLang].currency}</span>
+                        </div>
                     </div>
 
                     <div class="order-footer">
-                        <div class="total-price">${translations[currentLang].total_final}: ${order.total || 0} ${translations[currentLang].currency}</div>
-                        <button class="print-btn" onclick="printReceipt('${order.docId}')"><i class="fa-solid fa-print"></i> ${translations[currentLang].print_receipt}</button>
+                        <div class="total-price-box">
+                            ${translations[currentLang].total_final}: <span>${order.total || 0}</span> ${translations[currentLang].currency}
+                        </div>
+                        <button class="print-btn" onclick="printReceipt('${escapeHTML(order.docId)}')"><i class="fa-solid fa-print"></i> ${translations[currentLang].print_receipt}</button>
                     </div>
 
                     <div class="status-actions">
-                        <button class="${btnPrepClass}" onclick="updateStatus('${order.docId}', 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_prep}</button>
-                        <button class="${btnReadyClass}" onclick="updateStatus('${order.docId}', 'جاهز')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_ready}</button>
-                        <button class="${btnDeliveryClass}" onclick="updateStatus('${order.docId}', 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_delivery}</button>
-                        <button class="${btnSuccessClass}" onclick="updateStatus('${order.docId}', 'تم التسليم')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_success}</button>
-                        <button class="${btnCancelClass}" onclick="updateStatus('${order.docId}', 'ملغي')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_cancel}</button>
+                        <button class="${btnPrepClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_prep}</button>
+                        <button class="${btnReadyClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'جاهز')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_ready}</button>
+                        <button class="${btnDeliveryClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_delivery}</button>
+                        <button class="${btnSuccessClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'تم التسليم')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_success}</button>
+                        <button class="${btnCancelClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'ملغي')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_cancel}</button>
                     </div>
                 </div>
             `;
@@ -576,7 +739,7 @@
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p class="empty-state">${translations[currentLang].no_orders}</p>`;
+                container.innerHTML = `<p class="empty-state"><i class="fa-solid fa-mug-hot" style="font-size: 24px; margin-bottom: 8px; display: block; color: var(--warning);"></i>${translations[currentLang].no_orders}</p>`;
                 return;
             }
 
@@ -585,8 +748,8 @@
             }
 
             const targetDocIds = new Set(filtered.map(o => String(o.docId)));
-
             const existingCards = Array.from(container.querySelectorAll('.order-card'));
+            
             existingCards.forEach(card => {
                 const docId = card.getAttribute('data-docid');
                 if (!targetDocIds.has(docId)) {
@@ -640,10 +803,10 @@
             let times = [...new Set(orders.map(o => o.time).filter(Boolean))];
 
             let dateHtml = `<option value="all">${translations[currentLang].all_dates}</option>`;
-            dates.forEach(d => { dateHtml += `<option value="${d}">${d}</option>`; });
+            dates.forEach(d => { dateHtml += `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`; });
 
             let timeHtml = `<option value="all">${translations[currentLang].all_times}</option>`;
-            times.forEach(t => { timeHtml += `<option value="${t}">${t}</option>`; });
+            times.forEach(t => { timeHtml += `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`; });
 
             if (dateSelect.innerHTML !== dateHtml) {
                 dateSelect.innerHTML = dateHtml;
@@ -687,13 +850,15 @@
             let clientName = order.client ? order.client.name : '';
             let clientPhone = order.client ? order.client.phone : '';
             let clientAddress = order.client ? order.client.address : '';
+            let paymentMethod = order.paymentMethod || order.payment || 'Cash';
+            let feeVal = Number(order.serviceFee || order.fees || order.codFee || 0);
 
             let printDocumentContent = `
                 <!DOCTYPE html>
                 <html dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
                 <head>
                     <meta charset="UTF-8">
-                    <title>Receipt #${order.id || order.docId}</title>
+                    <title>Receipt #${escapeHTML(order.id || order.docId)}</title>
                     <style>
                         body { font-family: 'Cairo', sans-serif; padding: 5px; font-size: 12px; color: #000; width: 72mm; margin: 0 auto; text-align: center; }
                         h2 { margin: 2px 0; font-size: 14px; }
@@ -707,25 +872,26 @@
                 </head>
                 <body>
                     ${logoImgHtml}
-                    <h2>${restaurant.toUpperCase()}</h2>
+                    <h2>${escapeHTML(restaurant.toUpperCase())}</h2>
                     <div class="info">
                         <strong>Order:</strong> #${escapeHTML(String(order.id || order.docId).slice(-4))}<br>
                         <strong>Date:</strong> ${escapeHTML(order.date || '')} - ${escapeHTML(order.time || '')}<br>
                         <strong>Client:</strong> ${escapeHTML(clientName)} (${escapeHTML(clientPhone)})<br>
                         ${clientAddress ? `<strong>Address:</strong> ${escapeHTML(clientAddress)}<br>` : ''}
-                        <strong>Type:</strong> ${escapeHTML(order.type || '')} (${escapeHTML(order.table || '-')})
+                        <strong>Type:</strong> ${escapeHTML(order.type || '')} (${escapeHTML(order.table || '-')})<br>
+                        <strong>Payment:</strong> ${escapeHTML(paymentMethod)}
                     </div>
                     <table>
                         <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
                         ${(order.items || []).map(i => `<tr><td>${escapeHTML(i.name || '')}</td><td>${i.qty || i.quantity || 1}</td><td>${(i.price || 0) * (i.qty || i.quantity || 1)}</td></tr>`).join('')}
                     </table>
                     <div class="totals-section">
-                        <div>Fee: ${order.serviceFee || order.fees || 0} ${translations[currentLang].currency}</div>
+                        <div>Fee / COD: ${feeVal} ${translations[currentLang].currency}</div>
                         <div class="total-final">Total: ${order.total || 0} ${translations[currentLang].currency}</div>
                     </div>
                     <div class="footer-note">
                         Thank You For Your Visit!<br>
-                        Abdelrhman Mohamed | Web Developer
+                        Production Ready Kitchen System
                     </div>
                 </body>
                 </html>
