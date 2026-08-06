@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنيو والطلب</title>
+    <title>المنيو والطلب الذكي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -30,252 +30,388 @@
     </script>
 
     <style>
+        /* Theme Palettes */
+        [data-theme="dark-red"] {
+            --primary: #FF4757;
+            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
+            --secondary: #2ED573;
+            --dark-card: rgba(21, 27, 34, 0.75);
+            --dark-bg: #0D1117;
+            --white: #FFFFFF;
+            --gray: #8B949E;
+            --border: rgba(48, 54, 61, 0.6);
+            --warning: #FFA502;
+            --glass-bg: rgba(21, 27, 34, 0.65);
+        }
+        [data-theme="dark-blue"] {
+            --primary: #3b82f6;
+            --primary-gradient: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            --secondary: #10b981;
+            --dark-card: rgba(15, 23, 42, 0.75);
+            --dark-bg: #020617;
+            --white: #FFFFFF;
+            --gray: #94a3b8;
+            --border: rgba(51, 65, 85, 0.6);
+            --warning: #f59e0b;
+            --glass-bg: rgba(15, 23, 42, 0.65);
+        }
+        [data-theme="dark-green"] {
+            --primary: #10b981;
+            --primary-gradient: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            --secondary: #3b82f6;
+            --dark-card: rgba(6, 78, 59, 0.35);
+            --dark-bg: #022c22;
+            --white: #FFFFFF;
+            --gray: #6ee7b7;
+            --border: rgba(16, 185, 129, 0.3);
+            --warning: #fbbf24;
+            --glass-bg: rgba(6, 78, 59, 0.3);
+        }
+        [data-theme="purple"] {
+            --primary: #8b5cf6;
+            --primary-gradient: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            --secondary: #ec4899;
+            --dark-card: rgba(30, 27, 75, 0.75);
+            --dark-bg: #0f172a;
+            --white: #FFFFFF;
+            --gray: #cbd5e1;
+            --border: rgba(139, 92, 246, 0.3);
+            --warning: #fbbF24;
+            --glass-bg: rgba(30, 27, 75, 0.65);
+        }
+        [data-theme="orange"] {
+            --primary: #f97316;
+            --primary-gradient: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+            --secondary: #14b8a6;
+            --dark-card: rgba(43, 24, 16, 0.75);
+            --dark-bg: #120c08;
+            --white: #FFFFFF;
+            --gray: #d1d5db;
+            --border: rgba(249, 115, 22, 0.3);
+            --warning: #facc15;
+            --glass-bg: rgba(43, 24, 16, 0.65);
+        }
+        [data-theme="black-gold"] {
+            --primary: #d4af37;
+            --primary-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
+            --secondary: #ffffff;
+            --dark-card: rgba(20, 20, 20, 0.85);
+            --dark-bg: #0a0a0a;
+            --white: #F3F4F6;
+            --gray: #9ca3af;
+            --border: rgba(212, 175, 55, 0.35);
+            --warning: #f59e0b;
+            --glass-bg: rgba(20, 20, 20, 0.75);
+        }
+        [data-theme="pink"] {
+            --primary: #ec4899;
+            --primary-gradient: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+            --secondary: #8b5cf6;
+            --dark-card: rgba(50, 15, 35, 0.75);
+            --dark-bg: #1a0512;
+            --white: #FFFFFF;
+            --gray: #fbcfe8;
+            --border: rgba(236, 72, 153, 0.3);
+            --warning: #fbbf24;
+            --glass-bg: rgba(50, 15, 35, 0.65);
+        }
+        [data-theme="light"] {
+            --primary: #e11d48;
+            --primary-gradient: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
+            --secondary: #059669;
+            --dark-card: rgba(255, 255, 255, 0.85);
+            --dark-bg: #f8fafc;
+            --white: #0f172a;
+            --gray: #64748b;
+            --border: rgba(203, 213, 225, 0.8);
+            --warning: #d97706;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+        }
+
         :root {
             --primary: #FF4757;
             --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
             --secondary: #2ED573;
-            --dark-card: #151B22;
+            --dark-card: rgba(21, 27, 34, 0.75);
             --dark-bg: #0D1117;
             --white: #FFFFFF;
             --gray: #8B949E;
-            --border: #30363D;
+            --border: rgba(48, 54, 61, 0.6);
             --warning: #FFA502;
+            --glass-bg: rgba(21, 27, 34, 0.65);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 120px; }
 
-        button { touch-action: manipulation; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
+        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 140px; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, rgba(255,71,87,0.05) 0%, transparent 60%); }
+
+        button { touch-action: manipulation; cursor: pointer; }
         img { user-select: none; -webkit-user-drag: none; }
 
         header {
-            background: var(--dark-card);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            padding: 12px 15px;
+            padding: 14px 18px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 900;
         }
-        .header-brand { display: flex; align-items: center; gap: 10px; }
-        .header-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); display: none; }
-        header h1 { font-size: 15px; font-weight: 700; }
-        #headerRestaurantTitle { color: var(--warning); font-size: 14px; }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-logo { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        header h1 { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+        #headerRestaurantTitle { color: var(--warning); font-size: 15px; font-weight: 700; }
 
-        .container { max-width: 480px; margin: 12px auto; padding: 0 10px; }
+        .header-controls { display: flex; align-items: center; gap: 8px; }
+        .theme-select-btn, .lang-select {
+            background: var(--dark-card);
+            color: var(--white);
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
+        }
 
-        #authModal {
+        .container { max-width: 480px; margin: 16px auto; padding: 0 12px; }
+
+        #authModal, #historyModal, #customAlertModal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13, 17, 23, 0.96);
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(8px);
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            animation: fadeIn 0.25s ease forwards;
         }
-        .auth-box {
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+        .auth-box, .history-card-box, .custom-alert-box {
             background: var(--dark-card);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 20px;
+            padding: 24px;
             width: 100%;
-            max-width: 380px;
+            max-width: 400px;
             text-align: center;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }
-        .auth-box h3 { margin-bottom: 15px; font-size: 15px; color: var(--white); }
+        .auth-box h3, .history-card-box h3 { margin-bottom: 18px; font-size: 16px; font-weight: 800; color: var(--white); }
         .auth-input {
             width: 100%;
             background: var(--dark-bg);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 10px 12px;
+            border-radius: 12px;
+            padding: 12px 14px;
             color: var(--white);
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             font-size: 13px;
+            outline: none;
         }
+        .auth-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,71,87,0.15); }
         .auth-btn {
-            background: var(--primary);
+            background: var(--primary-gradient, var(--primary));
             color: white;
             border: none;
             width: 100%;
-            padding: 10px;
-            border-radius: 10px;
+            padding: 12px;
+            border-radius: 12px;
             font-weight: 700;
             cursor: pointer;
             font-size: 14px;
+            box-shadow: 0 4px 15px rgba(255,71,87,0.3);
         }
 
         .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             background: var(--dark-card);
-            padding: 10px 14px;
-            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: 14px;
             border: 1px solid var(--border);
             font-size: 13px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .history-btn-top {
             background: rgba(255, 71, 87, 0.15);
             color: var(--primary);
             border: 1px solid var(--primary);
-            padding: 5px 12px;
-            border-radius: 8px;
+            padding: 6px 14px;
+            border-radius: 10px;
             font-size: 12px;
             cursor: pointer;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .categories-row {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             overflow-x: auto;
-            margin-bottom: 12px;
-            padding-bottom: 5px;
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            scrollbar-width: none;
         }
+        .categories-row::-webkit-scrollbar { display: none; }
         .cat-btn {
             background: var(--dark-card);
             color: var(--gray);
             border: 1px solid var(--border);
-            padding: 6px 14px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: 24px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
+            backdrop-filter: blur(10px);
         }
         .cat-btn.active {
-            background: var(--primary);
+            background: var(--primary-gradient, var(--primary));
             color: #fff;
-            border-color: var(--primary);
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(255,71,87,0.25);
         }
 
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 12px;
         }
         @media(max-width: 340px) { .menu-grid { grid-template-columns: 1fr; } }
 
         .menu-card {
             background: var(--dark-card);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 16px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            transform: translateY(0);
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
-        .menu-card img { width: 100%; height: 105px; object-fit: cover; }
-        .menu-content { padding: 8px; }
-        .menu-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        .menu-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+        .menu-card img { width: 100%; height: 115px; object-fit: cover; }
+        .menu-content { padding: 10px; }
+        .menu-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; line-height: 1.4; }
         .menu-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 8px 8px 8px;
+            padding: 0 10px 10px 10px;
         }
-        .menu-price { color: var(--secondary); font-weight: 700; font-size: 13px; }
+        .menu-price { color: var(--secondary); font-weight: 800; font-size: 14px; }
 
         .qty-controls {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             background: var(--dark-bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 2px 6px;
+            border-radius: 10px;
+            padding: 4px 8px;
         }
-        .qty-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 12px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
-        .qty-num { font-size: 13px; font-weight: 700; min-width: 15px; text-align: center; }
+        .qty-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 12px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+        .qty-btn:hover { background: rgba(255,255,255,0.1); }
+        .qty-num { font-size: 13px; font-weight: 800; min-width: 16px; text-align: center; }
 
         .add-initial-btn {
-            background: var(--primary);
+            background: var(--primary-gradient, var(--primary));
             color: #fff;
             border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 7px 14px;
+            border-radius: 10px;
             font-size: 12px;
             cursor: pointer;
             font-weight: 700;
+            box-shadow: 0 3px 10px rgba(255,71,87,0.2);
         }
 
-        #historyModal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13, 17, 23, 0.95);
-            z-index: 9998;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-        }
-        .history-card-box {
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
-            width: 100%;
-            max-width: 440px;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
         .history-item-row {
             background: var(--dark-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
             font-size: 13px;
+            text-align: right;
         }
 
         .cart-bar {
             position: fixed;
             bottom: 0; left: 0; right: 0;
             background: var(--dark-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-top: 1px solid var(--border);
-            padding: 12px 15px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
-            z-index: 990;
+            padding: 16px 18px;
+            box-shadow: 0 -8px 30px rgba(0,0,0,0.5);
+            z-index: 950;
         }
-        .cart-details { font-size: 11px; color: var(--gray); margin-bottom: 6px; line-height: 1.5; }
+        .cart-details { font-size: 11px; color: var(--gray); margin-bottom: 8px; line-height: 1.6; }
         .cart-main-row { display: flex; justify-content: space-between; align-items: center; }
+        
+        .payment-methods-box {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .pay-method-btn {
+            background: var(--dark-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray);
+            cursor: pointer;
+            text-align: center;
+        }
+        .pay-method-btn.active {
+            border-color: var(--primary);
+            color: var(--white);
+            background: rgba(255,71,87,0.1);
+        }
+
         .btn-submit {
             background: var(--secondary);
             color: #000;
             border: none;
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-weight: 700;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 800;
             cursor: pointer;
-            font-size: 13px;
-        }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        #customAlertModal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13, 17, 23, 0.85);
-            z-index: 99999;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(46,213,115,0.3);
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            gap: 8px;
         }
-        .custom-alert-box {
-            background: var(--dark-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            width: 100%;
-            max-width: 340px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+
         .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
         .hidden { display: none !important; }
     </style>
 </head>
-<body>
+<body data-theme="dark-red">
 
     <div id="customAlertModal" class="hidden">
         <div class="custom-alert-box">
@@ -289,8 +425,8 @@
         <div class="auth-box">
             <div id="authChoiceView">
                 <h3 id="authModalTitle" style="margin-bottom: 20px;" data-i18n="welcome_auth">مرحباً بك في المنيو</h3>
-                <button class="auth-btn" style="margin-bottom: 10px;" onclick="showAuthForm('login')" data-i18n="login_btn">تسجيل الدخول</button>
-                <button class="auth-btn" style="background: transparent; border: 1px solid var(--primary); color: var(--white); margin-bottom: 10px;" onclick="showAuthForm('register')" data-i18n="register_btn">إنشاء حساب جديد</button>
+                <button class="auth-btn" style="margin-bottom: 12px;" onclick="showAuthForm('login')" data-i18n="login_btn">تسجيل الدخول</button>
+                <button class="auth-btn" style="background: transparent; border: 1px solid var(--primary); color: var(--white); margin-bottom: 12px;" onclick="showAuthForm('register')" data-i18n="register_btn">إنشاء حساب جديد</button>
                 <button class="auth-btn" style="background: transparent; border: 1px solid var(--gray); color: var(--gray);" onclick="showAuthForm('forgot')" data-i18n="forgot_password_btn">نسيت كلمة المرور</button>
             </div>
 
@@ -299,7 +435,7 @@
                 <input type="tel" id="loginPhone" class="auth-input" placeholder="رقم الموبايل" data-i18n-placeholder="phone_placeholder">
                 <input type="password" id="loginPassword" class="auth-input" placeholder="كلمة المرور" data-i18n-placeholder="password_placeholder">
                 <button class="auth-btn" onclick="processLogin()" data-i18n="enter_btn">دخول</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
             </div>
 
             <div id="registerFormView" class="hidden">
@@ -310,7 +446,7 @@
                 <input type="password" id="regConfirmPassword" class="auth-input" placeholder="تأكيد كلمة المرور" data-i18n-placeholder="confirm_password_placeholder">
                 <input type="text" id="regAddress" class="auth-input" placeholder="العنوان بالتفصيل (للأونلاين فقط)" data-i18n-placeholder="address_placeholder">
                 <button class="auth-btn" onclick="processRegister()" data-i18n="create_account_btn">إنشاء الحساب</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
             </div>
 
             <div id="forgotFormView" class="hidden">
@@ -319,7 +455,7 @@
                 <input type="password" id="forgotNewPassword" class="auth-input" placeholder="كلمة المرور الجديدة" data-i18n-placeholder="new_password_placeholder">
                 <input type="password" id="forgotConfirmPassword" class="auth-input" placeholder="تأكيد كلمة المرور الجديدة" data-i18n-placeholder="confirm_new_password_placeholder">
                 <button class="auth-btn" onclick="processForgotPassword()" data-i18n="reset_password_btn">تحديث كلمة المرور</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
             </div>
 
             <div id="editProfileFormView" class="hidden">
@@ -327,7 +463,7 @@
                 <input type="text" id="editName" class="auth-input" placeholder="الاسم الكريم" data-i18n-placeholder="name_placeholder">
                 <input type="text" id="editAddress" class="auth-input" placeholder="العنوان بالتفصيل" data-i18n-placeholder="address_placeholder">
                 <button class="auth-btn" onclick="processEditProfile()" data-i18n="save_changes_btn">حفظ التعديلات</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="toggleEditProfile(false)" data-i18n="back_btn">الرجوع</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="toggleEditProfile(false)" data-i18n="back_btn">الرجوع</button>
             </div>
 
             <div id="changePasswordFormView" class="hidden">
@@ -336,23 +472,23 @@
                 <input type="password" id="newPassword" class="auth-input" placeholder="كلمة المرور الجديدة" data-i18n-placeholder="new_password_placeholder">
                 <input type="password" id="confirmNewPassword" class="auth-input" placeholder="تأكيد كلمة المرور الجديدة" data-i18n-placeholder="confirm_new_password_placeholder">
                 <button class="auth-btn" onclick="processChangePassword()" data-i18n="update_password_btn">تحديث كلمة المرور</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 10px; cursor: pointer; font-size: 12px;" onclick="toggleChangePassword(false)" data-i18n="back_btn">الرجوع</button>
+                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="toggleChangePassword(false)" data-i18n="back_btn">الرجوع</button>
             </div>
         </div>
     </div>
 
     <div id="historyModal" class="hidden">
         <div class="history-card-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="font-size: 15px;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> <span data-i18n="my_orders">سجل طلباتي السابقة</span></h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 15px; margin-bottom: 0;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> <span data-i18n="my_orders">سجل طلباتي السابقة</span></h3>
                 <button onclick="toggleHistory(false)" style="background: none; border: none; color: var(--white); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div style="display: flex; gap: 6px; margin-bottom: 15px;">
-                <button onclick="toggleEditProfile(true)" style="flex: 1; background: rgba(255, 165, 2, 0.2); color: var(--warning); border: 1px solid var(--warning); padding: 8px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_edit_profile">تعديل البيانات</button>
-                <button onclick="toggleChangePassword(true)" style="flex: 1; background: rgba(46, 213, 115, 0.2); color: var(--secondary); border: 1px solid var(--secondary); padding: 8px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_change_password">تغيير كلمة المرور</button>
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button onclick="toggleEditProfile(true)" style="flex: 1; background: rgba(255, 165, 2, 0.2); color: var(--warning); border: 1px solid var(--warning); padding: 8px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_edit_profile">تعديل البيانات</button>
+                <button onclick="toggleChangePassword(true)" style="flex: 1; background: rgba(46, 213, 115, 0.2); color: var(--secondary); border: 1px solid var(--secondary); padding: 8px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_change_password">تغيير كلمة المرور</button>
             </div>
             <div id="historyListContainer"></div>
-            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; margin-top: 10px; cursor: pointer; font-size: 12px;" data-i18n="btn_logout_client">تسجيل خروج</button>
+            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 10px; border-radius: 10px; font-weight: 700; margin-top: 12px; cursor: pointer; font-size: 12px;" data-i18n="btn_logout_client">تسجيل خروج</button>
         </div>
     </div>
 
@@ -361,10 +497,22 @@
             <img id="headerLogoImg" class="header-logo" src="" alt="الشعار">
             <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
         </div>
-        <select id="langSelectOrders" onchange="changeLanguage(this.value)" style="width: 100px; padding: 4px; font-size: 11px; background: var(--dark-bg); color: #fff; border: 1px solid var(--border); border-radius: 6px;">
-            <option value="ar">العربية 🇸🇦</option>
-            <option value="en">English 🇺🇸</option>
-        </select>
+        <div class="header-controls">
+            <select id="themeSelect" class="theme-select-btn" onchange="changeTheme(this.value)">
+                <option value="dark-red">🔴 Dark Red</option>
+                <option value="dark-blue">🔵 Dark Blue</option>
+                <option value="dark-green">🟢 Dark Green</option>
+                <option value="purple">🟣 Purple</option>
+                <option value="orange">🟠 Orange</option>
+                <option value="black-gold">🪙 Black Gold</option>
+                <option value="pink">🩷 Pink</option>
+                <option value="light">☀️ Light</option>
+            </select>
+            <select id="langSelectOrders" class="lang-select" onchange="changeLanguage(this.value)">
+                <option value="ar">AR 🇸🇦</option>
+                <option value="en">EN 🇺🇸</option>
+            </select>
+        </div>
     </header>
 
     <div class="container">
@@ -386,11 +534,16 @@
     </div>
 
     <div id="cartBar" class="cart-bar hidden">
+        <div class="payment-methods-box">
+            <button class="pay-method-btn active" id="payMethodCod" onclick="setPaymentMethod('cod')"><i class="fa-solid fa-wallet"></i> <span data-i18n="pay_cod">استلام</span></button>
+            <button class="pay-method-btn" id="payMethodCard" onclick="setPaymentMethod('card')"><i class="fa-solid fa-credit-card"></i> <span data-i18n="pay_card">بطاقة</span></button>
+            <button class="pay-method-btn" id="payMethodWallet" onclick="setPaymentMethod('wallet')"><i class="fa-solid fa-mobile-screen"></i> <span data-i18n="pay_wallet">محفظة</span></button>
+        </div>
         <div class="cart-details" id="cartBreakdown"></div>
         <div class="cart-main-row">
             <div>
                 <div style="font-size: 10px; color: var(--gray);" data-i18n="final_total">الإجمالي النهائي</div>
-                <div style="font-weight: 900; color: var(--secondary); font-size: 15px;" id="cartTotal">0.0 ج.م</div>
+                <div style="font-weight: 900; color: var(--secondary); font-size: 16px;" id="cartTotal">0.0 ج.م</div>
             </div>
             <button class="btn-submit" onclick="submitOrder()"><span data-i18n="btn_submit_order">إرسال الطلب</span> <i class="fa-solid fa-paper-plane"></i></button>
         </div>
@@ -398,6 +551,18 @@
 
     <script>
         let currentLang = localStorage.getItem('app_lang') || 'ar';
+        let currentTheme = localStorage.getItem('app_theme') || 'dark-red';
+        let selectedPaymentMethod = 'cod'; // 'cod', 'card', 'wallet'
+
+        document.body.setAttribute('data-theme', currentTheme);
+        document.getElementById('themeSelect').value = currentTheme;
+
+        function changeTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('app_theme', theme);
+            document.body.setAttribute('data-theme', theme);
+        }
+
         const translations = {
             ar: {
                 alert_title: "تنبيه",
@@ -437,6 +602,14 @@
                 subtotal_text: "المجموع الفرعي",
                 delivery_text: "رسوم التوصيل",
                 service_text: "خدمة الصالة",
+                cod_fee_text: "رسوم الدفع عند الاستلام",
+                payment_method_text: "طريقة الدفع",
+                pay_cod: "عند الاستلام",
+                pay_card: "بطاقة بنكية",
+                pay_wallet: "محفظة إلكترونية",
+                method_cod_label: "الدفع عند الاستلام",
+                method_card_label: "بطاقة بنكية",
+                method_wallet_label: "محفظة إلكترونية",
                 final_total_text: "الإجمالي النهائي",
                 phone_already_registered: "هذا الرقم مسجل بالفعل.",
                 phone_not_registered: "هذا الرقم غير مسجل.",
@@ -485,6 +658,14 @@
                 subtotal_text: "Subtotal",
                 delivery_text: "Delivery",
                 service_text: "Service Charge",
+                cod_fee_text: "Cash on Delivery Fee",
+                payment_method_text: "Payment Method",
+                pay_cod: "Cash",
+                pay_card: "Card",
+                pay_wallet: "Wallet",
+                method_cod_label: "Cash on Delivery",
+                method_card_label: "Bank Card",
+                method_wallet_label: "Electronic Wallet",
                 final_total_text: "Final Total",
                 phone_already_registered: "This number is already registered.",
                 phone_not_registered: "This number is not registered.",
@@ -507,7 +688,7 @@
         }
 
         function showCustomAlert(msg) {
-            document.getElementById('customAlertMessage').innerText = msg;
+            document.getElementById('customAlertMessage').innerText = escapeHTML(msg);
             document.getElementById('customAlertModal').classList.remove('hidden');
         }
 
@@ -542,10 +723,10 @@
         }
 
         const urlParams = new URLSearchParams(window.location.search);
-        const restaurant = urlParams.get('restaurant') || 'default';
+        const restaurant = escapeHTML(urlParams.get('restaurant') || 'default');
         document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
 
-        const table = urlParams.get('table');
+        const table = escapeHTML(urlParams.get('table') || '');
         const isOnline = !table || table === 'online';
         let orderType = isOnline ? (currentLang === 'ar' ? 'أونلاين' : 'Online') : (currentLang === 'ar' ? 'صالة' : 'Dine-In');
         document.getElementById('orderTypeBadge').innerText = `${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}: ${orderType}`;
@@ -558,18 +739,31 @@
         let selectedCategory = 'All';
         let activeOrderUnsubscribe = null;
 
+        function setPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.getElementById('payMethodCod').classList.remove('active');
+            document.getElementById('payMethodCard').classList.remove('active');
+            document.getElementById('payMethodWallet').classList.remove('active');
+
+            if (method === 'cod') document.getElementById('payMethodCod').classList.add('active');
+            else if (method === 'card') document.getElementById('payMethodCard').classList.add('active');
+            else if (method === 'wallet') document.getElementById('payMethodWallet').classList.add('active');
+
+            updateCartBar();
+        }
+
         window.addEventListener('firebase-loaded', async () => {
             try {
                 const restDocRef = window.firebaseModules.doc(window.db, "restaurants", restaurant);
                 const restSnap = await window.firebaseModules.getDoc(restDocRef);
                 if (restSnap.exists()) {
                     let restData = restSnap.data();
-                    if (restData.primaryColor) {
+                    if (restData.primaryColor && !localStorage.getItem('app_theme')) {
                         document.documentElement.style.setProperty('--primary', restData.primaryColor);
                     }
                     if (restData.logo) {
                         let logoImg = document.getElementById('headerLogoImg');
-                        logoImg.src = restData.logo;
+                        logoImg.src = escapeHTML(restData.logo);
                         logoImg.style.display = 'block';
                     }
                     if (restData.categories) categories = restData.categories;
@@ -588,7 +782,7 @@
                 if (isOnline && !currentUser.address) {
                     let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
                     if (promptAddress) {
-                        currentUser.address = promptAddress;
+                        currentUser.address = escapeHTML(promptAddress);
                         localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
                         updateUserInFirestore(currentUser);
                     }
@@ -596,6 +790,7 @@
                 listenLiveOrders();
             }
             updateCartBar();
+            changeLanguage(currentLang);
         });
 
         async function updateUserInFirestore(userObj) {
@@ -656,11 +851,11 @@
         }
 
         async function processRegister() {
-            let name = document.getElementById('regName').value.trim();
-            let phone = document.getElementById('regPhone').value.trim();
+            let name = escapeHTML(document.getElementById('regName').value.trim());
+            let phone = escapeHTML(document.getElementById('regPhone').value.trim());
             let password = document.getElementById('regPassword').value.trim();
             let confirmPassword = document.getElementById('regConfirmPassword').value.trim();
-            let address = isOnline ? document.getElementById('regAddress').value.trim() : `Dine-In Table ${table}`;
+            let address = isOnline ? escapeHTML(document.getElementById('regAddress').value.trim()) : `Dine-In Table ${table}`;
 
             if (!name || phone.length < 10 || !password || !confirmPassword) {
                 showCustomAlert(translations[currentLang].fill_all_fields);
@@ -704,7 +899,7 @@
         }
 
         async function processLogin() {
-            let phone = document.getElementById('loginPhone').value.trim();
+            let phone = escapeHTML(document.getElementById('loginPhone').value.trim());
             let password = document.getElementById('loginPassword').value.trim();
 
             if (!phone || !password) {
@@ -740,7 +935,7 @@
         }
 
         async function processForgotPassword() {
-            let phone = document.getElementById('forgotPhone').value.trim();
+            let phone = escapeHTML(document.getElementById('forgotPhone').value.trim());
             let newPassword = document.getElementById('forgotNewPassword').value.trim();
             let confirmNewPassword = document.getElementById('forgotConfirmPassword').value.trim();
 
@@ -772,8 +967,8 @@
         }
 
         async function processEditProfile() {
-            let name = document.getElementById('editName').value.trim();
-            let address = document.getElementById('editAddress').value.trim();
+            let name = escapeHTML(document.getElementById('editName').value.trim());
+            let address = escapeHTML(document.getElementById('editAddress').value.trim());
 
             if (!name) {
                 showCustomAlert(translations[currentLang].fill_all_fields);
@@ -862,8 +1057,10 @@
                 container.innerHTML = myOrders.map(o => {
                     let sub = o.subtotal || 0;
                     let fee = o.fees || 0;
+                    let codFee = o.codFee || 0;
                     let feeLabel = (o.orderType === 'Delivery' || o.orderType === 'أونلاين') ? translations[currentLang].delivery_text : translations[currentLang].service_text;
                     let itemsHtml = (o.items || []).map(i => `${escapeHTML(i.name)} × ${i.qty || i.quantity || 1}`).join('، ');
+                    let payMethodStr = o.paymentMethod === 'card' ? translations[currentLang].method_card_label : (o.paymentMethod === 'wallet' ? translations[currentLang].method_wallet_label : translations[currentLang].method_cod_label);
 
                     return `
                         <div class="history-item-row">
@@ -875,11 +1072,13 @@
                             <div style="border-top: 1px solid var(--border); padding-top: 6px; font-size: 12px; margin-bottom: 6px;">
                                 ${itemsHtml}
                             </div>
-                            <div style="font-size: 11px; color: var(--gray); line-height: 1.4;">
+                            <div style="font-size: 11px; color: var(--gray); line-height: 1.5;">
                                 ${translations[currentLang].subtotal_text}: ${sub.toFixed(1)} ج.م<br>
                                 ${feeLabel}: ${fee.toFixed(1)} ج.م
+                                ${codFee > 0 ? `<br>${translations[currentLang].cod_fee_text}: ${codFee} ج.م` : ''}<br>
+                                ${translations[currentLang].payment_method_text}: ${payMethodStr}
                             </div>
-                            <div style="margin-top: 6px; font-weight: 700; color: var(--secondary);">${translations[currentLang].final_total_text}: ${o.total} ج.م</div>
+                            <div style="margin-top: 8px; font-weight: 800; color: var(--secondary);">${translations[currentLang].final_total_text}: ${o.total} ج.م</div>
                         </div>
                     `;
                 }).join('');
@@ -991,11 +1190,16 @@
 
             let deliveryFee = isOnline ? 40 : 0;
             let serviceFee = !isOnline ? subtotal * 0.1 : 0;
-            let finalTotal = subtotal + deliveryFee + serviceFee;
+            let codFee = (isOnline && selectedPaymentMethod === 'cod') ? 20 : 0;
+            let finalTotal = subtotal + deliveryFee + serviceFee + codFee;
+
+            let payMethodName = selectedPaymentMethod === 'card' ? translations[currentLang].method_card_label : (selectedPaymentMethod === 'wallet' ? translations[currentLang].method_wallet_label : translations[currentLang].method_cod_label);
 
             breakdown.innerHTML = `
                 ${itemsCount} أصناف | ${translations[currentLang].subtotal_text}: ${subtotal.toFixed(1)} ج.م<br>
-                ${isOnline ? `${translations[currentLang].delivery_text} (ثابت): ${deliveryFee} ج.م` : `${translations[currentLang].service_text} (10%): ${serviceFee.toFixed(1)} ج.م`}
+                ${isOnline ? `${translations[currentLang].delivery_text}: ${deliveryFee} ج.م` : `${translations[currentLang].service_text} (10%): ${serviceFee.toFixed(1)} ج.م`}
+                ${codFee > 0 ? `<br>${translations[currentLang].cod_fee_text}: ${codFee} ج.م` : ''}
+                <br>${translations[currentLang].payment_method_text}: <strong>${payMethodName}</strong>
             `;
             totalElem.innerText = `${finalTotal.toFixed(1)} ج.م`;
         }
@@ -1019,7 +1223,8 @@
 
             let deliveryFee = isOnline ? 40 : 0;
             let serviceFee = !isOnline ? subtotal * 0.1 : 0;
-            let finalTotal = subtotal + deliveryFee + serviceFee;
+            let codFee = (isOnline && selectedPaymentMethod === 'cod') ? 20 : 0;
+            let finalTotal = subtotal + deliveryFee + serviceFee + codFee;
 
             let now = new Date();
             let dateStr = now.toISOString().split('T')[0];
@@ -1035,6 +1240,8 @@
                 subtotal,
                 fees: isOnline ? deliveryFee : serviceFee,
                 serviceFee: isOnline ? deliveryFee : serviceFee,
+                codFee,
+                paymentMethod: selectedPaymentMethod,
                 total: finalTotal,
                 status: 'قيد المعالجة',
                 date: dateStr,
@@ -1044,7 +1251,6 @@
 
             try {
                 let docRef = await window.firebaseModules.addDoc(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), orderData);
-                // تحديث الـ ID الخاص بالطلب داخل الوثيقة ليتطابق مع الـ ID الحقيقي في Firestore
                 await window.firebaseModules.updateDoc(docRef, { id: docRef.id });
 
                 cart = {};
@@ -1098,7 +1304,7 @@
 
                     let latest = activeOrders[0];
                     tracker.innerHTML = `
-                        <div style="background: rgba(46, 213, 115, 0.15); border: 1px solid var(--secondary); padding: 12px; border-radius: 12px; margin-bottom: 12px; font-size: 13px;">
+                        <div style="background: rgba(46, 213, 115, 0.15); border: 1px solid var(--secondary); padding: 12px; border-radius: 14px; margin-bottom: 14px; font-size: 13px; backdrop-filter: blur(10px);">
                             <div style="font-weight: 700; color: var(--secondary); margin-bottom: 4px;"><i class="fa-solid fa-spinner fa-spin"></i> حالة طلبك الحالي: ${escapeHTML(latest.status || 'قيد المعالجة')}</div>
                             <div style="color: var(--gray); font-size: 11px;">رقم الطلب: #${escapeHTML(String(latest.id || '').slice(-4))} | الإجمالي: ${escapeHTML(String(latest.total || 0))} ج.م</div>
                         </div>
