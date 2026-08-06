@@ -692,11 +692,11 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   </main>
 </div>
 
-<!-- Firebase Modular Initialization -->
+<!-- Firebase Modular Initialization (Corrected SDK Version) -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -720,7 +720,7 @@ window.dispatchEvent(new Event('firebase-ready'));
 
 <!-- Main Controller JS Logic -->
 <script>
-// State
+// State Management
 let currentRestaurant = localStorage.getItem('current_restaurant');
 let currentLang = localStorage.getItem('app_lang') || 'ar';
 let appThemeMode = localStorage.getItem('app_theme_mode') || 'dark';
@@ -736,7 +736,7 @@ let salesChartInstance = null;
 let unsubscribeRestaurant = null;
 let unsubscribeOrders = null;
 
-// XSS Sanitization
+// Contextual Output Escaping (XSS Prevention)
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -820,6 +820,12 @@ function changeLanguage(lang) {
     let k = el.getAttribute('data-i18n');
     if (translations[lang] && translations[lang][k]) el.innerText = translations[lang][k];
   });
+
+  let activeNav = document.querySelector('.nav-item.active');
+  if(activeNav) {
+    document.getElementById('pageTitle').innerText = activeNav.innerText;
+  }
+
   renderItems();
   renderCategoriesManagement();
   filterOrdersTable();
@@ -840,9 +846,9 @@ window.onload = () => {
 
 // Auth Logic
 async function handleRegister() {
-  let nameInput = escapeHtml(document.getElementById('authRestaurantName').value.trim().toLowerCase());
-  let phoneInput = escapeHtml(document.getElementById('authPhoneNumber').value.trim());
-  let passwordInput = escapeHtml(document.getElementById('authPassword').value);
+  let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
+  let phoneInput = document.getElementById('authPhoneNumber').value.trim();
+  let passwordInput = document.getElementById('authPassword').value;
 
   if (!nameInput || !phoneInput || !passwordInput) return showCustomAlert(currentLang === 'ar'?'يرجى ملء جميع الحقول':'Please fill all fields');
   if (!window.FB) return;
@@ -862,13 +868,13 @@ async function handleRegister() {
       await window.FB.setDoc(restDocRef, restaurantDataCache);
     }
     startDataListeners(); showDashboard(); switchTab('dashboard');
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); showCustomAlert('حدث خطأ أثناء التسجيل'); }
 }
 
 async function handleLogin() {
-  let nameInput = escapeHtml(document.getElementById('authRestaurantName').value.trim().toLowerCase());
-  let phoneInput = escapeHtml(document.getElementById('authPhoneNumber').value.trim());
-  let passwordInput = escapeHtml(document.getElementById('authPassword').value);
+  let nameInput = document.getElementById('authRestaurantName').value.trim().toLowerCase();
+  let phoneInput = document.getElementById('authPhoneNumber').value.trim();
+  let passwordInput = document.getElementById('authPassword').value;
 
   if (!nameInput || !phoneInput || !passwordInput) return showCustomAlert(currentLang === 'ar'?'يرجى ملء جميع الحقول':'Please fill all fields');
   if (!window.FB) return;
@@ -879,7 +885,7 @@ async function handleLogin() {
     }
     currentRestaurant = nameInput; localStorage.setItem('current_restaurant', currentRestaurant);
     startDataListeners(); showDashboard(); switchTab('dashboard');
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); showCustomAlert('حدث خطأ أثناء تسجيل الدخول'); }
 }
 
 function logout() {
@@ -896,8 +902,8 @@ function showDashboard() {
   document.getElementById('headerRestaurantTitle').innerText = currentRestaurant.toUpperCase();
 
   let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  document.getElementById('onlineMenuBtn').href = `${baseUrl}orders.html?restaurant=${currentRestaurant}`;
-  document.getElementById('kitchenBtn').href = `${baseUrl}kitchen.html?restaurant=${currentRestaurant}`;
+  document.getElementById('onlineMenuBtn').href = `${baseUrl}orders.html?restaurant=${encodeURIComponent(currentRestaurant)}`;
+  document.getElementById('kitchenBtn').href = `${baseUrl}kitchen.html?restaurant=${encodeURIComponent(currentRestaurant)}`;
   generateTablesQR();
 }
 
@@ -947,7 +953,7 @@ function calculateStats() {
   let itemSalesCount = {};
 
   appOrders.forEach(o => {
-    let val = Number(o.total || 0);
+    let val = parseFloat(o.total || 0);
     if (o.status !== 'canceled') {
       totalRev += val;
       if (o.customerPhone) uniqueCustomers.add(o.customerPhone);
@@ -1014,7 +1020,7 @@ function renderSalesChart() {
 
     let dayTotal = appOrders
       .filter(o => o.status !== 'canceled' && o.createdAt && o.createdAt.startsWith(dateStr))
-      .reduce((sum, o) => sum + Number(o.total || 0), 0);
+      .reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
     totals.push(dayTotal);
   }
 
@@ -1124,7 +1130,7 @@ function renderOrdersTable(data) {
       <td data-label="طريقة الدفع">${o.paymentMethod === 'cash' ? 'كاش' : 'بطاقة'}</td>
       <td data-label="الإجمالي" style="font-weight:bold;">${escapeHtml(o.total)} ج.م</td>
       <td data-label="الحالة"><span class="badge ${s[1]}">${s[0]}</span></td>
-      <td data-label="التفاصيل"><button class="btn btn-secondary btn-sm" onclick="viewOrderDetails('${o.id}')"><i class="fa-solid fa-eye"></i></button></td>
+      <td data-label="التفاصيل"><button class="btn btn-secondary btn-sm" onclick="viewOrderDetails('${escapeHtml(o.id)}')"><i class="fa-solid fa-eye"></i></button></td>
     </tr>`;
   }).join('');
 }
@@ -1189,25 +1195,29 @@ function updateCategoryDropdown() {
   });
 }
 function renderCategoriesManagement() {
-  document.getElementById('categoriesManagementList').innerHTML = (restaurantDataCache.categories || defaultCategories).map(cat => `
+  let container = document.getElementById('categoriesManagementList');
+  container.innerHTML = (restaurantDataCache.categories || defaultCategories).map((cat, index) => `
     <div style="background: var(--input-bg); border: 1px solid var(--panel-border); padding: 6px 12px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px;">
       <span>${escapeHtml(cat)}</span>
-      <button onclick="deleteCategory('${cat.replace(/'/g, "\\'")}')" style="background:none; border:none; color: var(--brand-primary); cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+      <button onclick="deleteCategoryByIndex(${index})" style="background:none; border:none; color: var(--brand-primary); cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
     </div>
   `).join('');
 }
 async function addNewCategoryToList() {
-  let val = escapeHtml(document.getElementById('customCategoryInput').value.trim());
+  let val = document.getElementById('customCategoryInput').value.trim();
   if(!val) return;
   if(!restaurantDataCache.categories.includes(val)) {
     restaurantDataCache.categories.push(val);
-    await saveRestaurantDataToCloud(); document.getElementById('customCategoryInput').value = '';
+    await saveRestaurantDataToCloud(); 
+    document.getElementById('customCategoryInput').value = '';
     showCustomAlert('تم إضافة التصنيف');
   }
 }
-async function deleteCategory(cat) {
-  restaurantDataCache.categories = restaurantDataCache.categories.filter(c => c !== cat);
-  await saveRestaurantDataToCloud();
+async function deleteCategoryByIndex(index) {
+  if (restaurantDataCache.categories && restaurantDataCache.categories[index] !== undefined) {
+    restaurantDataCache.categories.splice(index, 1);
+    await saveRestaurantDataToCloud();
+  }
 }
 
 function handleImageUpload(e) {
@@ -1217,21 +1227,41 @@ function handleImageUpload(e) {
 
 async function saveItemAction() {
   let editId = document.getElementById('editItemId').value;
-  let name = escapeHtml(document.getElementById('newItemName').value.trim());
-  let category = escapeHtml(document.getElementById('newItemCategory').value);
+  let name = document.getElementById('newItemName').value.trim();
+  let category = document.getElementById('newItemCategory').value;
   let price = Number(document.getElementById('newItemPrice').value);
   let discount = Number(document.getElementById('newItemDiscount').value) || 0;
 
-  if (!name || !price) return showCustomAlert('الرجاء إدخال الاسم والسعر');
-  let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
+  if (!name || isNaN(price) || price <= 0) return showCustomAlert('الرجاء إدخال اسم وسعر صحيحين');
+  
+  let imgUrl = "";
+  if (uploadedImageFile) {
+    imgUrl = await uploadFileToStorage(uploadedImageFile, "items");
+  }
 
   if (editId) {
     let item = restaurantDataCache.items.find(i => i.id == editId);
-    if (item) { item.name=name; item.category=category; item.price=price; item.discount=discount; if(uploadedImageFile && img) item.img=img; }
+    if (item) { 
+      item.name = name; 
+      item.category = category; 
+      item.price = price; 
+      item.discount = discount; 
+      if(imgUrl) item.img = imgUrl; 
+    }
   } else {
-    restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, img });
+    let defaultImg = "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
+    restaurantDataCache.items.push({ 
+      id: Date.now(), 
+      name, 
+      category, 
+      price, 
+      discount, 
+      img: imgUrl || defaultImg 
+    });
   }
-  await saveRestaurantDataToCloud(); resetItemForm();
+  await saveRestaurantDataToCloud(); 
+  resetItemForm();
+  showCustomAlert(currentLang === 'ar' ? 'تم حفظ الصنف بنجاح' : 'Item saved successfully');
 }
 
 function editItem(id) {
@@ -1289,11 +1319,11 @@ async function importBilingualMenuOCR(replace) {
     let curCat = "أكلات"; let added = 0;
     lines.forEach((line, i) => {
       let hasNum = /\d/.test(line);
-      if(!hasNum && line.length>2 && line.length<30) { curCat = escapeHtml(line); if(!cats.includes(curCat)) cats.push(curCat); return; }
+      if(!hasNum && line.length>2 && line.length<30) { curCat = line; if(!cats.includes(curCat)) cats.push(curCat); return; }
       let pm = line.match(/(\d+)/g);
       if(pm && pm.length>0) {
         let price = parseInt(pm[pm.length-1]);
-        let name = escapeHtml(line.replace(/(\d+)/g, '').replace(/ريال|ج.م|جنيه|usd|$|egp|SAR/gi, '').replace(/[~-.,*+/]/g, '').trim());
+        let name = line.replace(/(\d+)/g, '').replace(/ريال|ج.م|جنيه|usd|$|egp|SAR/gi, '').replace(/[~-.,*+/]/g, '').trim();
         if(name.length>=2 && price>0) {
           items.push({ id: Date.now()+i+Math.random(), name, category: curCat, price, discount: 0, img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500' });
           added++;
@@ -1313,7 +1343,7 @@ function generateTablesQR() {
   let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
 
   for(let i=1; i<=count; i++) {
-    let url = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${i}`;
+    let url = `${baseUrl}orders.html?restaurant=${encodeURIComponent(currentRestaurant)}&table=${i}`;
     let id = `qr-${i}`;
     let box = document.createElement('div'); box.className = 'qr-box';
     box.innerHTML = `
@@ -1330,7 +1360,7 @@ function generateTablesQR() {
 function printSingleQR(tableNum) {
   let printable = document.getElementById('printableArea');
   let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  let url = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${tableNum}`;
+  let url = `${baseUrl}orders.html?restaurant=${encodeURIComponent(currentRestaurant)}&table=${tableNum}`;
 
   printable.innerHTML = `
     <div class="print-qr-card">
@@ -1341,8 +1371,10 @@ function printSingleQR(tableNum) {
   new QRCode(document.getElementById('print-single-qr-img'), { text: url, width: 180, height: 180, colorDark: "#000", colorLight: "#fff" });
 
   printable.classList.remove('hidden');
-  window.print();
-  printable.classList.add('hidden');
+  setTimeout(() => {
+    window.print();
+    printable.classList.add('hidden');
+  }, 300);
 }
 
 function printAllQRs() {
@@ -1352,7 +1384,7 @@ function printAllQRs() {
   printable.innerHTML = '';
 
   for(let i=1; i<=count; i++) {
-    let url = `${baseUrl}orders.html?restaurant=${currentRestaurant}&table=${i}`;
+    let url = `${baseUrl}orders.html?restaurant=${encodeURIComponent(currentRestaurant)}&table=${i}`;
     let card = document.createElement('div');
     card.className = 'print-qr-card';
     card.innerHTML = `<h3>طاولة ${i}</h3> <div id="print-qr-${i}"></div> <p style="margin-top:8px; font-size:12px;">امسح الكود للطلب</p>`;
@@ -1361,9 +1393,12 @@ function printAllQRs() {
   }
 
   printable.classList.remove('hidden');
-  window.print();
-  printable.classList.add('hidden');
+  setTimeout(() => {
+    window.print();
+    printable.classList.add('hidden');
+  }, 400);
 }
 </script>
 </body>
 </html>
+ش
