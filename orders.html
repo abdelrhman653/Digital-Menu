@@ -2,15 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنيو والطلب الذكي</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>المنيو الرقمي والطلب المباشر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -23,1303 +23,500 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        window.db = db;
-        window.firebaseModules = { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, onSnapshot, query, where };
-        
-        window.dispatchEvent(new Event('firebase-loaded'));
+        window.FB = { db, doc, getDoc, onSnapshot, collection, addDoc };
+        window.dispatchEvent(new Event('firebase-ready-orders'));
     </script>
 
     <style>
-        /* Theme Palettes */
-        [data-theme="dark-red"] {
-            --primary: #FF4757;
-            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
-            --secondary: #2ED573;
-            --dark-card: rgba(21, 27, 34, 0.75);
-            --dark-bg: #0D1117;
-            --white: #FFFFFF;
-            --gray: #8B949E;
-            --border: rgba(48, 54, 61, 0.6);
-            --warning: #FFA502;
-            --glass-bg: rgba(21, 27, 34, 0.65);
-        }
-        [data-theme="dark-blue"] {
-            --primary: #3b82f6;
-            --primary-gradient: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-            --secondary: #10b981;
-            --dark-card: rgba(15, 23, 42, 0.75);
-            --dark-bg: #020617;
-            --white: #FFFFFF;
-            --gray: #94a3b8;
-            --border: rgba(51, 65, 85, 0.6);
-            --warning: #f59e0b;
-            --glass-bg: rgba(15, 23, 42, 0.65);
-        }
-        [data-theme="dark-green"] {
-            --primary: #10b981;
-            --primary-gradient: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-            --secondary: #3b82f6;
-            --dark-card: rgba(6, 78, 59, 0.35);
-            --dark-bg: #022c22;
-            --white: #FFFFFF;
-            --gray: #6ee7b7;
-            --border: rgba(16, 185, 129, 0.3);
-            --warning: #fbbf24;
-            --glass-bg: rgba(6, 78, 59, 0.3);
-        }
-        [data-theme="purple"] {
-            --primary: #8b5cf6;
-            --primary-gradient: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-            --secondary: #ec4899;
-            --dark-card: rgba(30, 27, 75, 0.75);
-            --dark-bg: #0f172a;
-            --white: #FFFFFF;
-            --gray: #cbd5e1;
-            --border: rgba(139, 92, 246, 0.3);
-            --warning: #fbbF24;
-            --glass-bg: rgba(30, 27, 75, 0.65);
-        }
-        [data-theme="orange"] {
-            --primary: #f97316;
-            --primary-gradient: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-            --secondary: #14b8a6;
-            --dark-card: rgba(43, 24, 16, 0.75);
-            --dark-bg: #120c08;
-            --white: #FFFFFF;
-            --gray: #d1d5db;
-            --border: rgba(249, 115, 22, 0.3);
-            --warning: #facc15;
-            --glass-bg: rgba(43, 24, 16, 0.65);
-        }
-        [data-theme="black-gold"] {
-            --primary: #d4af37;
-            --primary-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
-            --secondary: #ffffff;
-            --dark-card: rgba(20, 20, 20, 0.85);
-            --dark-bg: #0a0a0a;
-            --white: #F3F4F6;
-            --gray: #9ca3af;
-            --border: rgba(212, 175, 55, 0.35);
-            --warning: #f59e0b;
-            --glass-bg: rgba(20, 20, 20, 0.75);
-        }
-        [data-theme="pink"] {
-            --primary: #ec4899;
-            --primary-gradient: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
-            --secondary: #8b5cf6;
-            --dark-card: rgba(50, 15, 35, 0.75);
-            --dark-bg: #1a0512;
-            --white: #FFFFFF;
-            --gray: #fbcfe8;
-            --border: rgba(236, 72, 153, 0.3);
-            --warning: #fbbf24;
-            --glass-bg: rgba(50, 15, 35, 0.65);
-        }
-        [data-theme="light"] {
-            --primary: #e11d48;
-            --primary-gradient: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
-            --secondary: #059669;
-            --dark-card: rgba(255, 255, 255, 0.85);
-            --dark-bg: #f8fafc;
-            --white: #0f172a;
-            --gray: #64748b;
-            --border: rgba(203, 213, 225, 0.8);
-            --warning: #d97706;
-            --glass-bg: rgba(255, 255, 255, 0.75);
-        }
-
         :root {
             --primary: #FF4757;
-            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
             --secondary: #2ED573;
-            --dark-card: rgba(21, 27, 34, 0.75);
-            --dark-bg: #0D1117;
-            --white: #FFFFFF;
-            --gray: #8B949E;
-            --border: rgba(48, 54, 61, 0.6);
-            --warning: #FFA502;
-            --glass-bg: rgba(21, 27, 34, 0.65);
+            --accent: #FFA502;
+            --bg-color: #0c090a;
+            --surface-color: rgba(25, 20, 20, 0.75);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff;
+            --text-muted: #a4b0be;
+            --input-bg: rgba(0, 0, 0, 0.3);
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
-        body { background-color: var(--dark-bg); color: var(--white); padding-bottom: 140px; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, rgba(255,71,87,0.05) 0%, transparent 60%); }
+        [data-user-theme="light"] {
+            --bg-color: #f8fafc;
+            --surface-color: rgba(255, 255, 255, 0.9);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+            --input-bg: rgba(241, 245, 249, 0.9);
+            --shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+        }
 
-        button { touch-action: manipulation; cursor: pointer; }
-        img { user-select: none; -webkit-user-drag: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; padding-bottom: 90px; transition: var(--transition); }
 
+        /* Header */
         header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 900;
+            position: sticky; top: 0; z-index: 100;
+            background: var(--surface-color); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color); padding: 16px 20px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .header-brand { display: flex; align-items: center; gap: 12px; }
-        .header-logo { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        header h1 { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
-        #headerRestaurantTitle { color: var(--warning); font-size: 15px; font-weight: 700; }
+        .brand-box { display: flex; align-items: center; gap: 12px; }
+        .brand-logo { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; border: 2px solid var(--primary); display: none; }
+        .brand-title { font-size: 18px; font-weight: 800; }
+        .table-badge { background: var(--primary); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
 
-        .header-controls { display: flex; align-items: center; gap: 8px; }
-        .theme-select-btn, .lang-select {
-            background: var(--dark-card);
-            color: var(--white);
-            border: 1px solid var(--border);
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            outline: none;
-            cursor: pointer;
+        .theme-toggle-btn {
+            background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color);
+            width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; transition: var(--transition);
         }
 
-        .container { max-width: 480px; margin: 16px auto; padding: 0 12px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px 15px; }
 
-        #authModal, #historyModal, #customAlertModal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13, 17, 23, 0.85);
-            backdrop-filter: blur(8px);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            animation: fadeIn 0.25s ease forwards;
+        /* Search & Categories */
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box input {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color);
+            padding: 14px 45px 14px 16px; border-radius: 16px; font-size: 14px; outline: none;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        .search-box i { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
 
-        .auth-box, .history-card-box, .custom-alert-box {
-            background: var(--dark-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 24px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        .categories-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 24px; scrollbar-width: none; }
+        .categories-scroll::-webkit-scrollbar { display: none; }
+        .cat-chip {
+            white-space: nowrap; padding: 10px 20px; border-radius: 30px; background: var(--surface-color);
+            border: 1px solid var(--border-color); color: var(--text-muted); font-size: 13px; font-weight: 700; cursor: pointer; transition: var(--transition);
         }
-        .auth-box h3, .history-card-box h3 { margin-bottom: 18px; font-size: 16px; font-weight: 800; color: var(--white); }
-        .auth-input {
-            width: 100%;
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 14px;
-            color: var(--white);
-            margin-bottom: 14px;
-            font-size: 13px;
-            outline: none;
-        }
-        .auth-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,71,87,0.15); }
-        .auth-btn {
-            background: var(--primary-gradient, var(--primary));
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 4px 15px rgba(255,71,87,0.3);
-        }
+        .cat-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-            background: var(--dark-card);
-            backdrop-filter: blur(10px);
-            padding: 12px 16px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            font-size: 13px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        /* Items Grid */
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+        .item-card {
+            background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            overflow: hidden; display: flex; flex-direction: column; transition: var(--transition);
         }
-        .history-btn-top {
-            background: rgba(255, 71, 87, 0.15);
-            color: var(--primary);
-            border: 1px solid var(--primary);
-            padding: 6px 14px;
-            border-radius: 10px;
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .item-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+        .item-img { width: 100%; height: 140px; object-fit: cover; }
+        .item-details { padding: 15px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .item-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+        .item-price { font-size: 16px; font-weight: 800; color: var(--secondary); margin-bottom: 12px; }
+        .add-btn {
+            background: var(--primary); color: #fff; border: none; padding: 10px; border-radius: 12px;
+            font-weight: 700; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition);
         }
+        .add-btn:hover { opacity: 0.9; }
 
-        .categories-row {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            margin-bottom: 16px;
-            padding-bottom: 6px;
-            scrollbar-width: none;
-        }
-        .categories-row::-webkit-scrollbar { display: none; }
-        .cat-btn {
-            background: var(--dark-card);
-            color: var(--gray);
-            border: 1px solid var(--border);
-            padding: 8px 16px;
-            border-radius: 24px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            backdrop-filter: blur(10px);
-        }
-        .cat-btn.active {
-            background: var(--primary-gradient, var(--primary));
-            color: #fff;
-            border-color: transparent;
-            box-shadow: 0 4px 12px rgba(255,71,87,0.25);
-        }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-        @media(max-width: 340px) { .menu-grid { grid-template-columns: 1fr; } }
-
-        .menu-card {
-            background: var(--dark-card);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-            transform: translateY(0);
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-        .menu-card:hover { transform: translateY(-3px); border-color: var(--primary); }
-        .menu-card img { width: 100%; height: 115px; object-fit: cover; }
-        .menu-content { padding: 10px; }
-        .menu-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; line-height: 1.4; }
-        .menu-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px 10px 10px;
-        }
-        .menu-price { color: var(--secondary); font-weight: 800; font-size: 14px; }
-
-        .qty-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 4px 8px;
-        }
-        .qty-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 12px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
-        .qty-btn:hover { background: rgba(255,255,255,0.1); }
-        .qty-num { font-size: 13px; font-weight: 800; min-width: 16px; text-align: center; }
-
-        .add-initial-btn {
-            background: var(--primary-gradient, var(--primary));
-            color: #fff;
-            border: none;
-            padding: 7px 14px;
-            border-radius: 10px;
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: 700;
-            box-shadow: 0 3px 10px rgba(255,71,87,0.2);
-        }
-
-        .history-item-row {
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 12px;
-            font-size: 13px;
-            text-align: right;
-        }
-
+        /* Floating Cart Bar */
         .cart-bar {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: var(--dark-card);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid var(--border);
-            padding: 16px 18px;
-            box-shadow: 0 -8px 30px rgba(0,0,0,0.5);
-            z-index: 950;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 600px;
+            background: var(--primary); color: #fff; padding: 14px 24px; border-radius: 30px;
+            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            cursor: pointer; z-index: 500; font-weight: 800;
         }
-        .cart-details { font-size: 11px; color: var(--gray); margin-bottom: 8px; line-height: 1.6; }
-        .cart-main-row { display: flex; justify-content: space-between; align-items: center; }
-        
-        .payment-methods-box {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 12px;
+
+        /* Cart Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px); z-index: 999; display: flex; align-items: flex-end; justify-content: center;
+            opacity: 0; pointer-events: none; transition: var(--transition);
         }
-        .pay-method-btn {
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px 4px;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--gray);
-            cursor: pointer;
-            text-align: center;
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .cart-modal {
+            background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 24px 24px 0 0;
+            width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; padding: 24px; transform: translateY(100%); transition: var(--transition);
         }
-        .pay-method-btn.active {
-            border-color: var(--primary);
-            color: var(--white);
-            background: rgba(255,71,87,0.1);
+        .modal-overlay.active .cart-modal { transform: translateY(0); }
+
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .qty-controls { display: flex; align-items: center; gap: 10px; background: var(--input-bg); padding: 4px 10px; border-radius: 10px; }
+        .qty-btn { background: none; border: none; color: var(--text-color); font-size: 16px; cursor: pointer; padding: 2px 6px; }
+
+        /* Inputs */
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text-muted); }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color);
+            padding: 12px 14px; border-radius: 12px; font-size: 14px; outline: none;
         }
 
         .btn-submit {
-            background: var(--secondary);
-            color: #000;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-weight: 800;
-            cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 4px 15px rgba(46,213,115,0.3);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: var(--secondary); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 14px;
+            font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: var(--transition);
         }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-        .custom-alert-box p { font-size: 14px; margin-bottom: 20px; color: var(--white); line-height: 1.6; }
-        .hidden { display: none !important; }
+        .empty-cart { text-align: center; padding: 40px 0; color: var(--text-muted); }
     </style>
 </head>
-<body data-theme="dark-red">
+<body>
 
-    <div id="customAlertModal" class="hidden">
-        <div class="custom-alert-box">
-            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;"><i class="fa-solid fa-circle-exclamation"></i> <span data-i18n="alert_title">تنبيه</span></h3>
-            <p id="customAlertMessage">رسالة التنبيه هنا</p>
-            <button class="auth-btn" onclick="closeCustomAlert()" data-i18n="btn_ok">حسناً</button>
-        </div>
-    </div>
-
-    <div id="authModal" class="hidden">
-        <div class="auth-box">
-            <div id="authChoiceView">
-                <h3 id="authModalTitle" style="margin-bottom: 20px;" data-i18n="welcome_auth">مرحباً بك في المنيو</h3>
-                <button class="auth-btn" style="margin-bottom: 12px;" onclick="showAuthForm('login')" data-i18n="login_btn">تسجيل الدخول</button>
-                <button class="auth-btn" style="background: transparent; border: 1px solid var(--primary); color: var(--white); margin-bottom: 12px;" onclick="showAuthForm('register')" data-i18n="register_btn">إنشاء حساب جديد</button>
-                <button class="auth-btn" style="background: transparent; border: 1px solid var(--gray); color: var(--gray);" onclick="showAuthForm('forgot')" data-i18n="forgot_password_btn">نسيت كلمة المرور</button>
-            </div>
-
-            <div id="loginFormView" class="hidden">
-                <h3 style="margin-bottom: 15px;" data-i18n="login_title">تسجيل الدخول</h3>
-                <input type="tel" id="loginPhone" class="auth-input" placeholder="رقم الموبايل" data-i18n-placeholder="phone_placeholder">
-                <input type="password" id="loginPassword" class="auth-input" placeholder="كلمة المرور" data-i18n-placeholder="password_placeholder">
-                <button class="auth-btn" onclick="processLogin()" data-i18n="enter_btn">دخول</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
-            </div>
-
-            <div id="registerFormView" class="hidden">
-                <h3 style="margin-bottom: 15px;" data-i18n="register_title">إنشاء حساب جديد</h3>
-                <input type="text" id="regName" class="auth-input" placeholder="اسمك الكريم" data-i18n-placeholder="name_placeholder">
-                <input type="tel" id="regPhone" class="auth-input" placeholder="رقم الموبايل" data-i18n-placeholder="phone_placeholder">
-                <input type="password" id="regPassword" class="auth-input" placeholder="كلمة المرور" data-i18n-placeholder="password_placeholder">
-                <input type="password" id="regConfirmPassword" class="auth-input" placeholder="تأكيد كلمة المرور" data-i18n-placeholder="confirm_password_placeholder">
-                <input type="text" id="regAddress" class="auth-input" placeholder="العنوان بالتفصيل (للأونلاين فقط)" data-i18n-placeholder="address_placeholder">
-                <button class="auth-btn" onclick="processRegister()" data-i18n="create_account_btn">إنشاء الحساب</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
-            </div>
-
-            <div id="forgotFormView" class="hidden">
-                <h3 style="margin-bottom: 15px;" data-i18n="forgot_title">استعادة كلمة المرور</h3>
-                <input type="tel" id="forgotPhone" class="auth-input" placeholder="رقم الموبايل المسجل" data-i18n-placeholder="phone_placeholder">
-                <input type="password" id="forgotNewPassword" class="auth-input" placeholder="كلمة المرور الجديدة" data-i18n-placeholder="new_password_placeholder">
-                <input type="password" id="forgotConfirmPassword" class="auth-input" placeholder="تأكيد كلمة المرور الجديدة" data-i18n-placeholder="confirm_new_password_placeholder">
-                <button class="auth-btn" onclick="processForgotPassword()" data-i18n="reset_password_btn">تحديث كلمة المرور</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="showAuthForm('choice')" data-i18n="back_btn">الرجوع</button>
-            </div>
-
-            <div id="editProfileFormView" class="hidden">
-                <h3 style="margin-bottom: 15px;" data-i18n="edit_profile_title">تعديل البيانات الشخصية</h3>
-                <input type="text" id="editName" class="auth-input" placeholder="الاسم الكريم" data-i18n-placeholder="name_placeholder">
-                <input type="text" id="editAddress" class="auth-input" placeholder="العنوان بالتفصيل" data-i18n-placeholder="address_placeholder">
-                <button class="auth-btn" onclick="processEditProfile()" data-i18n="save_changes_btn">حفظ التعديلات</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="toggleEditProfile(false)" data-i18n="back_btn">الرجوع</button>
-            </div>
-
-            <div id="changePasswordFormView" class="hidden">
-                <h3 style="margin-bottom: 15px;" data-i18n="change_password_title">تغيير كلمة المرور</h3>
-                <input type="password" id="currentPassword" class="auth-input" placeholder="كلمة المرور الحالية" data-i18n-placeholder="current_password_placeholder">
-                <input type="password" id="newPassword" class="auth-input" placeholder="كلمة المرور الجديدة" data-i18n-placeholder="new_password_placeholder">
-                <input type="password" id="confirmNewPassword" class="auth-input" placeholder="تأكيد كلمة المرور الجديدة" data-i18n-placeholder="confirm_new_password_placeholder">
-                <button class="auth-btn" onclick="processChangePassword()" data-i18n="update_password_btn">تحديث كلمة المرور</button>
-                <button style="background: none; border: none; color: var(--gray); margin-top: 12px; cursor: pointer; font-size: 12px;" onclick="toggleChangePassword(false)" data-i18n="back_btn">الرجوع</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="historyModal" class="hidden">
-        <div class="history-card-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 15px; margin-bottom: 0;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> <span data-i18n="my_orders">سجل طلباتي السابقة</span></h3>
-                <button onclick="toggleHistory(false)" style="background: none; border: none; color: var(--white); font-size: 18px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                <button onclick="toggleEditProfile(true)" style="flex: 1; background: rgba(255, 165, 2, 0.2); color: var(--warning); border: 1px solid var(--warning); padding: 8px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_edit_profile">تعديل البيانات</button>
-                <button onclick="toggleChangePassword(true)" style="flex: 1; background: rgba(46, 213, 115, 0.2); color: var(--secondary); border: 1px solid var(--secondary); padding: 8px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 11px;" data-i18n="btn_change_password">تغيير كلمة المرور</button>
-            </div>
-            <div id="historyListContainer"></div>
-            <button onclick="logoutClient()" style="background: rgba(255, 71, 87, 0.2); color: var(--primary); border: 1px solid var(--primary); width: 100%; padding: 10px; border-radius: 10px; font-weight: 700; margin-top: 12px; cursor: pointer; font-size: 12px;" data-i18n="btn_logout_client">تسجيل خروج</button>
-        </div>
-    </div>
-
+    <!-- Header -->
     <header>
-        <div class="header-brand">
-            <img id="headerLogoImg" class="header-logo" src="" alt="الشعار">
-            <h1 id="headerRestaurantTitle">المنيو والطلب</h1>
+        <div class="brand-box">
+            <img id="restLogo" class="brand-logo" src="" alt="Logo">
+            <div>
+                <div class="brand-title" id="restName">اسم المطعم</div>
+                <div id="tableDisplay" class="table-badge">طلب عام</div>
+            </div>
         </div>
-        <div class="header-controls">
-            <select id="themeSelect" class="theme-select-btn" onchange="changeTheme(this.value)">
-                <option value="dark-red">🔴 Dark Red</option>
-                <option value="dark-blue">🔵 Dark Blue</option>
-                <option value="dark-green">🟢 Dark Green</option>
-                <option value="purple">🟣 Purple</option>
-                <option value="orange">🟠 Orange</option>
-                <option value="black-gold">🪙 Black Gold</option>
-                <option value="pink">🩷 Pink</option>
-                <option value="light">☀️ Light</option>
-            </select>
-            <select id="langSelectOrders" class="lang-select" onchange="changeLanguage(this.value)">
-                <option value="ar">AR 🇸🇦</option>
-                <option value="en">EN 🇺🇸</option>
-            </select>
-        </div>
+        <button class="theme-toggle-btn" onclick="toggleUserTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
     </header>
 
+    <!-- Main Container -->
     <div class="container">
-        <div id="liveOrderTrackerContainer"></div>
-
-        <div class="top-bar">
-            <div>
-                <span id="orderTypeBadge" style="font-weight: 700; font-size: 12px;">نوع الطلب: أونلاين</span>
-                <span id="tableDisplayBadge" style="color: var(--primary); font-weight: 700; font-size: 12px; margin-right: 8px;">توصيل دليفري</span>
-            </div>
-            <button class="history-btn-top" onclick="toggleHistory(true)"><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="btn_my_orders">طلباتي</span></button>
+        
+        <!-- Search -->
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="ابحث عن صنف أو مشروب..." onkeyup="filterItems()">
         </div>
 
-        <div class="categories-row" id="categoriesRowContainer">
-            <button class="cat-btn active" onclick="filterCategory('All', this)" data-i18n="all_cat">الكل</button>
+        <!-- Categories -->
+        <div class="categories-scroll" id="categoriesScroll">
+            <!-- Dynamic Category Chips -->
         </div>
 
-        <div id="customerMenuGrid" class="menu-grid"></div>
-    </div>
-
-    <div id="cartBar" class="cart-bar hidden">
-        <div class="payment-methods-box">
-            <button class="pay-method-btn active" id="payMethodCod" onclick="setPaymentMethod('cod')"><i class="fa-solid fa-wallet"></i> <span data-i18n="pay_cod">استلام</span></button>
-            <button class="pay-method-btn" id="payMethodCard" onclick="setPaymentMethod('card')"><i class="fa-solid fa-credit-card"></i> <span data-i18n="pay_card">بطاقة</span></button>
-            <button class="pay-method-btn" id="payMethodWallet" onclick="setPaymentMethod('wallet')"><i class="fa-solid fa-mobile-screen"></i> <span data-i18n="pay_wallet">محفظة</span></button>
-        </div>
-        <div class="cart-details" id="cartBreakdown"></div>
-        <div class="cart-main-row">
-            <div>
-                <div style="font-size: 10px; color: var(--gray);" data-i18n="final_total">الإجمالي النهائي</div>
-                <div style="font-weight: 900; color: var(--secondary); font-size: 16px;" id="cartTotal">0.0 ج.م</div>
-            </div>
-            <button class="btn-submit" onclick="submitOrder()"><span data-i18n="btn_submit_order">إرسال الطلب</span> <i class="fa-solid fa-paper-plane"></i></button>
+        <!-- Items Grid -->
+        <div class="items-grid" id="itemsGrid">
+            <!-- Dynamic Items -->
         </div>
     </div>
 
+    <!-- Floating Cart Bar -->
+    <div id="cartBar" class="cart-bar hidden" onclick="openCartModal()">
+        <div><i class="fa-solid fa-cart-shopping"></i> السلة (<span id="cartCount">0</span>)</div>
+        <div id="cartTotalBar">0 ج.م</div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal-overlay">
+        <div class="cart-modal">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-size: 20px;"><i class="fa-solid fa-bag-shopping" style="color:var(--primary);"></i> طلبك الحالي</h3>
+                <button onclick="closeCartModal()" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div id="cartItemsList"></div>
+
+            <div id="checkoutFormSection" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <div class="input-group">
+                    <label>اسمك الكريـم</label>
+                    <input type="text" id="custName" placeholder="أدخل اسمك...">
+                </div>
+                <div class="input-group">
+                    <label>رقم التليفون</label>
+                    <input type="tel" id="custPhone" placeholder="010XXXXXXXX">
+                </div>
+                <div class="input-group">
+                    <label>نوع الطلب</label>
+                    <select id="orderTypeSelect" onchange="toggleAddressField()">
+                        <option value="dine_in">داخل المطعم (صالة)</option>
+                        <option value="takeaway">تيك أواي (سفري)</option>
+                        <option value="delivery">توصيل (دليفري)</option>
+                    </select>
+                </div>
+                <div class="input-group hidden" id="addressGroup">
+                    <label>عنوان التوصيل التفصيلي</label>
+                    <input type="text" id="custAddress" placeholder="المنطقة، الشارع، العمارة...">
+                </div>
+                <div class="input-group">
+                    <label><i class="fa-solid fa-money-bill-wave"></i> طريقة الدفع</label>
+                    <select id="paymentMethodSelect" disabled style="background: var(--input-bg); opacity: 0.9;">
+                        <option value="cash" selected>💵 الدفع عند الاستلام (Cash on Delivery)</option>
+                    </select>
+                    <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">* الدفع نقداً عند الاستلام أو بالطاولة حالياً.</small>
+                </div>
+                <div class="input-group">
+                    <label>ملاحظات خاصة</label>
+                    <textarea id="orderNotes" rows="2" placeholder="بدون مخلل، زيادة صوص..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; margin: 15px 0;">
+                    <span>الإجمالي النهائي:</span>
+                    <span id="modalTotalAmount" style="color: var(--secondary);">0 ج.م</span>
+                </div>
+
+                <button class="btn-submit" id="submitOrderBtn" onclick="submitOrder()"><i class="fa-solid fa-paper-plane"></i> إرسال الطلب الآن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Status Modal -->
+    <div id="statusModal" class="modal-overlay">
+        <div class="cart-modal" style="border-radius:24px; max-width:450px; text-align:center; padding:35px 24px;">
+            <div style="font-size: 55px; color: var(--secondary); margin-bottom: 15px;"><i class="fa-solid fa-circle-check"></i></div>
+            <h2 style="font-size: 22px; margin-bottom: 10px;">تم إرسال طلبك بنجاح!</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">رقم الطلب: <strong id="submittedOrderId" style="color:var(--primary);">#---</strong></p>
+            
+            <div style="background: var(--input-bg); padding: 15px; border-radius: 16px; margin-bottom: 20px;">
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">حالة الطلب الحالية:</p>
+                <div id="liveStatusText" style="font-size: 18px; font-weight: 800; color: var(--accent);">قيد الانتظار ⏳</div>
+            </div>
+
+            <button class="btn-submit" style="background: var(--primary);" onclick="closeStatusModal()">حسناً، الرجوع للمنيو</button>
+        </div>
+    </div>
+
+    <!-- Script -->
     <script>
-        let currentLang = localStorage.getItem('app_lang') || 'ar';
-        let currentTheme = localStorage.getItem('app_theme') || 'dark-red';
-        let selectedPaymentMethod = 'cod'; // 'cod', 'card', 'wallet'
-
-        document.body.setAttribute('data-theme', currentTheme);
-        document.getElementById('themeSelect').value = currentTheme;
-
-        function changeTheme(theme) {
-            currentTheme = theme;
-            localStorage.setItem('app_theme', theme);
-            document.body.setAttribute('data-theme', theme);
-        }
-
-        const translations = {
-            ar: {
-                alert_title: "تنبيه",
-                btn_ok: "حسناً",
-                my_orders: "سجل طلباتي السابقة",
-                btn_logout_client: "تسجيل خروج",
-                btn_my_orders: "طلباتي",
-                btn_edit_profile: "تعديل البيانات",
-                btn_change_password: "تغيير كلمة المرور",
-                all_cat: "الكل",
-                final_total: "الإجمالي النهائي",
-                btn_submit_order: "إرسال الطلب",
-                add_btn: "إضافة",
-                welcome_auth: "مرحباً بك في المنيو",
-                login_btn: "تسجيل الدخول",
-                register_btn: "إنشاء حساب جديد",
-                forgot_password_btn: "نسيت كلمة المرور",
-                login_title: "تسجيل الدخول",
-                register_title: "إنشاء حساب جديد",
-                forgot_title: "استعادة كلمة المرور",
-                edit_profile_title: "تعديل البيانات الشخصية",
-                change_password_title: "تغيير كلمة المرور",
-                enter_btn: "دخول",
-                back_btn: "الرجوع",
-                create_account_btn: "إنشاء الحساب",
-                reset_password_btn: "تحديث كلمة المرور",
-                save_changes_btn: "حفظ التعديلات",
-                update_password_btn: "تحديث كلمة المرور",
-                name_placeholder: "اسمك الكريم (مثال: أحمد)",
-                phone_placeholder: "رقم الموبايل (مثال: 01012345678)",
-                password_placeholder: "كلمة المرور",
-                confirm_password_placeholder: "تأكيد كلمة المرور",
-                confirm_new_password_placeholder: "تأكيد كلمة المرور الجديدة",
-                new_password_placeholder: "كلمة المرور الجديدة",
-                current_password_placeholder: "كلمة المرور الحالية",
-                address_placeholder: "العنوان بالتفصيل (للأونلاين فقط)",
-                subtotal_text: "المجموع الفرعي",
-                delivery_text: "رسوم التوصيل",
-                service_text: "خدمة الصالة",
-                cod_fee_text: "رسوم الدفع عند الاستلام",
-                payment_method_text: "طريقة الدفع",
-                pay_cod: "عند الاستلام",
-                pay_card: "بطاقة بنكية",
-                pay_wallet: "محفظة إلكترونية",
-                method_cod_label: "الدفع عند الاستلام",
-                method_card_label: "بطاقة بنكية",
-                method_wallet_label: "محفظة إلكترونية",
-                final_total_text: "الإجمالي النهائي",
-                phone_already_registered: "هذا الرقم مسجل بالفعل.",
-                phone_not_registered: "هذا الرقم غير مسجل.",
-                wrong_password: "كلمة المرور غير صحيحة.",
-                passwords_not_match: "كلمة المرور وتأكيدها غير متطابقين.",
-                fill_all_fields: "الرجاء إدخال جميع الحقول المطلوبة بشكل صحيح.",
-                profile_updated: "تم تعديل البيانات بنجاح.",
-                password_updated: "تم تحديث كلمة المرور بنجاح.",
-                current_password_incorrect: "كلمة المرور الحالية غير صحيحة."
-            },
-            en: {
-                alert_title: "Alert",
-                btn_ok: "OK",
-                my_orders: "My Order History",
-                btn_logout_client: "Logout",
-                btn_my_orders: "My Orders",
-                btn_edit_profile: "Edit Profile",
-                btn_change_password: "Change Password",
-                all_cat: "All",
-                final_total: "Final Total",
-                btn_submit_order: "Submit Order",
-                add_btn: "Add",
-                welcome_auth: "Welcome to Menu",
-                login_btn: "Login",
-                register_btn: "Create Account",
-                forgot_password_btn: "Forgot Password",
-                login_title: "Login",
-                register_title: "Create New Account",
-                forgot_title: "Recover Password",
-                edit_profile_title: "Edit Profile",
-                change_password_title: "Change Password",
-                enter_btn: "Login",
-                back_btn: "Back",
-                create_account_btn: "Create Account",
-                reset_password_btn: "Update Password",
-                save_changes_btn: "Save Changes",
-                update_password_btn: "Update Password",
-                name_placeholder: "Your Name (e.g., John)",
-                phone_placeholder: "Mobile Number (e.g., 01012345678)",
-                password_placeholder: "Password",
-                confirm_password_placeholder: "Confirm Password",
-                confirm_new_password_placeholder: "Confirm New Password",
-                new_password_placeholder: "New Password",
-                current_password_placeholder: "Current Password",
-                address_placeholder: "Detailed Address",
-                subtotal_text: "Subtotal",
-                delivery_text: "Delivery",
-                service_text: "Service Charge",
-                cod_fee_text: "Cash on Delivery Fee",
-                payment_method_text: "Payment Method",
-                pay_cod: "Cash",
-                pay_card: "Card",
-                pay_wallet: "Wallet",
-                method_cod_label: "Cash on Delivery",
-                method_card_label: "Bank Card",
-                method_wallet_label: "Electronic Wallet",
-                final_total_text: "Final Total",
-                phone_already_registered: "This number is already registered.",
-                phone_not_registered: "This number is not registered.",
-                wrong_password: "Incorrect password.",
-                passwords_not_match: "Passwords do not match.",
-                fill_all_fields: "Please fill all required fields correctly.",
-                profile_updated: "Profile updated successfully.",
-                password_updated: "Password updated successfully.",
-                current_password_incorrect: "Current password is incorrect."
-            }
-        };
-
-        function escapeHTML(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function showCustomAlert(msg) {
-            document.getElementById('customAlertMessage').innerText = escapeHTML(msg);
-            document.getElementById('customAlertModal').classList.remove('hidden');
-        }
-
-        function closeCustomAlert() {
-            document.getElementById('customAlertModal').classList.add('hidden');
-        }
-
-        function changeLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('app_lang', lang);
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('langSelectOrders').value = lang;
-
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                let key = el.getAttribute('data-i18n');
-                if (translations[lang][key]) {
-                    el.innerText = translations[lang][key];
-                }
-            });
-
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                let key = el.getAttribute('data-i18n-placeholder');
-                if (translations[lang][key]) {
-                    el.placeholder = translations[lang][key];
-                }
-            });
-
-            if (typeof categories !== 'undefined') loadCategoriesBar();
-            if (typeof menuItems !== 'undefined') loadMenu();
-            updateCartBar();
-        }
-
         const urlParams = new URLSearchParams(window.location.search);
-        const restaurant = escapeHTML(urlParams.get('restaurant') || 'default');
-        document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
+        const restaurantId = urlParams.get('restaurant') || 'default';
+        const tableNum = urlParams.get('table');
 
-        const table = escapeHTML(urlParams.get('table') || '');
-        const isOnline = !table || table === 'online';
-        let orderType = isOnline ? (currentLang === 'ar' ? 'أونلاين' : 'Online') : (currentLang === 'ar' ? 'صالة' : 'Dine-In');
-        document.getElementById('orderTypeBadge').innerText = `${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}: ${orderType}`;
-        document.getElementById('tableDisplayBadge').innerText = isOnline ? (currentLang === 'ar' ? 'توصيل دليفري' : 'Delivery') : `Table: ${table}`;
+        let restaurantData = null;
+        let selectedCategory = 'all';
+        let cart = [];
+        let userTheme = localStorage.getItem('user_app_theme') || 'dark';
 
-        let menuItems = [];
-        let categories = [];
-        let currentUser = JSON.parse(localStorage.getItem(`current_client_${restaurant}`)) || null;
-        let cart = JSON.parse(localStorage.getItem(`cart_${restaurant}`)) || {};
-        let selectedCategory = 'All';
-        let activeOrderUnsubscribe = null;
-
-        function setPaymentMethod(method) {
-            selectedPaymentMethod = method;
-            document.getElementById('payMethodCod').classList.remove('active');
-            document.getElementById('payMethodCard').classList.remove('active');
-            document.getElementById('payMethodWallet').classList.remove('active');
-
-            if (method === 'cod') document.getElementById('payMethodCod').classList.add('active');
-            else if (method === 'card') document.getElementById('payMethodCard').classList.add('active');
-            else if (method === 'wallet') document.getElementById('payMethodWallet').classList.add('active');
-
-            updateCartBar();
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        window.addEventListener('firebase-loaded', async () => {
-            try {
-                const restDocRef = window.firebaseModules.doc(window.db, "restaurants", restaurant);
-                const restSnap = await window.firebaseModules.getDoc(restDocRef);
-                if (restSnap.exists()) {
-                    let restData = restSnap.data();
-                    if (restData.primaryColor && !localStorage.getItem('app_theme')) {
-                        document.documentElement.style.setProperty('--primary', restData.primaryColor);
-                    }
-                    if (restData.logo) {
-                        let logoImg = document.getElementById('headerLogoImg');
-                        logoImg.src = escapeHTML(restData.logo);
-                        logoImg.style.display = 'block';
-                    }
-                    if (restData.categories) categories = restData.categories;
-                    if (restData.items) menuItems = restData.items;
-                }
-            } catch(e) { console.error(e); }
+        function toggleUserTheme() {
+            userTheme = userTheme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('user_app_theme', userTheme);
+            applyThemeUI();
+        }
 
-            if(categories.length === 0) categories = ["مشروبات / Drinks", "أكلات / Foods"];
-            loadCategoriesBar();
-            loadMenu();
-
-            if (!currentUser) {
-                document.getElementById('authModal').classList.remove('hidden');
+        function applyThemeUI() {
+            if (userTheme === 'light') {
+                document.documentElement.setAttribute('data-user-theme', 'light');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun';
             } else {
-                document.getElementById('authModal').classList.add('hidden');
-                if (isOnline && !currentUser.address) {
-                    let promptAddress = prompt(currentLang === 'ar' ? 'برجاء إدخال عنوان التوصيل بالتفصيل:' : 'Please enter your delivery address:');
-                    if (promptAddress) {
-                        currentUser.address = escapeHTML(promptAddress);
-                        localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
-                        updateUserInFirestore(currentUser);
-                    }
-                }
-                listenLiveOrders();
+                document.documentElement.removeAttribute('data-user-theme');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon';
             }
-            updateCartBar();
-            changeLanguage(currentLang);
+        }
+
+        window.addEventListener('firebase-ready-orders', () => {
+            applyThemeUI();
+            if (tableNum) {
+                document.getElementById('tableDisplay').innerText = `طاولة رقم ${tableNum}`;
+                document.getElementById('orderTypeSelect').value = 'dine_in';
+            } else {
+                document.getElementById('tableDisplay').innerText = `طلب أونلاين`;
+            }
+
+            // Real-Time Listen Brand Colors & Menu
+            window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", restaurantId), (docSnap) => {
+                if (docSnap.exists()) {
+                    restaurantData = docSnap.data();
+                    
+                    // Inject Brand Colors
+                    let root = document.documentElement;
+                    if (restaurantData.primaryColor) root.style.setProperty('--primary', restaurantData.primaryColor);
+                    if (restaurantData.secondaryColor) root.style.setProperty('--secondary', restaurantData.secondaryColor);
+                    if (restaurantData.accentColor) root.style.setProperty('--accent', restaurantData.accentColor);
+                    if (restaurantData.bgColor) root.style.setProperty('--bg-color', restaurantData.bgColor);
+                    if (restaurantData.surfaceColor) root.style.setProperty('--surface-color', restaurantData.surfaceColor);
+                    if (restaurantData.textColor) root.style.setProperty('--text-color', restaurantData.textColor);
+
+                    document.getElementById('restName').innerText = restaurantId.toUpperCase();
+                    if (restaurantData.logo) {
+                        let logo = document.getElementById('restLogo');
+                        logo.src = restaurantData.logo; logo.style.display = 'block';
+                    }
+
+                    renderCategories();
+                    renderItems();
+                }
+            });
         });
 
-        async function updateUserInFirestore(userObj) {
-            try {
-                await window.firebaseModules.setDoc(window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, userObj.phone), userObj, { merge: true });
-            } catch(e) { console.error(e); }
-        }
-
-        function showAuthForm(view) {
-            document.getElementById('authChoiceView').classList.add('hidden');
-            document.getElementById('loginFormView').classList.add('hidden');
-            document.getElementById('registerFormView').classList.add('hidden');
-            document.getElementById('forgotFormView').classList.add('hidden');
-            document.getElementById('editProfileFormView').classList.add('hidden');
-            document.getElementById('changePasswordFormView').classList.add('hidden');
-
-            if (view === 'choice') {
-                document.getElementById('authChoiceView').classList.remove('hidden');
-            } else if (view === 'login') {
-                document.getElementById('loginFormView').classList.remove('hidden');
-            } else if (view === 'register') {
-                document.getElementById('registerFormView').classList.remove('hidden');
-                if (!isOnline) {
-                    document.getElementById('regAddress').style.display = 'none';
-                }
-            } else if (view === 'forgot') {
-                document.getElementById('forgotFormView').classList.remove('hidden');
-            }
-        }
-
-        function toggleEditProfile(show) {
-            if (show) {
-                document.getElementById('authModal').classList.remove('hidden');
-                document.getElementById('authChoiceView').classList.add('hidden');
-                document.getElementById('editProfileFormView').classList.remove('hidden');
-                document.getElementById('editName').value = currentUser.name || '';
-                document.getElementById('editAddress').value = currentUser.address || '';
-                toggleHistory(false);
-            } else {
-                document.getElementById('editProfileFormView').classList.add('hidden');
-                document.getElementById('authModal').classList.add('hidden');
-            }
-        }
-
-        function toggleChangePassword(show) {
-            if (show) {
-                document.getElementById('authModal').classList.remove('hidden');
-                document.getElementById('authChoiceView').classList.add('hidden');
-                document.getElementById('changePasswordFormView').classList.remove('hidden');
-                document.getElementById('currentPassword').value = '';
-                document.getElementById('newPassword').value = '';
-                document.getElementById('confirmNewPassword').value = '';
-                toggleHistory(false);
-            } else {
-                document.getElementById('changePasswordFormView').classList.add('hidden');
-                document.getElementById('authModal').classList.add('hidden');
-            }
-        }
-
-        async function processRegister() {
-            let name = escapeHTML(document.getElementById('regName').value.trim());
-            let phone = escapeHTML(document.getElementById('regPhone').value.trim());
-            let password = document.getElementById('regPassword').value.trim();
-            let confirmPassword = document.getElementById('regConfirmPassword').value.trim();
-            let address = isOnline ? escapeHTML(document.getElementById('regAddress').value.trim()) : `Dine-In Table ${table}`;
-
-            if (!name || phone.length < 10 || !password || !confirmPassword) {
-                showCustomAlert(translations[currentLang].fill_all_fields);
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                showCustomAlert(translations[currentLang].passwords_not_match);
-                return;
-            }
-
-            try {
-                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, phone);
-                let userSnap = await window.firebaseModules.getDoc(userRef);
-
-                if (userSnap.exists()) {
-                    showCustomAlert(translations[currentLang].phone_already_registered);
-                    return;
-                }
-
-                let newUser = {
-                    name,
-                    phone,
-                    password,
-                    address,
-                    createdAt: new Date().toISOString()
-                };
-
-                await window.firebaseModules.setDoc(userRef, newUser);
-
-                currentUser = { name, phone, address };
-                localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
-                
-                document.getElementById('authModal').classList.add('hidden');
-                loadCategoriesBar();
-                loadMenu();
-                listenLiveOrders();
-            } catch(e) {
-                showCustomAlert(e.message);
-            }
-        }
-
-        async function processLogin() {
-            let phone = escapeHTML(document.getElementById('loginPhone').value.trim());
-            let password = document.getElementById('loginPassword').value.trim();
-
-            if (!phone || !password) {
-                showCustomAlert(translations[currentLang].fill_all_fields);
-                return;
-            }
-
-            try {
-                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, phone);
-                let userSnap = await window.firebaseModules.getDoc(userRef);
-
-                if (!userSnap.exists()) {
-                    showCustomAlert(translations[currentLang].phone_not_registered);
-                    return;
-                }
-
-                let userData = userSnap.data();
-                if (userData.password !== password) {
-                    showCustomAlert(translations[currentLang].wrong_password);
-                    return;
-                }
-
-                currentUser = { name: userData.name, phone: userData.phone, address: userData.address || (isOnline ? '' : `Dine-In Table ${table}`) };
-                localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
-                
-                document.getElementById('authModal').classList.add('hidden');
-                loadCategoriesBar();
-                loadMenu();
-                listenLiveOrders();
-            } catch(e) {
-                showCustomAlert(e.message);
-            }
-        }
-
-        async function processForgotPassword() {
-            let phone = escapeHTML(document.getElementById('forgotPhone').value.trim());
-            let newPassword = document.getElementById('forgotNewPassword').value.trim();
-            let confirmNewPassword = document.getElementById('forgotConfirmPassword').value.trim();
-
-            if (!phone || !newPassword || !confirmNewPassword) {
-                showCustomAlert(translations[currentLang].fill_all_fields);
-                return;
-            }
-
-            if (newPassword !== confirmNewPassword) {
-                showCustomAlert(translations[currentLang].passwords_not_match);
-                return;
-            }
-
-            try {
-                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, phone);
-                let userSnap = await window.firebaseModules.getDoc(userRef);
-
-                if (!userSnap.exists()) {
-                    showCustomAlert(translations[currentLang].phone_not_registered);
-                    return;
-                }
-
-                await window.firebaseModules.updateDoc(userRef, { password: newPassword });
-                showCustomAlert(translations[currentLang].password_updated);
-                showAuthForm('login');
-            } catch(e) {
-                showCustomAlert(e.message);
-            }
-        }
-
-        async function processEditProfile() {
-            let name = escapeHTML(document.getElementById('editName').value.trim());
-            let address = escapeHTML(document.getElementById('editAddress').value.trim());
-
-            if (!name) {
-                showCustomAlert(translations[currentLang].fill_all_fields);
-                return;
-            }
-
-            try {
-                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
-                await window.firebaseModules.updateDoc(userRef, { name, address });
-
-                currentUser.name = name;
-                currentUser.address = address;
-                localStorage.setItem(`current_client_${restaurant}`, JSON.stringify(currentUser));
-
-                showCustomAlert(translations[currentLang].profile_updated);
-                toggleEditProfile(false);
-            } catch(e) {
-                showCustomAlert(e.message);
-            }
-        }
-
-        async function processChangePassword() {
-            let currentPassword = document.getElementById('currentPassword').value.trim();
-            let newPassword = document.getElementById('newPassword').value.trim();
-            let confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
-
-            if (!currentPassword || !newPassword || !confirmNewPassword) {
-                showCustomAlert(translations[currentLang].fill_all_fields);
-                return;
-            }
-
-            if (newPassword !== confirmNewPassword) {
-                showCustomAlert(translations[currentLang].passwords_not_match);
-                return;
-            }
-
-            try {
-                let userRef = window.firebaseModules.doc(window.db, `restaurants/${restaurant}/users`, currentUser.phone);
-                let userSnap = await window.firebaseModules.getDoc(userRef);
-
-                if (!userSnap.exists() || userSnap.data().password !== currentPassword) {
-                    showCustomAlert(translations[currentLang].current_password_incorrect);
-                    return;
-                }
-
-                await window.firebaseModules.updateDoc(userRef, { password: newPassword });
-                showCustomAlert(translations[currentLang].password_updated);
-                toggleChangePassword(false);
-            } catch(e) {
-                showCustomAlert(e.message);
-            }
-        }
-
-        function logoutClient() {
-            if (activeOrderUnsubscribe) {
-                activeOrderUnsubscribe();
-                activeOrderUnsubscribe = null;
-            }
-            localStorage.removeItem(`current_client_${restaurant}`);
-            location.reload();
-        }
-
-        function toggleHistory(show) {
-            let modal = document.getElementById('historyModal');
-            if (show) { renderClientHistory(); modal.classList.remove('hidden'); }
-            else { modal.classList.add('hidden'); }
-        }
-
-        async function renderClientHistory() {
-            let container = document.getElementById('historyListContainer');
-            container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">جاري التحميل...</p>`;
-
-            try {
-                let q = window.firebaseModules.query(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), window.firebaseModules.where("client.phone", "==", currentUser.phone));
-                let querySnapshot = await window.firebaseModules.getDocs(q);
-                let myOrders = [];
-                querySnapshot.forEach(d => myOrders.push({ id: d.id, ...d.data() }));
-
-                if (myOrders.length === 0) {
-                    container.innerHTML = `<p style="color: var(--gray); text-align: center; padding: 20px; font-size: 13px;">لا توجد طلبات سابقة.</p>`;
-                    return;
-                }
-
-                myOrders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-                container.innerHTML = myOrders.map(o => {
-                    let sub = o.subtotal || 0;
-                    let fee = o.fees || 0;
-                    let codFee = o.codFee || 0;
-                    let feeLabel = (o.orderType === 'Delivery' || o.orderType === 'أونلاين') ? translations[currentLang].delivery_text : translations[currentLang].service_text;
-                    let itemsHtml = (o.items || []).map(i => `${escapeHTML(i.name)} × ${i.qty || i.quantity || 1}`).join('، ');
-                    let payMethodStr = o.paymentMethod === 'card' ? translations[currentLang].method_card_label : (o.paymentMethod === 'wallet' ? translations[currentLang].method_wallet_label : translations[currentLang].method_cod_label);
-
-                    return `
-                        <div class="history-item-row">
-                            <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px;">
-                                <span>طلب #${escapeHTML(String(o.id).slice(-4))}</span>
-                                <span style="color: var(--warning);">${escapeHTML(o.status || 'قيد المعالجة')}</span>
-                            </div>
-                            <div style="color: var(--gray); font-size: 11px; margin-bottom: 6px;">${o.createdAt ? new Date(o.createdAt).toLocaleString() : ''}</div>
-                            <div style="border-top: 1px solid var(--border); padding-top: 6px; font-size: 12px; margin-bottom: 6px;">
-                                ${itemsHtml}
-                            </div>
-                            <div style="font-size: 11px; color: var(--gray); line-height: 1.5;">
-                                ${translations[currentLang].subtotal_text}: ${sub.toFixed(1)} ج.م<br>
-                                ${feeLabel}: ${fee.toFixed(1)} ج.م
-                                ${codFee > 0 ? `<br>${translations[currentLang].cod_fee_text}: ${codFee} ج.م` : ''}<br>
-                                ${translations[currentLang].payment_method_text}: ${payMethodStr}
-                            </div>
-                            <div style="margin-top: 8px; font-weight: 800; color: var(--secondary);">${translations[currentLang].final_total_text}: ${o.total} ج.م</div>
-                        </div>
-                    `;
-                }).join('');
-            } catch(e) {
-                container.innerHTML = `<p style="color: var(--primary); text-align: center; padding: 20px; font-size: 13px;">فشل تحميل الطلبات.</p>`;
-            }
-        }
-
-        function loadCategoriesBar() {
-            let container = document.getElementById('categoriesRowContainer');
-            let html = `<button class="cat-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="filterCategory('All', this)">${translations[currentLang].all_cat}</button>`;
-            categories.forEach(cat => {
-                html += `<button class="cat-btn ${selectedCategory === cat ? 'active' : ''}" onclick="filterCategory('${escapeHTML(cat)}', this)">${escapeHTML(cat)}</button>`;
+        function renderCategories() {
+            let container = document.getElementById('categoriesScroll');
+            let cats = restaurantData.categories || [];
+            let html = `<div class="cat-chip ${selectedCategory==='all'?'active':''}" onclick="setCategory('all')">الكل</div>`;
+            cats.forEach(c => {
+                html += `<div class="cat-chip ${selectedCategory===c?'active':''}" onclick="setCategory('${c.replace(/'/g, "\\'")}')">${escapeHtml(c)}</div>`;
             });
             container.innerHTML = html;
         }
 
-        function filterCategory(cat, btn) {
+        function setCategory(cat) {
             selectedCategory = cat;
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            loadMenu();
+            renderCategories();
+            renderItems();
         }
 
-        function loadMenu() {
-            let container = document.getElementById('customerMenuGrid');
-            let filtered = selectedCategory === 'All' ? menuItems : menuItems.filter(i => i.category === selectedCategory);
+        function filterItems() {
+            renderItems();
+        }
+
+        function renderItems() {
+            let container = document.getElementById('itemsGrid');
+            let search = document.getElementById('searchInput').value.toLowerCase().trim();
+            let items = restaurantData.items || [];
+
+            let filtered = items.filter(i => {
+                let matchCat = selectedCategory === 'all' || i.category === selectedCategory;
+                let matchSearch = !search || i.name.toLowerCase().includes(search);
+                return matchCat && matchSearch;
+            });
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); grid-column: span 2; text-align: center; padding: 20px; font-size: 13px;">لا توجد أصناف متاحة.</p>`;
+                container.innerHTML = '<p class="empty-cart" style="grid-column: 1/-1;">لا توجد أصناف مطابقة</p>';
                 return;
             }
 
             container.innerHTML = filtered.map(item => {
-                let price = item.discount ? (item.price - item.discount) : item.price;
-                let qty = cart[item.id] ? cart[item.id].quantity : 0;
-
+                let finalPrice = item.price - (item.discount || 0);
                 return `
-                    <div class="menu-card">
-                        <img src="${escapeHTML(item.img || 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500')}" alt="${escapeHTML(item.name)}">
-                        <div class="menu-content">
-                            <div class="menu-title">${escapeHTML(item.name)}</div>
-                            <div class="menu-price">${price} ج.م</div>
-                        </div>
-                        <div class="menu-footer">
-                            ${qty === 0 ? `
-                                <button class="add-initial-btn" onclick="updateCartItem('${item.id}', 1)">${translations[currentLang].add_btn}</button>
-                            ` : `
-                                <div class="qty-controls">
-                                    <button class="qty-btn" onclick="updateCartItem('${item.id}', -1)"><i class="fa-solid fa-minus"></i></button>
-                                    <span class="qty-num">${qty}</span>
-                                    <button class="qty-btn" onclick="updateCartItem('${item.id}', 1)"><i class="fa-solid fa-plus"></i></button>
-                                </div>
-                            `}
+                    <div class="item-card">
+                        <img src="${escapeHtml(item.img)}" class="item-img" alt="" loading="lazy">
+                        <div class="item-details">
+                            <div>
+                                <div class="item-title">${escapeHtml(item.name)}</div>
+                                <div class="item-price">${finalPrice} ج.م ${item.discount ? `<small style="text-decoration:line-through; color:var(--text-muted); font-size:12px;">${item.price}</small>` : ''}</div>
+                            </div>
+                            <button class="add-btn" onclick="addToCart(${item.id})"><i class="fa-solid fa-plus"></i> إضافة للسلّة</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function updateCartItem(itemId, change) {
-            let item = menuItems.find(i => i.id == itemId);
+        function addToCart(itemId) {
+            let item = restaurantData.items.find(i => i.id == itemId);
             if (!item) return;
 
-            let finalPrice = item.discount ? (item.price - item.discount) : item.price;
-
-            if (!cart[itemId]) {
-                if (change > 0) {
-                    cart[itemId] = {
-                        id: item.id,
-                        name: item.name,
-                        price: finalPrice,
-                        quantity: 1,
-                        qty: 1
-                    };
-                }
+            let existing = cart.find(c => c.id == itemId);
+            if (existing) {
+                existing.quantity++;
             } else {
-                cart[itemId].quantity += change;
-                cart[itemId].qty = cart[itemId].quantity;
-                if (cart[itemId].quantity <= 0) {
-                    delete cart[itemId];
-                }
+                let price = item.price - (item.discount || 0);
+                cart.push({ id: item.id, name: item.name, price: price, quantity: 1 });
             }
-
-            localStorage.setItem(`cart_${restaurant}`, JSON.stringify(cart));
-            loadMenu();
-            updateCartBar();
+            updateCartUI();
         }
 
-        function updateCartBar() {
-            let cartBar = document.getElementById('cartBar');
-            let breakdown = document.getElementById('cartBreakdown');
-            let totalElem = document.getElementById('cartTotal');
+        function updateCartUI() {
+            let count = cart.reduce((acc, item) => acc + item.quantity, 0);
+            let total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-            let keys = Object.keys(cart);
-            if (keys.length === 0) {
-                cartBar.classList.add('hidden');
+            document.getElementById('cartCount').innerText = count;
+            document.getElementById('cartTotalBar').innerText = `${total} ج.م`;
+            document.getElementById('modalTotalAmount').innerText = `${total} ج.م`;
+
+            if (count > 0) {
+                document.getElementById('cartBar').classList.remove('hidden');
+            } else {
+                document.getElementById('cartBar').classList.add('hidden');
+                closeCartModal();
+            }
+
+            renderCartItems();
+        }
+
+        function renderCartItems() {
+            let container = document.getElementById('cartItemsList');
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="empty-cart">السلة فارغة</p>';
                 return;
             }
 
-            cartBar.classList.remove('hidden');
-            let subtotal = 0;
-            let itemsCount = 0;
-
-            keys.forEach(k => {
-                subtotal += cart[k].price * cart[k].quantity;
-                itemsCount += cart[k].quantity;
-            });
-
-            let deliveryFee = isOnline ? 40 : 0;
-            let serviceFee = !isOnline ? subtotal * 0.1 : 0;
-            let codFee = (isOnline && selectedPaymentMethod === 'cod') ? 20 : 0;
-            let finalTotal = subtotal + deliveryFee + serviceFee + codFee;
-
-            let payMethodName = selectedPaymentMethod === 'card' ? translations[currentLang].method_card_label : (selectedPaymentMethod === 'wallet' ? translations[currentLang].method_wallet_label : translations[currentLang].method_cod_label);
-
-            breakdown.innerHTML = `
-                ${itemsCount} أصناف | ${translations[currentLang].subtotal_text}: ${subtotal.toFixed(1)} ج.م<br>
-                ${isOnline ? `${translations[currentLang].delivery_text}: ${deliveryFee} ج.م` : `${translations[currentLang].service_text} (10%): ${serviceFee.toFixed(1)} ج.م`}
-                ${codFee > 0 ? `<br>${translations[currentLang].cod_fee_text}: ${codFee} ج.م` : ''}
-                <br>${translations[currentLang].payment_method_text}: <strong>${payMethodName}</strong>
-            `;
-            totalElem.innerText = `${finalTotal.toFixed(1)} ج.م`;
+            container.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div>
+                        <div style="font-weight:700;">${escapeHtml(item.name)}</div>
+                        <div style="color:var(--secondary); font-size:13px;">${item.price * item.quantity} ج.م</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                        <span style="font-weight:700;">${item.quantity}</span>
+                        <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
+        function changeQty(itemId, delta) {
+            let item = cart.find(c => c.id == itemId);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    cart = cart.filter(c => c.id != itemId);
+                }
+            }
+            updateCartUI();
+        }
+
+        function toggleAddressField() {
+            let type = document.getElementById('orderTypeSelect').value;
+            let group = document.getElementById('addressGroup');
+            if (type === 'delivery') group.classList.remove('hidden');
+            else group.classList.add('hidden');
+        }
+
+        function openCartModal() { document.getElementById('cartModal').classList.add('active'); }
+        function closeCartModal() { document.getElementById('cartModal').classList.remove('active'); }
+
         async function submitOrder() {
-            let keys = Object.keys(cart);
-            if (keys.length === 0) return;
+            let name = document.getElementById('custName').value.trim();
+            let phone = document.getElementById('custPhone').value.trim();
+            let orderType = document.getElementById('orderTypeSelect').value;
+            let address = document.getElementById('custAddress').value.trim();
+            let notes = document.getElementById('orderNotes').value.trim();
+            let total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-            let subtotal = 0;
-            let orderItemsList = [];
-            keys.forEach(k => {
-                subtotal += cart[k].price * cart[k].quantity;
-                orderItemsList.push({
-                    id: cart[k].id,
-                    name: cart[k].name,
-                    price: cart[k].price,
-                    quantity: cart[k].quantity,
-                    qty: cart[k].quantity
-                });
-            });
+            if (!name || !phone) return alert('الرجاء إدخال الاسم ورقم الهاتف');
+            if (orderType === 'delivery' && !address) return alert('الرجاء إدخال عنوان التوصيل');
 
-            let deliveryFee = isOnline ? 40 : 0;
-            let serviceFee = !isOnline ? subtotal * 0.1 : 0;
-            let codFee = (isOnline && selectedPaymentMethod === 'cod') ? 20 : 0;
-            let finalTotal = subtotal + deliveryFee + serviceFee + codFee;
-
-            let now = new Date();
-            let dateStr = now.toISOString().split('T')[0];
-            let timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+            let btn = document.getElementById('submitOrderBtn');
+            btn.disabled = true; btn.innerText = 'جاري الإرسال...';
 
             let orderData = {
-                restaurant,
-                client: currentUser,
-                items: orderItemsList,
-                orderType: isOnline ? 'Delivery' : 'Dine-In',
-                type: isOnline ? 'أونلاين' : 'صالة',
-                table: table || 'Online',
-                subtotal,
-                fees: isOnline ? deliveryFee : serviceFee,
-                serviceFee: isOnline ? deliveryFee : serviceFee,
-                codFee,
-                paymentMethod: selectedPaymentMethod,
-                total: finalTotal,
-                status: 'قيد المعالجة',
-                date: dateStr,
-                time: timeStr,
-                createdAt: now.toISOString()
+                restaurant: restaurantId,
+                table: tableNum || 'عام',
+                customerName: name,
+                customerPhone: phone,
+                orderType: orderType,
+                address: address || '',
+                notes: notes || '',
+                items: cart,
+                total: total,
+                paymentMethod: 'cash',
+                status: 'pending',
+                createdAt: new Date().toISOString()
             };
 
             try {
-                let docRef = await window.firebaseModules.addDoc(window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`), orderData);
-                await window.firebaseModules.updateDoc(docRef, { id: docRef.id });
-
-                cart = {};
-                localStorage.removeItem(`cart_${restaurant}`);
-                updateCartBar();
-                loadMenu();
-                showCustomAlert(currentLang === 'ar' ? 'تم إرسال طلبك بنجاح! تابع حالته من قسم طلباتي.' : 'Order submitted successfully!');
-                listenLiveOrders();
+                let docRef = await window.FB.addDoc(window.FB.collection(window.FB.db, "orders"), orderData);
+                cart = [];
+                updateCartUI();
+                closeCartModal();
+                showStatusModal(docRef.id);
             } catch(e) {
-                showCustomAlert(currentLang === 'ar' ? 'حدث خطأ أثناء إرسال الطلب.' : 'Error submitting order.');
+                console.error("Order error:", e);
+                alert('حدث خطأ أثناء إرسال الطلب');
+            } finally {
+                btn.disabled = false; btn.innerText = 'إرسال الطلب الآن';
             }
         }
 
-        function listenLiveOrders() {
-            if (!currentUser) return;
-            if (activeOrderUnsubscribe) {
-                activeOrderUnsubscribe();
-                activeOrderUnsubscribe = null;
-            }
+        function showStatusModal(orderId) {
+            document.getElementById('submittedOrderId').innerText = `#${orderId.substring(0,6)}`;
+            document.getElementById('statusModal').classList.add('active');
 
-            try {
-                let q = window.firebaseModules.query(
-                    window.firebaseModules.collection(window.db, `restaurants/${restaurant}/orders`),
-                    window.firebaseModules.where("client.phone", "==", currentUser.phone)
-                );
-                
-                activeOrderUnsubscribe = window.firebaseModules.onSnapshot(q, (snapshot) => {
-                    let tracker = document.getElementById('liveOrderTrackerContainer');
-                    if (!tracker) return;
-
-                    let activeOrders = [];
-                    snapshot.forEach(d => {
-                        let data = d.data();
-                        let rawStatus = data.status ? String(data.status).trim() : '';
-                        
-                        if (rawStatus !== 'تم التسليم' && rawStatus !== 'ملغي' && rawStatus !== 'Delivered' && rawStatus !== 'Cancelled') {
-                            activeOrders.push({ id: data.id || d.id, ...data });
-                        }
-                    });
-
-                    if (activeOrders.length === 0) {
-                        tracker.innerHTML = "";
-                        return;
-                    }
-
-                    activeOrders.sort((a, b) => {
-                        let timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                        let timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                        return timeB - timeA;
-                    });
-
-                    let latest = activeOrders[0];
-                    tracker.innerHTML = `
-                        <div style="background: rgba(46, 213, 115, 0.15); border: 1px solid var(--secondary); padding: 12px; border-radius: 14px; margin-bottom: 14px; font-size: 13px; backdrop-filter: blur(10px);">
-                            <div style="font-weight: 700; color: var(--secondary); margin-bottom: 4px;"><i class="fa-solid fa-spinner fa-spin"></i> حالة طلبك الحالي: ${escapeHTML(latest.status || 'قيد المعالجة')}</div>
-                            <div style="color: var(--gray); font-size: 11px;">رقم الطلب: #${escapeHTML(String(latest.id || '').slice(-4))} | الإجمالي: ${escapeHTML(String(latest.total || 0))} ج.م</div>
-                        </div>
-                    `;
-                }, (error) => {
-                    console.error("Live orders snapshot error:", error);
-                });
-            } catch(e) { console.error(e); }
+            // Listen Live Order Status
+            window.FB.onSnapshot(window.FB.doc(window.FB.db, "orders", orderId), (docSnap) => {
+                if (docSnap.exists()) {
+                    let st = docSnap.data().status;
+                    let text = 'قيد الانتظار ⏳';
+                    if (st === 'preparing') text = 'جاري التجهيز بالمطبخ 👨‍🍳';
+                    if (st === 'ready') text = 'طلبك جاهز الآن! 🔔';
+                    if (st === 'delivered') text = 'تم التسليم بنجاح ✅';
+                    if (st === 'canceled') text = 'تم إلغاء الطلب ❌';
+                    document.getElementById('liveStatusText').innerText = text;
+                }
+            });
         }
 
-        window.addEventListener('beforeunload', () => {
-            if (activeOrderUnsubscribe) {
-                activeOrderUnsubscribe();
-            }
-        });
+        function closeStatusModal() { document.getElementById('statusModal').classList.remove('active'); }
     </script>
 </body>
 </html>
