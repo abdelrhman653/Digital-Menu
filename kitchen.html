@@ -1,9 +1,8 @@
-<!-- Source: 3 -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>شاشة المطبخ وإدارة الطلبات الذكية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,7 +10,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-      import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+      import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -25,7 +24,7 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
       window.db = db;
-      window.firestoreModules = { collection, onSnapshot, doc, updateDoc, getDoc };
+      window.firestoreModules = { collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy };
 
       window.dispatchEvent(new Event('firebase-loaded-kitchen'));
     </script>
@@ -87,7 +86,7 @@
         header h1 { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
         #headerRestaurantTitle { color: var(--warning); font-size: 15px; font-weight: 700; background: rgba(255, 165, 2, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255, 165, 2, 0.2); }
 
-        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
 
         /* Stats Bar */
         .stats-bar {
@@ -110,6 +109,7 @@
             display: flex;
             gap: 8px;
             margin-bottom: 15px;
+            overflow-x: auto;
         }
         .tab-btn {
             background: var(--dark-card);
@@ -129,6 +129,7 @@
             gap: 6px;
             transition: var(--transition);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            white-space: nowrap;
         }
         .tab-btn:hover { border-color: var(--gray); color: var(--white); transform: translateY(-1px); }
         .tab-btn.active {
@@ -172,24 +173,11 @@
             transition: var(--transition);
         }
         .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.15); }
-        .filter-row { display: flex; gap: 8px; }
-        .filter-select {
-            flex: 1;
-            background: var(--dark-bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 8px 10px;
-            color: var(--white);
-            font-size: 12px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .filter-select:focus { outline: none; border-color: var(--primary); }
 
         /* Modern Order Cards */
         #kitchenOrdersList {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 15px;
         }
 
@@ -210,11 +198,6 @@
         @keyframes fadeInCard {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        .order-card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
         }
 
         .order-header {
@@ -239,24 +222,6 @@
         .time-warning { background: rgba(255, 165, 2, 0.15); color: var(--warning); border: 1px solid rgba(255, 165, 2, 0.3); }
         .time-danger { background: rgba(255, 71, 87, 0.15); color: var(--primary); border: 1px solid rgba(255, 71, 87, 0.3); }
 
-        /* Customer & Details Grid */
-        .order-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .info-box {
-            background: rgba(13, 17, 23, 0.6);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            font-size: 12px;
-        }
-        .info-box-title { font-size: 10px; font-weight: 700; color: var(--gray); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .info-box-content { font-weight: 600; color: var(--white); word-break: break-word; }
-
         /* Items List */
         .order-items-container {
             background: rgba(13, 17, 23, 0.4);
@@ -278,690 +243,319 @@
         .item-qty { background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; color: var(--warning); }
         .item-price { font-weight: 700; color: var(--secondary); }
 
-        /* Payment Breakdown Box */
-        .payment-breakdown {
-            background: rgba(30, 144, 255, 0.05);
-            border: 1px solid rgba(30, 144, 255, 0.2);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            margin-bottom: 12px;
-            font-size: 12px;
-        }
-        .payment-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-        .payment-row:last-child { margin-bottom: 0; }
-        .payment-label { color: var(--gray); font-size: 11px; }
-        .payment-val { font-weight: 700; color: var(--white); }
-
-        /* Order Footer & Actions */
-        .order-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid var(--border);
-        }
-        .total-price-box { font-size: 14px; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 6px; }
-        .total-price-box span { font-size: 16px; }
-
-        .print-btn {
-            background: rgba(30, 144, 255, 0.15);
-            color: var(--info);
-            border: 1px solid rgba(30, 144, 255, 0.3);
-            padding: 6px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: var(--transition);
-        }
-        .print-btn:hover { background: rgba(30, 144, 255, 0.25); transform: translateY(-1px); }
-
         /* Status Action Buttons */
         .status-actions {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            gap: 4px;
             margin-top: 12px;
         }
         .status-btn {
             background: var(--dark-bg);
             color: var(--white);
             border: 1px solid var(--border);
-            padding: 8px 4px;
+            padding: 8px 2px;
             border-radius: var(--radius-sm);
             font-weight: 700;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
             text-align: center;
             transition: var(--transition);
         }
-        .status-btn:hover:not(:disabled) { border-color: var(--gray); transform: translateY(-1px); }
-        .status-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        
-        .status-btn.active-current { background: var(--warning); color: #000; border-color: var(--warning); box-shadow: 0 0 12px rgba(255, 165, 2, 0.4); font-weight: 900; }
-        .status-btn.ready-current { background: var(--info); color: #fff; border-color: var(--info); box-shadow: 0 0 12px rgba(30, 144, 255, 0.4); font-weight: 900; }
-        .status-btn.delivery-current { background: #9b59b6; color: #fff; border-color: #9b59b6; box-shadow: 0 0 12px rgba(155, 89, 182, 0.4); font-weight: 900; }
-        .status-btn.success-current { background: var(--secondary); color: #000; border-color: var(--secondary); box-shadow: 0 0 12px rgba(46, 213, 115, 0.4); font-weight: 900; }
-        .status-btn.cancel-current { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 0 12px rgba(255, 71, 87, 0.4); font-weight: 900; }
+        .status-btn:hover { border-color: var(--white); }
+        .status-btn.active { border-color: transparent; }
+        .status-btn.st-pending.active { background: var(--warning); color: #000; }
+        .status-btn.st-preparing.active { background: #3b82f6; color: #fff; }
+        .status-btn.st-ready.active { background: #8b5cf6; color: #fff; }
+        .status-btn.st-delivered.active { background: var(--secondary); color: #fff; }
+        .status-btn.st-canceled.active { background: var(--primary); color: #fff; }
 
-        .empty-state { color: var(--gray); text-align: center; padding: 50px 20px; font-size: 14px; background: var(--dark-card); border-radius: var(--radius-lg); border: 1px solid var(--border); }
-
-        @media (max-width: 600px) {
-            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-            .order-info-grid { grid-template-columns: 1fr; }
-            .status-actions { grid-template-columns: repeat(3, 1fr); }
-            header { padding: 12px 15px; }
+        .print-btn {
+            background: rgba(30, 144, 255, 0.15);
+            color: var(--info);
+            border: 1px solid rgba(30, 144, 255, 0.3);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
         }
+        .print-btn:hover { background: rgba(30, 144, 255, 0.25); }
+
+        .empty-kitchen { text-align: center; padding: 60px 20px; color: var(--gray); grid-column: 1/-1; }
+        .empty-kitchen i { font-size: 60px; margin-bottom: 15px; color: var(--border); }
+
+        /* Printable Receipt */
+        @media print {
+            body * { visibility: hidden !important; }
+            #kitchenReceiptArea, #kitchenReceiptArea * { visibility: visible !important; }
+            #kitchenReceiptArea {
+                position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important;
+                background: #fff !important; color: #000 !important; padding: 15px !important; font-family: monospace !important;
+            }
+        }
+        #kitchenReceiptArea { display: none; }
     </style>
 </head>
 <body>
 
-    <audio id="orderAlertSound" preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
-    </audio>
-
+    <!-- Header -->
     <header>
         <div class="header-brand">
-            <img id="headerLogoImg" class="header-logo" src="" alt="الشعار">
-            <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> <span data-i18n="kitchen_title">شاشة المطبخ</span></h1>
+            <img id="kitchenLogo" class="header-logo" src="" alt="Logo">
+            <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> شاشة المطبخ الذكية</h1>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <select id="langSelectKitchen" onchange="changeLanguage(this.value)" style="width: 100px; padding: 5px 8px; font-size: 12px; background: var(--dark-bg); color: #fff; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
-                <option value="ar">العربية 🇸🇦</option>
-                <option value="en">English 🇺🇸</option>
-            </select>
-            <div id="headerRestaurantTitle">مطعمي</div>
-        </div>
+        <div id="headerRestaurantTitle">جاري التحميل...</div>
     </header>
 
+    <div id="kitchenReceiptArea"></div>
+
     <div class="container">
+        
+        <!-- Stats -->
         <div class="stats-bar">
-            <div class="total-badge"><span data-i18n="total_orders">إجمالي الطلبات</span> <span id="totalOrdersCount">0</span></div>
-            <div class="total-badge" style="color: var(--warning);"><span data-i18n="active_orders">النشطة</span> <span id="activeCount">0</span></div>
-            <div class="total-badge" style="color: var(--secondary);"><span data-i18n="delivered_orders">تم التسليم</span> <span id="deliveredCount">0</span></div>
-            <div class="total-badge" style="color: var(--primary);"><span data-i18n="cancelled_orders">الملغاة</span> <span id="cancelledCount">0</span></div>
+            <div class="total-badge">نشطة<span id="statActive">0</span></div>
+            <div class="total-badge">قيد التجهيز<span id="statPreparing">0</span></div>
+            <div class="total-badge">مكتملة<span id="statDelivered">0</span></div>
+            <div class="total-badge">إجمالي اليوم<span id="statTotal">0</span></div>
         </div>
 
+        <!-- Tabs -->
         <div class="tabs-row">
-            <button class="tab-btn active" id="tabActive" onclick="switchTab('active')"><i class="fa-solid fa-hourglass-half"></i> <span data-i18n="tab_active">نشطة</span> (<span id="tabActiveCount">0</span>)</button>
-            <button class="tab-btn" id="tabDelivered" onclick="switchTab('delivered')"><i class="fa-solid fa-check"></i> <span data-i18n="tab_delivered">تم التسليم</span></button>
-            <button class="tab-btn" id="tabCancelled" onclick="switchTab('cancelled')"><i class="fa-solid fa-xmark"></i> <span data-i18n="tab_cancelled">تم الإلغاء</span></button>
+            <button class="tab-btn active" id="tabActive" onclick="setTab('active')"><i class="fa-solid fa-clock"></i> النشطة</button>
+            <button class="tab-btn delivered" id="tabDelivered" onclick="setTab('delivered')"><i class="fa-solid fa-check-circle"></i> المكتملة</button>
+            <button class="tab-btn cancelled" id="tabCanceled" onclick="setTab('canceled')"><i class="fa-solid fa-ban"></i> الملغية</button>
+            <button class="tab-btn" id="tabAll" onclick="setTab('all')"><i class="fa-solid fa-list"></i> الكل</button>
         </div>
 
+        <!-- Filter -->
         <div class="filter-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="بحث برقم الطلب، اسم العميل، رقم الطاولة، أو الهاتف..." oninput="handleSearchInput()">
-            <div class="filter-row">
-                <select id="dateFilter" class="filter-select" onchange="renderKitchenOrders()">
-                    <option value="all" data-i18n="all_dates">كل التواريخ</option>
-                </select>
-                <select id="timeFilter" class="filter-select" onchange="renderKitchenOrders()">
-                    <option value="all" data-i18n="all_times">كل الأوقات</option>
-                </select>
-            </div>
+            <input type="text" class="search-input" id="kitchenSearch" placeholder="بحث برقم الطلب، العميل، الطاولة..." onkeyup="renderKitchenOrders()">
         </div>
 
-        <div id="kitchenOrdersList"></div>
+        <!-- Orders Grid -->
+        <div id="kitchenOrdersList">
+            <!-- Dynamic Kitchen Cards -->
+        </div>
     </div>
 
+    <!-- Script Logic -->
     <script>
-        let currentLang = localStorage.getItem('app_lang') || 'ar';
-        const translations = {
-            ar: {
-                kitchen_title: "شاشة المطبخ",
-                total_orders: "إجمالي الطلبات",
-                active_orders: "النشطة",
-                delivered_orders: "تم التسليم",
-                cancelled_orders: "الملغاة",
-                tab_active: "نشطة",
-                tab_delivered: "تم التسليم",
-                tab_cancelled: "تم الإلغاء",
-                all_dates: "كل التواريخ",
-                all_times: "كل الأوقات",
-                search_placeholder: "بحث برقم الطلب، اسم العميل، الطاولة، أو الهاتف...",
-                print_receipt: "طباعة الوصل",
-                status_prep: "تحضير",
-                status_ready: "جاهز",
-                status_delivery: "دليفري",
-                status_success: "تسليم",
-                status_cancel: "إلغاء",
-                subtotal: "المجموع الفرعي",
-                total_final: "الإجمالي النهائي",
-                payment_method: "طريقة الدفع",
-                cod_fee: "رسوم الدفع عند الاستلام",
-                yes: "نعم",
-                no: "لا",
-                fee_amount: "قيمة الرسوم",
-                customer_info: "بيانات العميل",
-                order_details: "تفاصيل الطلب",
-                no_orders: "لا توجد طلبات في هذا القسم.",
-                currency: "ج.م"
-            },
-            en: {
-                kitchen_title: "Kitchen Display",
-                total_orders: "Total Orders",
-                active_orders: "Active",
-                delivered_orders: "Delivered",
-                cancelled_orders: "Cancelled",
-                tab_active: "Active",
-                tab_delivered: "Delivered",
-                tab_cancelled: "Cancelled",
-                all_dates: "All Dates",
-                all_times: "All Times",
-                search_placeholder: "Search order #, client name, table, phone...",
-                print_receipt: "Print Receipt",
-                status_prep: "Prep",
-                status_ready: "Ready",
-                status_delivery: "Delivery",
-                status_success: "Deliver",
-                status_cancel: "Cancel",
-                subtotal: "Subtotal",
-                total_final: "Final Total",
-                payment_method: "Payment Method",
-                cod_fee: "Cash on Delivery Fee",
-                yes: "Yes",
-                no: "No",
-                fee_amount: "Fee Amount",
-                customer_info: "Customer Info",
-                order_details: "Order Details",
-                no_orders: "No orders in this section.",
-                currency: "EGP"
-            }
-        };
-
         const urlParams = new URLSearchParams(window.location.search);
-        const restaurant = urlParams.get('restaurant') || 'default';
-        document.getElementById('headerRestaurantTitle').innerText = restaurant.toUpperCase();
+        const restaurantId = urlParams.get('restaurant') || 'default';
 
-        let restData = {};
         let currentTab = 'active';
-        let globalOrdersMap = new Map();
-        let isInitialSnapshot = true;
-        let searchDebounceTimer = null;
-        let isFirestoreInitialized = false;
+        let allKitchenOrders = [];
+        let previousOrdersCount = -1;
 
-        function escapeHTML(str) {
-            return String(str || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        window.addEventListener('firebase-loaded-kitchen', async () => {
+        function playNotificationSound() {
             try {
-                const restDocRef = window.firestoreModules.doc(window.db, "restaurants", restaurant);
-                const restSnap = await window.firestoreModules.getDoc(restDocRef);
-                if (restSnap.exists()) {
-                    restData = restSnap.data();
-                    if (restData.primaryColor) {
-                        document.documentElement.style.setProperty('--primary', restData.primaryColor);
-                    }
-                    if (restData.logo) {
-                        let logoImg = document.getElementById('headerLogoImg');
-                        logoImg.src = restData.logo;
-                        logoImg.style.display = 'block';
+                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                let osc = ctx.createOscillator();
+                let gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch(e){}
+        }
+
+        window.addEventListener('firebase-loaded-kitchen', () => {
+            document.getElementById('headerRestaurantTitle').innerText = restaurantId.toUpperCase();
+
+            // 1. Listen Brand Colors
+            const { doc, onSnapshot, collection, query, where, updateDoc } = window.firestoreModules;
+            
+            onSnapshot(doc(window.db, "restaurants", restaurantId), (docSnap) => {
+                if (docSnap.exists()) {
+                    let data = docSnap.data();
+                    let root = document.documentElement;
+                    if (data.primaryColor) root.style.setProperty('--primary', data.primaryColor);
+                    if (data.secondaryColor) root.style.setProperty('--secondary', data.secondaryColor);
+                    if (data.accentColor) root.style.setProperty('--warning', data.accentColor);
+                    if (data.bgColor) root.style.setProperty('--dark-bg', data.bgColor);
+                    if (data.surfaceColor) root.style.setProperty('--dark-card', data.surfaceColor);
+                    if (data.textColor) root.style.setProperty('--white', data.textColor);
+
+                    if (data.logo) {
+                        let logo = document.getElementById('kitchenLogo');
+                        logo.src = data.logo; logo.style.display = 'block';
                     }
                 }
-            } catch(e) { console.error(e); }
+            });
 
-            initFirestoreListener();
+            // 2. Real-Time Orders Listener
+            let q = query(collection(window.db, "orders"), where("restaurant", "==", restaurantId));
+            onSnapshot(q, (snapshot) => {
+                let temp = [];
+                snapshot.forEach(d => { temp.push({ id: d.id, ...d.data() }); });
+                temp.sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                
+                if (previousOrdersCount !== -1 && temp.length > previousOrdersCount) {
+                    playNotificationSound();
+                }
+                previousOrdersCount = temp.length;
+
+                allKitchenOrders = temp;
+                updateStats();
+                renderKitchenOrders();
+            });
         });
 
-        function changeLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('app_lang', lang);
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('langSelectKitchen').value = lang;
-
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                let key = el.getAttribute('data-i18n');
-                if (translations[lang][key]) {
-                    el.innerText = translations[lang][key];
-                }
+        function updateStats() {
+            let active = 0, preparing = 0, delivered = 0;
+            allKitchenOrders.forEach(o => {
+                if (['pending', 'preparing', 'ready', 'on_way'].includes(o.status)) active++;
+                if (o.status === 'preparing') preparing++;
+                if (o.status === 'delivered') delivered++;
             });
-            document.getElementById('searchInput').placeholder = translations[lang].search_placeholder;
-            updateStatsAndFilters();
-            renderKitchenOrders();
+            document.getElementById('statActive').innerText = active;
+            document.getElementById('statPreparing').innerText = preparing;
+            document.getElementById('statDelivered').innerText = delivered;
+            document.getElementById('statTotal').innerText = allKitchenOrders.length;
         }
 
-        function playOrderSound() {
-            let sound = document.getElementById('orderAlertSound');
-            if (sound) {
-                sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio play blocked by browser policy"));
-            }
-        }
-
-        function switchTab(tab) {
+        function setTab(tab) {
             currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(b => b.className = 'tab-btn');
-            let btn = document.getElementById(tab === 'active' ? 'tabActive' : (tab === 'delivered' ? 'tabDelivered' : 'tabCancelled'));
-            if (btn) {
-                btn.classList.add('active');
-                if (tab === 'delivered') btn.classList.add('delivered');
-                if (tab === 'cancelled') btn.classList.add('cancelled');
-            }
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if(tab === 'active') document.getElementById('tabActive').classList.add('active');
+            if(tab === 'delivered') document.getElementById('tabDelivered').classList.add('active');
+            if(tab === 'canceled') document.getElementById('tabCanceled').classList.add('active');
+            if(tab === 'all') document.getElementById('tabAll').classList.add('active');
             renderKitchenOrders();
-        }
-
-        function handleSearchInput() {
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => {
-                renderKitchenOrders();
-            }, 200);
-        }
-
-        function getTimeAgo(timestamp) {
-            if (!timestamp) return { text: currentLang === 'ar' ? 'منذ لحظات' : 'Just now', class: 'time-fresh' };
-            let diffSec = Math.floor((Date.now() - timestamp) / 1000);
-            if (diffSec < 60) return { text: currentLang === 'ar' ? 'منذ لحظات' : 'Just now', class: 'time-fresh' };
-            let diffMin = Math.floor(diffSec / 60);
-            if (diffMin < 60) {
-                let text = currentLang === 'ar' ? `منذ ${diffMin} دقيقة` : `${diffMin}m ago`;
-                let cls = diffMin > 20 ? 'time-danger' : (diffMin > 10 ? 'time-warning' : 'time-fresh');
-                return { text, class: cls };
-            }
-            let diffHour = Math.floor(diffMin / 60);
-            let text = currentLang === 'ar' ? `منذ ${diffHour} ساعة` : `${diffHour}h ago`;
-            return { text, class: 'time-danger' };
-        }
-
-        function updateStatsAndFilters() {
-            let orders = Array.from(globalOrdersMap.values());
-
-            let activeList = orders.filter(o => {
-                let st = o.status || '';
-                return st !== 'تم التسليم' && st !== 'ملغي' && st !== 'Delivered' && st !== 'Cancelled';
-            });
-            let deliveredList = orders.filter(o => o.status === 'تم التسليم' || o.status === 'Delivered');
-            let cancelledList = orders.filter(o => o.status === 'ملغي' || o.status === 'Cancelled');
-
-            document.getElementById('totalOrdersCount').innerText = orders.length;
-            document.getElementById('activeCount').innerText = activeList.length;
-            document.getElementById('deliveredCount').innerText = deliveredList.length;
-            document.getElementById('cancelledCount').innerText = cancelledList.length;
-            document.getElementById('tabActiveCount').innerText = activeList.length;
-
-            updateDateAndTimeFilters(orders);
-        }
-
-        function generateOrderCardHTML(order) {
-            let itemsHtml = '';
-            if (order.items && Array.isArray(order.items)) {
-                order.items.forEach(item => {
-                    let q = item.qty || item.quantity || 1;
-                    let p = item.price || 0;
-                    itemsHtml += `
-                        <div class="order-item-row">
-                            <span class="item-name"><span class="item-qty">x${q}</span> ${escapeHTML(item.name || '')}</span>
-                            <span class="item-price">${p * q} ${translations[currentLang].currency}</span>
-                        </div>
-                    `;
-                });
-            }
-
-            let clientName = order.client ? order.client.name : (currentLang === 'ar' ? 'عميل' : 'Client');
-            let clientPhone = order.client ? order.client.phone : '';
-            let clientAddress = order.client ? order.client.address : '';
-
-            let st = order.status || '';
-            let isLocked = (st === 'تم التسليم' || st === 'ملغي' || st === 'Delivered' || st === 'Cancelled');
-            
-            // Payment details extraction
-            let paymentMethod = escapeHTML(order.paymentMethod || order.payment || (currentLang === 'ar' ? 'نقدي (كاش)' : 'Cash'));
-            let feeVal = Number(order.serviceFee || order.fees || order.codFee || 0);
-            let hasCodFeeVal = feeVal > 0 ? (currentLang === 'ar' ? 'نعم' : 'Yes') : (currentLang === 'ar' ? 'لا' : 'No');
-
-            let timeInfo = getTimeAgo(order.timestamp || (order.createdAt ? new Date(order.createdAt).getTime() : null));
-
-            let btnPrepClass = (st === 'قيد التحضير' || st === 'Prep') ? 'status-btn active-current' : 'status-btn';
-            let btnReadyClass = (st === 'جاهز' || st === 'Ready') ? 'status-btn ready-current' : 'status-btn';
-            let btnDeliveryClass = (st === 'جاري التوصيل' || st === 'Delivery') ? 'status-btn delivery-current' : 'status-btn';
-            let btnSuccessClass = (st === 'تم التسليم' || st === 'Delivered') ? 'status-btn success-current' : 'status-btn';
-            let btnCancelClass = (st === 'ملغي' || st === 'Cancelled') ? 'status-btn cancel-current' : 'status-btn';
-
-            let shortId = escapeHTML(String(order.id || order.docId || '').slice(-4));
-            let orderType = escapeHTML(order.type || (currentLang === 'ar' ? 'صالة' : 'Dine-In'));
-            let tableNum = escapeHTML(order.table || '-');
-
-            return `
-                <div class="order-card" data-docid="${escapeHTML(order.docId)}">
-                    <div class="order-header">
-                        <div class="table-title">
-                            <i class="fa-solid fa-receipt"></i> ${orderType} (${tableNum})
-                        </div>
-                        <div class="order-meta">
-                            <span class="time-badge ${timeInfo.class}">${timeInfo.text}</span>
-                            <span><i class="fa-regular fa-calendar"></i> ${escapeHTML(order.date || '')}</span>
-                            <span><i class="fa-regular fa-clock"></i> ${escapeHTML(order.time || '')}</span>
-                            <span style="font-weight: 800; color: var(--white);">#${shortId}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="order-info-grid">
-                        <div class="info-box">
-                            <div class="info-box-title"><i class="fa-solid fa-user"></i> ${translations[currentLang].customer_info}</div>
-                            <div class="info-box-content">${escapeHTML(clientName)}<br><span style="color: var(--gray); font-size: 11px;">${escapeHTML(clientPhone)}</span></div>
-                        </div>
-                        ${clientAddress ? `
-                        <div class="info-box">
-                            <div class="info-box-title"><i class="fa-solid fa-location-dot"></i> العنوان</div>
-                            <div class="info-box-content" style="font-size: 11px;">${escapeHTML(clientAddress)}</div>
-                        </div>` : `
-                        <div class="info-box">
-                            <div class="info-box-title"><i class="fa-solid fa-bookmark"></i> الحالة الحالية</div>
-                            <div class="info-box-content" style="color: var(--warning);">${escapeHTML(st || (currentLang === 'ar' ? 'جديد' : 'New'))}</div>
-                        </div>`}
-                    </div>
-
-                    <div class="order-items-container">
-                        <div style="font-size: 11px; font-weight: 700; color: var(--gray); margin-bottom: 6px;"><i class="fa-solid fa-utensils"></i> ${translations[currentLang].order_details}</div>
-                        ${itemsHtml}
-                    </div>
-
-                    <div class="payment-breakdown">
-                        <div class="payment-row">
-                            <span class="payment-label">${translations[currentLang].payment_method}:</span>
-                            <span class="payment-val">${paymentMethod}</span>
-                        </div>
-                        <div class="payment-row">
-                            <span class="payment-label">${translations[currentLang].cod_fee} (${hasCodFeeVal}):</span>
-                            <span class="payment-val">${feeVal} ${translations[currentLang].currency}</span>
-                        </div>
-                    </div>
-
-                    <div class="order-footer">
-                        <div class="total-price-box">
-                            ${translations[currentLang].total_final}: <span>${order.total || 0}</span> ${translations[currentLang].currency}
-                        </div>
-                        <button class="print-btn" onclick="printReceipt('${escapeHTML(order.docId)}')"><i class="fa-solid fa-print"></i> ${translations[currentLang].print_receipt}</button>
-                    </div>
-
-                    <div class="status-actions">
-                        <button class="${btnPrepClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'قيد التحضير')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_prep}</button>
-                        <button class="${btnReadyClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'جاهز')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_ready}</button>
-                        <button class="${btnDeliveryClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'جاري التوصيل')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_delivery}</button>
-                        <button class="${btnSuccessClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'تم التسليم')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_success}</button>
-                        <button class="${btnCancelClass}" onclick="updateStatus('${escapeHTML(order.docId)}', 'ملغي')" ${isLocked ? 'disabled' : ''}>${translations[currentLang].status_cancel}</button>
-                    </div>
-                </div>
-            `;
         }
 
         function renderKitchenOrders() {
-            const container = document.getElementById('kitchenOrdersList');
-            if (!container) return;
+            let container = document.getElementById('kitchenOrdersList');
+            let search = document.getElementById('kitchenSearch').value.toLowerCase().trim();
 
-            let orders = Array.from(globalOrdersMap.values());
-            
-            let searchVal = document.getElementById('searchInput').value.trim().toLowerCase();
-            let dateVal = document.getElementById('dateFilter').value;
-            let timeVal = document.getElementById('timeFilter').value;
+            let filtered = allKitchenOrders.filter(o => {
+                let matchTab = true;
+                if (currentTab === 'active') matchTab = ['pending', 'preparing', 'ready', 'on_way'].includes(o.status);
+                else if (currentTab === 'delivered') matchTab = o.status === 'delivered';
+                else if (currentTab === 'canceled') matchTab = o.status === 'canceled';
 
-            let filtered = orders.filter(o => {
-                let st = o.status || '';
-                let isDel = (st === 'تم التسليم' || st === 'Delivered');
-                let isCan = (st === 'ملغي' || st === 'Cancelled');
-                if (currentTab === 'active') return !isDel && !isCan;
-                if (currentTab === 'delivered') return isDel;
-                if (currentTab === 'cancelled') return isCan;
-                return true;
-            });
+                let matchSearch = !search || 
+                    (o.id && o.id.toLowerCase().includes(search)) ||
+                    (o.customerName && o.customerName.toLowerCase().includes(search)) ||
+                    (o.table && String(o.table).includes(search));
 
-            if (searchVal) {
-                filtered = filtered.filter(o => 
-                    String(o.id || '').toLowerCase().includes(searchVal) ||
-                    String(o.docId || '').toLowerCase().includes(searchVal) ||
-                    (o.client && String(o.client.name || '').toLowerCase().includes(searchVal)) ||
-                    String(o.table || '').toLowerCase().includes(searchVal) ||
-                    (o.client && String(o.client.phone || '').includes(searchVal))
-                );
-            }
-
-            if (dateVal !== 'all') filtered = filtered.filter(o => o.date === dateVal);
-            if (timeVal !== 'all') filtered = filtered.filter(o => o.time === timeVal);
-
-            filtered.sort((a, b) => {
-                let timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                let timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                return timeB - timeA;
+                return matchTab && matchSearch;
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p class="empty-state"><i class="fa-solid fa-mug-hot" style="font-size: 24px; margin-bottom: 8px; display: block; color: var(--warning);"></i>${translations[currentLang].no_orders}</p>`;
+                container.innerHTML = `
+                    <div class="empty-kitchen">
+                        <i class="fa-solid fa-utensils"></i>
+                        <h3>لا توجد طلبات في هذا القسم حالياً</h3>
+                    </div>
+                `;
                 return;
             }
 
-            if (container.querySelector('.empty-state')) {
-                container.innerHTML = '';
-            }
+            container.innerHTML = filtered.map(o => {
+                let created = new Date(o.createdAt || Date.now());
+                let mins = Math.floor((new Date() - created) / 60000);
+                let timeClass = mins < 10 ? 'time-fresh' : (mins < 25 ? 'time-warning' : 'time-danger');
+                
+                let orderTypeText = o.orderType === 'delivery' ? 'دليفري' : (o.orderType === 'takeaway' ? 'تيك أواي' : `طاولة ${escapeHtml(o.table)}`);
 
-            const targetDocIds = new Set(filtered.map(o => String(o.docId)));
-            const existingCards = Array.from(container.querySelectorAll('.order-card'));
-            
-            existingCards.forEach(card => {
-                const docId = card.getAttribute('data-docid');
-                if (!targetDocIds.has(docId)) {
-                    card.remove();
-                }
-            });
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <div class="table-title"><i class="fa-solid fa-receipt"></i> #${escapeHtml(o.id.substring(0,6))}</div>
+                                <div style="font-size:12px; font-weight:700; color:var(--warning); margin-top:3px;">${orderTypeText}</div>
+                            </div>
+                            <div class="order-meta">
+                                <span class="time-badge ${timeClass}"><i class="fa-regular fa-clock"></i> منذ ${mins} دقيقة</span>
+                            </div>
+                        </div>
 
-            filtered.forEach((order, index) => {
-                const docId = String(order.docId);
-                let card = container.querySelector(`.order-card[data-docid="${docId}"]`);
-                const cardHtml = generateOrderCardHTML(order);
+                        <div style="font-size:12px; margin-bottom:10px; color:var(--gray);">
+                            <div><strong>العميل:</strong> ${escapeHtml(o.customerName || 'عام')} (${escapeHtml(o.customerPhone || '-')})</div>
+                            ${o.address ? `<div><strong>العنوان:</strong> ${escapeHtml(o.address)}</div>` : ''}
+                            ${o.notes ? `<div style="color:var(--primary);"><strong>ملاحظات:</strong> ${escapeHtml(o.notes)}</div>` : ''}
+                        </div>
 
-                if (!card) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = cardHtml;
-                    card = tempDiv.firstElementChild;
-                    
-                    const currentChildren = Array.from(container.children);
-                    if (index < currentChildren.length) {
-                        container.insertBefore(card, currentChildren[index]);
-                    } else {
-                        container.appendChild(card);
-                    }
-                } else {
-                    if (card.outerHTML !== cardHtml) {
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = cardHtml;
-                        const newCard = tempDiv.firstElementChild;
-                        card.replaceWith(newCard);
-                    } else {
-                        const currentChildren = Array.from(container.children);
-                        if (currentChildren[index] !== card) {
-                            container.insertBefore(card, currentChildren[index] || null);
-                        }
-                    }
-                }
-            });
+                        <div class="order-items-container">
+                            ${(o.items || []).map(i => `
+                                <div class="order-item-row">
+                                    <span class="item-name"><span class="item-qty">${i.quantity}x</span> ${escapeHtml(i.name)}</span>
+                                    <span class="item-price">${i.price * i.quantity} ج.م</span>
+                                </div>
+                            `).join('')}
+                        </div>
 
-            updateStatsAndFilters();
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <span style="font-size:12px; font-weight:700; color:var(--secondary);">الدفع: كاش (Cash)</span>
+                            <span style="font-size:15px; font-weight:900; color:var(--white);">${escapeHtml(o.total)} ج.م</span>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <button class="print-btn" onclick="printReceipt('${o.id}')"><i class="fa-solid fa-print"></i> طباعة الفاتورة</button>
+                        </div>
+
+                        <div class="status-actions">
+                            <button class="status-btn st-pending ${o.status==='pending'?'active':''}" onclick="changeStatus('${o.id}', 'pending')">انتظار</button>
+                            <button class="status-btn st-preparing ${o.status==='preparing'?'active':''}" onclick="changeStatus('${o.id}', 'preparing')">تجهيز</button>
+                            <button class="status-btn st-ready ${o.status==='ready'?'active':''}" onclick="changeStatus('${o.id}', 'ready')">جاهز</button>
+                            <button class="status-btn st-delivered ${o.status==='delivered'?'active':''}" onclick="changeStatus('${o.id}', 'delivered')">تسليم</button>
+                            <button class="status-btn st-canceled ${o.status==='canceled'?'active':''}" onclick="changeStatus('${o.id}', 'canceled')">إلغاء</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        function updateDateAndTimeFilters(orders) {
-            let dateSelect = document.getElementById('dateFilter');
-            let timeSelect = document.getElementById('timeFilter');
-            if (!dateSelect || !timeSelect) return;
-
-            let currentSelectedDate = dateSelect.value || 'all';
-            let currentSelectedTime = timeSelect.value || 'all';
-
-            let dates = [...new Set(orders.map(o => o.date).filter(Boolean))];
-            let times = [...new Set(orders.map(o => o.time).filter(Boolean))];
-
-            let dateHtml = `<option value="all">${translations[currentLang].all_dates}</option>`;
-            dates.forEach(d => { dateHtml += `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`; });
-
-            let timeHtml = `<option value="all">${translations[currentLang].all_times}</option>`;
-            times.forEach(t => { timeHtml += `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`; });
-
-            if (dateSelect.innerHTML !== dateHtml) {
-                dateSelect.innerHTML = dateHtml;
-                dateSelect.value = dates.includes(currentSelectedDate) ? currentSelectedDate : 'all';
-            }
-
-            if (timeSelect.innerHTML !== timeHtml) {
-                timeSelect.innerHTML = timeHtml;
-                timeSelect.value = times.includes(currentSelectedTime) ? currentSelectedTime : 'all';
-            }
-        }
-
-        async function updateStatus(docId, newStatus) {
-            let order = globalOrdersMap.get(String(docId));
-            if (!order) return;
-
-            let oldStatus = order.status;
-            if (oldStatus === newStatus) return;
-
-            order.status = newStatus;
-            updateStatsAndFilters();
-            renderKitchenOrders();
-
+        async function changeStatus(orderId, newStatus) {
             try {
                 const { doc, updateDoc } = window.firestoreModules;
-                const orderRef = doc(window.db, `restaurants/${restaurant}/orders`, String(docId));
-                await updateDoc(orderRef, { status: newStatus });
-            } catch (e) {
-                console.error("Error updating status: ", e);
-                order.status = oldStatus;
-                updateStatsAndFilters();
-                renderKitchenOrders();
+                await updateDoc(doc(window.db, "orders", orderId), { status: newStatus });
+            } catch(e) {
+                console.error("Status update error:", e);
             }
         }
 
         function printReceipt(orderId) {
-            let order = Array.from(globalOrdersMap.values()).find(o => String(o.docId) === String(orderId) || String(o.id) === String(orderId));
+            let order = allKitchenOrders.find(o => o.id === orderId);
             if (!order) return;
 
-            let logoImgHtml = restData.logo ? `<img src="${restData.logo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; display: block; margin: 0 auto 5px auto;">` : '';
-            let clientName = order.client ? order.client.name : '';
-            let clientPhone = order.client ? order.client.phone : '';
-            let clientAddress = order.client ? order.client.address : '';
-            let paymentMethod = order.paymentMethod || order.payment || 'Cash';
-            let feeVal = Number(order.serviceFee || order.fees || order.codFee || 0);
-
-            let printDocumentContent = `
-                <!DOCTYPE html>
-                <html dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Receipt #${escapeHTML(order.id || order.docId)}</title>
-                    <style>
-                        body { font-family: 'Cairo', sans-serif; padding: 5px; font-size: 12px; color: #000; width: 72mm; margin: 0 auto; text-align: center; }
-                        h2 { margin: 2px 0; font-size: 14px; }
-                        .info { margin-bottom: 6px; border-bottom: 1px dashed #000; padding-bottom: 6px; font-size: 10px; text-align: ${currentLang === 'ar' ? 'right' : 'left'}; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 10px; text-align: ${currentLang === 'ar' ? 'right' : 'left'}; }
-                        th, td { padding: 2px; border-bottom: 1px solid #ddd; }
-                        .totals-section { margin-top: 6px; border-top: 1px dashed #000; padding-top: 4px; font-size: 10px; text-align: ${currentLang === 'ar' ? 'right' : 'left'}; }
-                        .total-final { font-weight: bold; font-size: 12px; margin-top: 2px; }
-                        .footer-note { font-size: 9px; margin-top: 8px; border-top: 1px solid #000; padding-top: 4px; }
-                    </style>
-                </head>
-                <body>
-                    ${logoImgHtml}
-                    <h2>${escapeHTML(restaurant.toUpperCase())}</h2>
-                    <div class="info">
-                        <strong>Order:</strong> #${escapeHTML(String(order.id || order.docId).slice(-4))}<br>
-                        <strong>Date:</strong> ${escapeHTML(order.date || '')} - ${escapeHTML(order.time || '')}<br>
-                        <strong>Client:</strong> ${escapeHTML(clientName)} (${escapeHTML(clientPhone)})<br>
-                        ${clientAddress ? `<strong>Address:</strong> ${escapeHTML(clientAddress)}<br>` : ''}
-                        <strong>Type:</strong> ${escapeHTML(order.type || '')} (${escapeHTML(order.table || '-')})<br>
-                        <strong>Payment:</strong> ${escapeHTML(paymentMethod)}
-                    </div>
-                    <table>
-                        <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
-                        ${(order.items || []).map(i => `<tr><td>${escapeHTML(i.name || '')}</td><td>${i.qty || i.quantity || 1}</td><td>${(i.price || 0) * (i.qty || i.quantity || 1)}</td></tr>`).join('')}
-                    </table>
-                    <div class="totals-section">
-                        <div>Fee / COD: ${feeVal} ${translations[currentLang].currency}</div>
-                        <div class="total-final">Total: ${order.total || 0} ${translations[currentLang].currency}</div>
-                    </div>
-                    <div class="footer-note">
-                        Thank You For Your Visit!<br>
-                        Production Ready Kitchen System
-                    </div>
-                </body>
-                </html>
+            let area = document.getElementById('kitchenReceiptArea');
+            area.innerHTML = `
+                <div style="text-align:center; margin-bottom:10px;">
+                    <h2>${escapeHtml(restaurantId.toUpperCase())}</h2>
+                    <p>فاتورة مطبخ / عميل</p>
+                    <p>رقم الطلب: #${escapeHtml(order.id.substring(0,8))}</p>
+                    <p>التاريخ: ${new Date(order.createdAt || Date.now()).toLocaleString('ar-EG')}</p>
+                </div>
+                <hr style="border-top:1px dashed #000;">
+                <p><strong>نوع الطلب:</strong> ${order.orderType === 'delivery' ? 'دليفري' : (order.orderType === 'takeaway' ? 'تيك أواي' : `صالة - طاولة ${order.table}`)}</p>
+                <p><strong>العميل:</strong> ${escapeHtml(order.customerName || '-')} (${escapeHtml(order.customerPhone || '-')})</p>
+                ${order.address ? `<p><strong>العنوان:</strong> ${escapeHtml(order.address)}</p>` : ''}
+                <hr style="border-top:1px dashed #000;">
+                <h3>الأصناف:</h3>
+                ${(order.items || []).map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.quantity}x ${escapeHtml(i.name)}</span> <span>${i.price * i.quantity} ج.م</span></div>`).join('')}
+                <hr style="border-top:1px dashed #000;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;">
+                    <span>الإجمالي (كاش):</span>
+                    <span>${escapeHtml(order.total)} ج.م</span>
+                </div>
             `;
 
-            let iframe = document.getElementById('printIframe');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'printIframe';
-                iframe.style.position = 'fixed';
-                iframe.style.right = '0';
-                iframe.style.bottom = '0';
-                iframe.style.width = '0px';
-                iframe.style.height = '0px';
-                iframe.style.border = 'none';
-                iframe.style.visibility = 'hidden';
-                document.body.appendChild(iframe);
-            }
-
-            let doc = iframe.contentWindow.document;
-            doc.open();
-            doc.write(printDocumentContent);
-            doc.close();
-
-            setTimeout(() => {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            }, 250);
-        }
-
-        function initFirestoreListener() {
-            if (isFirestoreInitialized) return;
-            
-            if (window.db && window.firestoreModules) {
-                isFirestoreInitialized = true;
-                const { collection, onSnapshot } = window.firestoreModules;
-                const ordersCol = collection(window.db, `restaurants/${restaurant}/orders`);
-                
-                onSnapshot(ordersCol, (snapshot) => {
-                    const changes = snapshot.docChanges();
-                    let hasNewOrderAdded = false;
-
-                    changes.forEach(change => {
-                        const data = change.doc.data();
-                        data.docId = change.doc.id;
-                        if (!data.id) data.id = change.doc.id;
-
-                        if (change.type === "added") {
-                            globalOrdersMap.set(data.docId, data);
-                            if (!isInitialSnapshot) {
-                                hasNewOrderAdded = true;
-                            }
-                        } else if (change.type === "modified") {
-                            globalOrdersMap.set(data.docId, data);
-                        } else if (change.type === "removed") {
-                            globalOrdersMap.delete(data.docId);
-                        }
-                    });
-
-                    if (hasNewOrderAdded) {
-                        playOrderSound();
-                    }
-
-                    isInitialSnapshot = false;
-                    updateStatsAndFilters();
-                    renderKitchenOrders();
-                }, (error) => {
-                    console.error("Kitchen orders snapshot error:", error);
-                });
-            }
+            setTimeout(() => { window.print(); }, 200);
         }
     </script>
 </body>
