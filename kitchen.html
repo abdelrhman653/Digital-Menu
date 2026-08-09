@@ -7,27 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDKs -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-      import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
-        authDomain: "digital-menu-8d2b4.firebaseapp.com",
-        projectId: "digital-menu-8d2b4",
-        storageBucket: "digital-menu-8d2b4.firebasestorage.app",
-        messagingSenderId: "436566477044",
-        appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-      window.db = db;
-      window.firestoreModules = { collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy };
-
-      window.dispatchEvent(new Event('firebase-loaded-kitchen'));
-    </script>
+    <!-- Shared Firebase modules -->
+    <script type="module" src="firestore.js"></script>
+    <script type="module" src="storage.js"></script>
 
     <style>
         :root {
@@ -311,6 +293,13 @@
     </style>
 </head>
 <body>
+    <div id="accessGate" style="position:fixed;inset:0;z-index:99999;background:#0D1117;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;">
+      <div style="max-width:420px;background:#151B22;border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:30px;box-shadow:0 20px 60px rgba(0,0,0,.45);">
+        <div style="font-size:50px;color:#FFA502;margin-bottom:15px;"><i class="fa-solid fa-lock"></i></div>
+        <h2 id="accessGateTitle" style="margin-bottom:10px;">جارٍ التحقق من صلاحية المطعم...</h2>
+        <p id="accessGateText" style="color:#8B949E;line-height:1.8;">لا تغلق الصفحة.</p>
+      </div>
+    </div>
 
     <!-- Header -->
     <header>
@@ -371,6 +360,9 @@
         let allKitchenOrders = [];
         let previousOrdersCount = -1;
         let restaurantDisplayName = restaurantId;
+        let kitchenAccessAllowed = false;
+        let kitchenRestaurantData = null;
+        let kitchenOrderUnsubscribe = null;
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -394,10 +386,36 @@
 
         window.addEventListener('firebase-loaded-kitchen', () => {
             document.getElementById('headerRestaurantTitle').innerText = restaurantId.toUpperCase();
+            const { doc, onSnapshot, collection, query, where, updateDoc, onAuthStateChanged } = window.firestoreModules;
+            onAuthStateChanged(window.ownerAuth, async (user) => {
+                if(!user){ return denyKitchen('تسجيل الدخول مطلوب للوصول إلى شاشة المطبخ.'); }
+                try{
+                    const profileSnap=await window.getOwnerProfile(user.uid);
+                    if(!profileSnap || profileSnap.restaurantId !== restaurantId) return denyKitchen('هذا الحساب غير مصرح له بهذا المطعم.');
+                    const restSnap=await window.firestoreModules.getDoc(doc(window.db,'restaurants',restaurantId));
+                    if(!restSnap.exists()) return denyKitchen('المطعم غير موجود.');
+                    kitchenRestaurantData=restSnap.data();
+                    const expiry=kitchenRestaurantData.licenseExpiresAt?new Date(kitchenRestaurantData.licenseExpiresAt):null;
+                    if(kitchenRestaurantData.ownerUid!==user.uid || kitchenRestaurantData.licenseStatus!=='active' || !expiry || expiry.getTime()<=Date.now()) return denyKitchen('انتهى ترخيص المطعم أو تم إيقافه.');
+                    kitchenAccessAllowed=true;
+                    document.getElementById('accessGate').style.display='none';
+                    document.getElementById('headerRestaurantTitle').innerText=kitchenRestaurantData.name||restaurantId.toUpperCase();
+                    startKitchenDataListeners();
+                }catch(e){ console.error(e); denyKitchen('تعذر التحقق من صلاحية الحساب.'); }
+            });
+        });
 
-            // 1. Listen Brand Colors
-            const { doc, onSnapshot, collection, query, where, updateDoc } = window.firestoreModules;
-            
+        function denyKitchen(message){
+            kitchenAccessAllowed=false;
+            document.getElementById('accessGate').style.display='flex';
+            document.getElementById('accessGateTitle').innerText='الوصول غير مصرح';
+            document.getElementById('accessGateText').innerText=message;
+            if(kitchenOrderUnsubscribe){try{kitchenOrderUnsubscribe();}catch(e){} kitchenOrderUnsubscribe=null;}
+        }
+
+        async function startKitchenDataListeners(){
+            if(!kitchenAccessAllowed) return;
+            const { doc, onSnapshot, collection, query, where } = window.firestoreModules;
             onSnapshot(doc(window.db, "restaurants", restaurantId), (docSnap) => {
                 if (docSnap.exists()) {
                     let data = docSnap.data();
@@ -421,7 +439,7 @@
 
             // 2. Real-Time Orders Listener
             let q = query(collection(window.db, "orders"), where("restaurant", "==", restaurantId));
-            onSnapshot(q, (snapshot) => {
+            kitchenOrderUnsubscribe = onSnapshot(q, (snapshot) => {
                 let temp = [];
                 snapshot.forEach(d => { temp.push({ id: d.id, ...d.data() }); });
                 temp.sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -435,7 +453,7 @@
                 updateStats();
                 renderKitchenOrders();
             });
-        });
+        }
 
         function updateStats() {
             let active = 0, preparing = 0, delivered = 0;
@@ -603,6 +621,7 @@
         }
 
         async function changeStatus(orderId, newStatus) {
+            if(!kitchenAccessAllowed) return alert('غير مصرح لك باستخدام المطبخ.');
             try {
                 const { doc, updateDoc } = window.firestoreModules;
                 await updateDoc(doc(window.db, "orders", orderId), { status: newStatus });

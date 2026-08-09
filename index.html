@@ -362,6 +362,11 @@
                 <label data-i18n="label_password">كلمة المرور</label>
                 <input type="password" id="authPassword" placeholder="••••••••">
             </div>
+            <div class="input-group" id="licenseCodeGroup">
+                <label>كود الترخيص <span style="color:var(--text-muted);font-size:11px;">(مطلوب عند إنشاء الحساب فقط)</span></label>
+                <input type="text" id="authLicenseCode" placeholder="مثال: DM-2026-XXXX" autocomplete="off">
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 15px;line-height:1.7;">الحساب الإداري مربوط بالمطعم والترخيص، ومشاركة رابط لوحة الإدارة وحدها لا تمنح أي شخص صلاحية الدخول.</div>
 
             <button class="btn" style="width: 100%; margin-bottom: 12px;" onclick="handleLogin()">
                 <i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login">تسجيل الدخول</span>
@@ -701,36 +706,17 @@
         </main>
     </div>
 
-    <!-- Firebase Scripts -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
-            authDomain: "digital-menu-8d2b4.firebaseapp.com",
-            projectId: "digital-menu-8d2b4",
-            storageBucket: "digital-menu-8d2b4.firebasestorage.app",
-            messagingSenderId: "436566477044",
-            appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        window.FB = { 
-            db, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, ref, uploadBytes, getDownloadURL 
-        };
-
-        window.dispatchEvent(new Event('firebase-ready'));
-    </script>
+    <!-- Shared Firebase modules -->
+    <script type="module" src="firestore.js"></script>
+    <script type="module" src="storage.js"></script>
 
     <!-- Main Logic -->
     <script>
         // State
         let currentRestaurant = localStorage.getItem('current_restaurant');
+        let currentOwnerUser = null;
+        let ownerLicenseExpiresAt = null;
+        let ownerAccessAllowed = false;
         let currentLang = localStorage.getItem('app_lang') || 'ar';
         let appTheme = localStorage.getItem('app_theme') || 'dark-red';
         
@@ -857,67 +843,136 @@
         window.addEventListener('firebase-ready', () => {
             setAppTheme(appTheme);
             changeLanguage(currentLang);
-            if (currentRestaurant) {
-                startDataListeners();
-                showDashboard();
+            if (window.FB && window.FB.auth) {
+                window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
+                    currentOwnerUser = user || null;
+                    if (!user) {
+                        ownerAccessAllowed = false;
+                        currentRestaurant = null;
+                        localStorage.removeItem('current_restaurant');
+                        if (unsubscribeRestaurant) { unsubscribeRestaurant(); unsubscribeRestaurant = null; }
+                        if (unsubscribeOrders) { unsubscribeOrders(); unsubscribeOrders = null; }
+                        document.getElementById('authSection').classList.remove('hidden');
+                        document.getElementById('app').classList.add('hidden');
+                        return;
+                    }
+                    await restoreOwnerSession(user);
+                });
             }
         });
         window.onload = () => {
             if (window.FB) window.dispatchEvent(new Event('firebase-ready'));
         };
 
-        // Firebase Auth & Setup
-        async function handleRegister() {
-            let nameInput = escapeHtml(document.getElementById('authRestaurantName').value.trim().toLowerCase());
-            let phoneInput = escapeHtml(document.getElementById('authPhoneNumber').value.trim());
-            let passwordInput = escapeHtml(document.getElementById('authPassword').value);
-
-            if (!nameInput || !phoneInput || !passwordInput) return showCustomAlert(translations[currentLang].btn_login + " Error");
-            if (!window.FB) return;
-
-            try {
-                let q = window.FB.query(window.FB.collection(window.FB.db, "users"), window.FB.where("name", "==", nameInput), window.FB.where("phone", "==", phoneInput));
-                let snap = await window.FB.getDocs(q);
-                if (!snap.empty) return showCustomAlert(currentLang === 'ar' ? 'الحساب موجود بالفعل.' : 'Account exists.');
-
-                await window.FB.setDoc(window.FB.doc(window.FB.db, "users", `${nameInput}_${phoneInput}`), { name: nameInput, phone: phoneInput, password: passwordInput, createdAt: new Date().toISOString() });
-                currentRestaurant = nameInput; localStorage.setItem('current_restaurant', currentRestaurant);
-                
-                let restDocRef = window.FB.doc(window.FB.db, "restaurants", currentRestaurant);
-                let restSnap = await window.FB.getDoc(restDocRef);
-                if (!restSnap.exists()) {
-                    restaurantDataCache = { 
-                        phone: phoneInput, primaryColor: '#FF4757', secondaryColor: '#2ED573', accentColor: '#FFA502', bgColor: '#0c090a', surfaceColor: '#191414', textColor: '#ffffff',
-                        logo: '', categories: [...defaultCategories], items: [] 
-                    };
-                    await window.FB.setDoc(restDocRef, restaurantDataCache);
-                }
-                
-                startDataListeners(); showDashboard(); switchTab('dashboard');
-            } catch(e) { console.error(e); }
+        // Owner Authentication + License System
+        function normalizePhone(value){ return String(value||'').replace(/\D/g,''); }
+        function makeOwnerEmail(storeName, phone){
+            const raw = `${String(storeName||'').trim().toLowerCase()}|${normalizePhone(phone)}`;
+            let hash = 2166136261;
+            for(let i=0;i<raw.length;i++){ hash ^= raw.charCodeAt(i); hash = Math.imul(hash,16777619); }
+            return `owner_${(hash>>>0).toString(16)}@owners.digitalmenu.local`;
         }
-
-        async function handleLogin() {
-            let nameInput = escapeHtml(document.getElementById('authRestaurantName').value.trim().toLowerCase());
-            let phoneInput = escapeHtml(document.getElementById('authPhoneNumber').value.trim());
-            let passwordInput = escapeHtml(document.getElementById('authPassword').value);
-
-            if (!nameInput || !phoneInput || !passwordInput) return;
-            if (!window.FB) return;
-            try {
-                let snap = await window.FB.getDoc(window.FB.doc(window.FB.db, "users", `${nameInput}_${phoneInput}`));
-                if (!snap.exists() || snap.data().password !== passwordInput) {
-                    return showCustomAlert(currentLang === 'ar' ? 'بيانات خاطئة' : 'Invalid credentials');
-                }
-                currentRestaurant = nameInput; localStorage.setItem('current_restaurant', currentRestaurant);
-                startDataListeners(); showDashboard(); switchTab('dashboard');
-            } catch(e) { console.error(e); }
+        function parseLicenseDate(value){
+            if(!value) return null;
+            const d = new Date(value);
+            return Number.isNaN(d.getTime()) ? null : d;
         }
-
-        function logout() {
-            if (unsubscribeRestaurant) { unsubscribeRestaurant(); unsubscribeRestaurant = null; }
-            if (unsubscribeOrders) { unsubscribeOrders(); unsubscribeOrders = null; }
-            localStorage.removeItem('current_restaurant'); currentRestaurant = null;
+        function licenseIsActive(data){
+            if(!data || data.licenseStatus !== 'active') return false;
+            const expiry = parseLicenseDate(data.licenseExpiresAt);
+            return !!expiry && expiry.getTime() > Date.now();
+        }
+        async function getOwnerRestaurant(user){
+            if(!user || !window.FB) return null;
+            const profileSnap = await window.FB.getDoc(window.FB.doc(window.FB.db,'ownerProfiles',user.uid));
+            if(!profileSnap.exists()) return null;
+            const restaurantId = profileSnap.data().restaurantId;
+            if(!restaurantId) return null;
+            const restSnap = await window.FB.getDoc(window.FB.doc(window.FB.db,'restaurants',restaurantId));
+            if(!restSnap.exists()) return null;
+            const data = restSnap.data();
+            if(data.ownerUid !== user.uid) return null;
+            return {restaurantId,data};
+        }
+        async function restoreOwnerSession(user){
+            try{
+                const result = await getOwnerRestaurant(user);
+                if(!result || !licenseIsActive(result.data)){
+                    ownerAccessAllowed=false;
+                    currentRestaurant=null;
+                    localStorage.removeItem('current_restaurant');
+                    await window.FB.signOut(window.FB.auth);
+                    showCustomAlert(result ? 'انتهى ترخيص هذا المطعم أو تم إيقافه. يرجى التجديد.' : 'هذا الحساب غير مرتبط بمطعم مرخّص.');
+                    return;
+                }
+                currentRestaurant=result.restaurantId;
+                ownerLicenseExpiresAt=result.data.licenseExpiresAt;
+                ownerAccessAllowed=true;
+                localStorage.setItem('current_restaurant',currentRestaurant);
+                startDataListeners();
+                showDashboard();
+                switchTab('dashboard');
+            }catch(e){
+                console.error('Owner session error:',e);
+                ownerAccessAllowed=false;
+                try{await window.FB.signOut(window.FB.auth);}catch(_){}
+                showCustomAlert('تعذر التحقق من صلاحية الحساب حالياً.');
+            }
+        }
+        async function handleRegister(){
+            const nameInput=document.getElementById('authRestaurantName').value.trim().toLowerCase();
+            const phoneInput=document.getElementById('authPhoneNumber').value.trim();
+            const passwordInput=document.getElementById('authPassword').value;
+            const licenseCode=document.getElementById('authLicenseCode').value.trim().toUpperCase();
+            if(!nameInput||!phoneInput||!passwordInput||!licenseCode) return showCustomAlert('اكتب اسم/كود المطعم، رقم الهاتف، كلمة المرور، وكود الترخيص.');
+            if(passwordInput.length<6) return showCustomAlert('كلمة المرور يجب أن تكون 6 أحرف أو أرقام على الأقل.');
+            try{
+                const licenseRef=window.FB.doc(window.FB.db,'licenses',licenseCode);
+                const licenseSnap=await window.FB.getDoc(licenseRef);
+                if(!licenseSnap.exists()) return showCustomAlert('كود الترخيص غير صحيح.');
+                const license=licenseSnap.data();
+                const expiry=parseLicenseDate(license.expiresAt);
+                if(license.used || license.status!=='available' || !expiry || expiry.getTime()<=Date.now()) return showCustomAlert('كود الترخيص مستخدم أو منتهي الصلاحية.');
+                const ownerEmail=makeOwnerEmail(nameInput,phoneInput);
+                const cred=await window.FB.createUserWithEmailAndPassword(window.FB.auth,ownerEmail,passwordInput);
+                const uid=cred.user.uid;
+                const restRef=window.FB.doc(window.FB.db,'restaurants',nameInput);
+                const restSnap=await window.FB.getDoc(restRef);
+                if(restSnap.exists() && restSnap.data().ownerUid) { await window.FB.signOut(window.FB.auth); return showCustomAlert('اسم/كود المطعم مستخدم بالفعل.'); }
+                const baseData=restSnap.exists()?restSnap.data():{};
+                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', licenseExpiresAt:license.expiresAt, createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                const batch=window.FB.writeBatch(window.FB.db);
+                batch.set(restRef,restaurantData,{merge:true});
+                batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString()});
+                batch.update(licenseRef,{status:'used',used:true,usedBy:uid,restaurantId:nameInput,usedAt:new Date().toISOString()});
+                await batch.commit();
+                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.expiresAt; ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
+                startDataListeners(); showDashboard(); switchTab('dashboard');
+            }catch(e){
+                console.error('Registration error:',e);
+                const code=e?.code||'';
+                if(code==='auth/email-already-in-use') showCustomAlert('الحساب موجود بالفعل. استخدم تسجيل الدخول.');
+                else showCustomAlert('تعذر إنشاء الحساب. تأكد من البيانات وكود الترخيص.');
+            }
+        }
+        async function handleLogin(){
+            const nameInput=document.getElementById('authRestaurantName').value.trim().toLowerCase();
+            const phoneInput=document.getElementById('authPhoneNumber').value.trim();
+            const passwordInput=document.getElementById('authPassword').value;
+            if(!nameInput||!phoneInput||!passwordInput) return showCustomAlert('اكتب اسم/كود المطعم ورقم الهاتف وكلمة المرور.');
+            try{
+                const ownerEmail=makeOwnerEmail(nameInput,phoneInput);
+                await window.FB.signInWithEmailAndPassword(window.FB.auth,ownerEmail,passwordInput);
+            }catch(e){
+                console.error('Login error:',e);
+                showCustomAlert('بيانات الدخول غير صحيحة أو الحساب غير موجود.');
+            }
+        }
+        async function logout(){
+            if(unsubscribeRestaurant){unsubscribeRestaurant();unsubscribeRestaurant=null;}
+            if(unsubscribeOrders){unsubscribeOrders();unsubscribeOrders=null;}
+            ownerAccessAllowed=false; currentRestaurant=null; localStorage.removeItem('current_restaurant');
+            try{await window.FB.signOut(window.FB.auth);}catch(e){}
             document.getElementById('authSection').classList.remove('hidden');
             document.getElementById('app').classList.add('hidden');
         }
@@ -935,7 +990,7 @@
 
         // Real-Time Firebase Listeners
         function startDataListeners() {
-            if (!window.FB || !currentRestaurant) return;
+            if (!window.FB || !currentRestaurant || !ownerAccessAllowed || !currentOwnerUser) return;
             
             // 1. Restaurant Document Listener
             if (unsubscribeRestaurant) unsubscribeRestaurant();
@@ -1110,7 +1165,7 @@
 
         // Settings & Identity Upload Fix
         async function saveRestaurantDataToCloud() {
-            if (!window.FB) return;
+            if (!window.FB || !ownerAccessAllowed || !currentOwnerUser) return;
             try { await window.FB.setDoc(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), restaurantDataCache, { merge: true }); }
             catch(e) { console.error(e); }
         }
@@ -1118,7 +1173,7 @@
         async function uploadFileToStorage(file, folder) {
             if (!window.FB || !file) return "";
             try {
-                let fileRef = window.FB.ref(window.FB.storage, `${folder}/${currentRestaurant}_${Date.now()}_${file.name}`);
+                let fileRef = window.FB.ref(window.FB.storage, `restaurants/${currentRestaurant}/${folder}/${Date.now()}_${file.name}`);
                 await window.FB.uploadBytes(fileRef, file);
                 return await window.FB.getDownloadURL(fileRef);
             } catch (e) { 

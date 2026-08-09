@@ -7,25 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
-            authDomain: "digital-menu-8d2b4.firebaseapp.com",
-            projectId: "digital-menu-8d2b4",
-            storageBucket: "digital-menu-8d2b4.firebasestorage.app",
-            messagingSenderId: "436566477044",
-            appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        window.FB = { db, doc, getDoc, onSnapshot, collection, addDoc, getDocs, query, where };
-        window.dispatchEvent(new Event('firebase-ready-orders'));
-    </script>
+    <!-- Shared Firebase modules -->
+    <script type="module" src="firestore.js"></script>
+    <script type="module" src="storage.js"></script>
 
     <style>
         :root {
@@ -55,7 +39,6 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        .hidden { display: none !important; }
         body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; padding-bottom: 90px; transition: var(--transition); }
 
         /* Header */
@@ -165,9 +148,8 @@
             </div>
         </div>
         <div class="account-actions">
-            <button id="historyHeaderBtn" class="header-action-btn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
-            <button id="loginHeaderBtn" class="header-action-btn" onclick="openLoginModal()"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</button>
-            <button id="profileHeaderBtn" class="header-action-btn hidden" onclick="openProfileModal()"><i class="fa-solid fa-user"></i> معلوماتي</button>
+            <button class="header-action-btn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
+            <button class="header-action-btn" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
             <button class="theme-toggle-btn" onclick="toggleUserTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
         </div>
     </header>
@@ -257,35 +239,6 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal-overlay">
-        <div class="cart-modal" style="border-radius:24px;max-width:500px;text-align:right;padding:25px 20px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                <h3 style="font-size:20px;"><i class="fa-solid fa-right-to-bracket" style="color:var(--primary);"></i> تسجيل الدخول</h3>
-                <button onclick="closeLoginModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="input-group"><label>الاسم</label><input type="text" id="loginName" placeholder="اكتب اسمك..."></div>
-            <div class="input-group"><label>رقم التليفون</label><input type="tel" id="loginPhone" placeholder="010XXXXXXXX"></div>
-            <div class="input-group"><label>العنوان</label><input type="text" id="loginAddress" placeholder="المنطقة، الشارع، العمارة..."></div>
-            <button class="btn-submit" onclick="loginCustomer()"><i class="fa-solid fa-check"></i> دخول</button>
-        </div>
-    </div>
-
-    <!-- Profile Modal -->
-    <div id="profileModal" class="modal-overlay">
-        <div class="cart-modal" style="border-radius:24px;max-width:500px;text-align:right;padding:25px 20px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                <h3 style="font-size:20px;"><i class="fa-solid fa-user" style="color:var(--primary);"></i> معلوماتي</h3>
-                <button onclick="closeProfileModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="input-group"><label>الاسم</label><input type="text" id="profileName" placeholder="الاسم"></div>
-            <div class="input-group"><label>رقم التليفون</label><input type="tel" id="profilePhone" placeholder="010XXXXXXXX"></div>
-            <div class="input-group"><label>العنوان</label><input type="text" id="profileAddress" placeholder="المنطقة، الشارع، العمارة..."></div>
-            <button class="btn-submit" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> حفظ التعديلات</button>
-            <button class="header-action-btn" style="width:100%;margin-top:10px;padding:13px;" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج</button>
-        </div>
-    </div>
-
     <!-- Order Status Modal -->
     <div id="statusModal" class="modal-overlay">
         <div class="cart-modal" style="border-radius:24px; max-width:450px; text-align:center; padding:35px 24px;">
@@ -317,9 +270,6 @@
         let activeOrderUnsubscribers = {};
         const customerSessionKey = `customer_session_${encodeURIComponent(restaurantId)}`;
         const activeOrdersKey = `customer_active_orders_${encodeURIComponent(restaurantId)}`;
-        // الصالة = جلسة مؤقتة لكل تبويب، الأونلاين = حساب محفوظ
-        const customerStorage = tableNum ? sessionStorage : localStorage;
-        const activeOrdersStorage = tableNum ? sessionStorage : localStorage;
         const statusMeta = {
             pending:{text:'قيد الانتظار ⏳',level:1}, preparing:{text:'جاري التجهيز بالمطبخ 👨‍🍳',level:2},
             ready:{text:'طلبك جاهز الآن! 🔔',level:3}, delivered:{text:'تم التسليم بنجاح ✅',level:4},
@@ -351,7 +301,6 @@
             applyThemeUI();
             configureOrderMode();
             loadCustomerSession();
-            configureOrderMode();
 
             window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", restaurantId), (docSnap) => {
                 if(docSnap.exists()) {
@@ -490,136 +439,34 @@
         }
 
         function configureOrderMode(){
-            const typeEl=document.getElementById('orderTypeSelect');
-            const tableDisplay=document.getElementById('tableDisplay');
-            const addressGroup=document.getElementById('addressGroup');
-            const addressInput=document.getElementById('custAddress');
-
-            if(tableNum){
-                // QR from a restaurant table = dine-in. Never ask for an address.
-                typeEl.value='dine_in';
-                tableDisplay.innerText=`طاولة رقم ${tableNum}`;
-                addressGroup.classList.add('hidden');
-                addressInput.value='';
-            }else{
-                // Direct menu link = online/delivery. Address is required for the first order.
-                typeEl.value='delivery';
-                tableDisplay.innerText='طلب أونلاين';
-                addressGroup.classList.remove('hidden');
-            }
+            const typeEl=document.getElementById('orderTypeSelect'), tableDisplay=document.getElementById('tableDisplay'), addressGroup=document.getElementById('addressGroup');
+            if(tableNum){typeEl.value='dine_in';tableDisplay.innerText=`طاولة رقم ${tableNum}`;addressGroup.classList.add('hidden');}
+            else{typeEl.value='delivery';tableDisplay.innerText='طلب أونلاين';addressGroup.classList.remove('hidden');}
         }
         function toggleAddressField(){
             const type=tableNum?'dine_in':'delivery';document.getElementById('orderTypeSelect').value=type;
             document.getElementById('addressGroup').classList.toggle('hidden',type!=='delivery');
         }
-        function updateAccountButtons(){
-            const historyBtn=document.getElementById('historyHeaderBtn');
-            const loginBtn=document.getElementById('loginHeaderBtn');
-            const profileBtn=document.getElementById('profileHeaderBtn');
-            if(tableNum){
-                // الصالة: لا سجل ولا تسجيل دخول/خروج دائم. الجلسة مؤقتة وتنتهي بعد التسليم.
-                historyBtn.classList.add('hidden');
-                loginBtn.classList.add('hidden');
-                profileBtn.classList.add('hidden');
-                return;
-            }
-            historyBtn.classList.toggle('hidden', !customerSession);
-            loginBtn.classList.toggle('hidden', !!customerSession);
-            profileBtn.classList.toggle('hidden', !customerSession);
-        }
-
         function loadCustomerSession(){
-            try{customerSession=JSON.parse(customerStorage.getItem(customerSessionKey)||'null');}catch(e){customerSession=null;}
+            try{customerSession=JSON.parse(localStorage.getItem(customerSessionKey)||'null');}catch(e){customerSession=null;}
             const name=document.getElementById('custName'),phone=document.getElementById('custPhone'),address=document.getElementById('custAddress');
             if(customerSession){
-                name.value=customerSession.name||'';
-                phone.value=customerSession.phone||'';
-                address.value=customerSession.address||'';
-                document.getElementById('custNameGroup').classList.add('hidden');
-                document.getElementById('custPhoneGroup').classList.add('hidden');
-                const box=document.getElementById('savedCustomerBox');
-                box.classList.remove('hidden');
+                name.value=customerSession.name||'';phone.value=customerSession.phone||'';address.value=customerSession.address||'';
+                document.getElementById('custNameGroup').classList.add('hidden');document.getElementById('custPhoneGroup').classList.add('hidden');
+                const box=document.getElementById('savedCustomerBox');box.classList.remove('hidden');
                 box.innerHTML=`<i class="fa-solid fa-user-check" style="color:var(--secondary);"></i> بياناتك محفوظة: <strong>${escapeHtml(customerSession.name)}</strong> — ${escapeHtml(customerSession.phone)}.`;
             }else{
-                document.getElementById('custNameGroup').classList.remove('hidden');
-                document.getElementById('custPhoneGroup').classList.remove('hidden');
-                document.getElementById('savedCustomerBox').classList.add('hidden');
-                name.value='';
-                phone.value='';
-                if(tableNum) address.value='';
+                document.getElementById('custNameGroup').classList.remove('hidden');document.getElementById('custPhoneGroup').classList.remove('hidden');document.getElementById('savedCustomerBox').classList.add('hidden');
             }
-            // العنوان مطلوب فقط للأونلاين، ومخفي تماماً في الصالة.
-            if(tableNum){
-                document.getElementById('addressGroup').classList.add('hidden');
-                address.value='';
-            }else{
-                document.getElementById('addressGroup').classList.toggle('hidden', !!customerSession);
-            }
-            updateAccountButtons();
+            if(!tableNum) document.getElementById('addressGroup').classList.toggle('hidden',!!(customerSession&&customerSession.address));
         }
-
-        function saveCustomerSession(name,phone,address){
-            customerSession={name:name.trim(),phone:phone.trim(),address:(address||'').trim()};
-            customerStorage.setItem(customerSessionKey,JSON.stringify(customerSession));
-            loadCustomerSession();
-        }
-
-        function openLoginModal(){
-            if(tableNum)return;
-            document.getElementById('loginName').value='';
-            document.getElementById('loginPhone').value='';
-            document.getElementById('loginAddress').value='';
-            document.getElementById('loginModal').classList.add('active');
-        }
-        function closeLoginModal(){document.getElementById('loginModal').classList.remove('active');}
-
-        function loginCustomer(){
-            const name=document.getElementById('loginName').value.trim();
-            const phone=document.getElementById('loginPhone').value.trim();
-            const address=document.getElementById('loginAddress').value.trim();
-            if(!name||!phone||!address)return alert('الرجاء إدخال الاسم ورقم التليفون والعنوان');
-            saveCustomerSession(name,phone,address);
-            closeLoginModal();
-            loadOrderHistory();
-            alert('تم تسجيل الدخول بنجاح. أهلاً بك 👋');
-        }
-
-        function openProfileModal(){
-            if(!customerSession)return openLoginModal();
-            document.getElementById('profileName').value=customerSession.name||'';
-            document.getElementById('profilePhone').value=customerSession.phone||'';
-            document.getElementById('profileAddress').value=customerSession.address||'';
-            document.getElementById('profileModal').classList.add('active');
-        }
-        function closeProfileModal(){document.getElementById('profileModal').classList.remove('active');}
-
-        function saveProfile(){
-            const name=document.getElementById('profileName').value.trim();
-            const phone=document.getElementById('profilePhone').value.trim();
-            const address=document.getElementById('profileAddress').value.trim();
-            if(!name||!phone||!address)return alert('الرجاء إدخال الاسم ورقم التليفون والعنوان');
-            saveCustomerSession(name,phone,address);
-            closeProfileModal();
-            loadOrderHistory();
-            alert('تم حفظ معلوماتك بنجاح ✅');
-        }
-
-        function customerLogout(){
-            if(tableNum)return;
-            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});
-            activeOrderUnsubscribers={};
-            customerStorage.removeItem(customerSessionKey);
-            activeOrdersStorage.removeItem(activeOrdersKey);
-            customerSession=null;
-            historyOrders=[];
-            document.getElementById('custName').value='';
-            document.getElementById('custPhone').value='';
-            document.getElementById('custAddress').value='';
-            closeProfileModal();
-            loadCustomerSession();
-            hideLiveOrderBanner();
-            renderHistory();
-            alert('تم تسجيل الخروج. يمكنك الآن تسجيل الدخول بحساب آخر.');
+        function saveCustomerSession(name,phone,address){customerSession={name,phone,address:address||''};localStorage.setItem(customerSessionKey,JSON.stringify(customerSession));loadCustomerSession();}
+        async function customerLogout(){
+            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});activeOrderUnsubscribers={};
+            localStorage.removeItem(customerSessionKey);localStorage.removeItem(activeOrdersKey);customerSession=null;historyOrders=[];
+            try{ if(window.FB?.auth?.currentUser?.isAnonymous) await window.FB.signOut(window.FB.auth); }catch(e){}
+            document.getElementById('custName').value='';document.getElementById('custPhone').value='';document.getElementById('custAddress').value='';
+            loadCustomerSession();hideLiveOrderBanner();renderHistory();alert('تم تسجيل الخروج. يمكنك الآن إدخال بيانات عميل جديد.');
         }
         function openCartModal(){document.getElementById('cartModal').classList.add('active');}
         function closeCartModal(){document.getElementById('cartModal').classList.remove('active');}
@@ -634,11 +481,15 @@
             if(!name||!phone)return alert('الرجاء إدخال الاسم ورقم الهاتف');
             if(orderType==='delivery'&&!address)return alert('الرجاء إدخال عنوان التوصيل');
             const btn=document.getElementById('submitOrderBtn');btn.disabled=true;btn.innerText='جاري الإرسال...';
-            const orderData={restaurant:restaurantId,table:tableNum||'عام',customerName:name,customerPhone:phone,orderType,address:orderType==='delivery'?address:'',notes:notes||'',items:cart,total,paymentMethod:'cash',status:'pending',createdAt:new Date().toISOString()};
+            if(!window.FB?.auth?.currentUser){
+                try{ await window.FB.signInAnonymously(window.FB.auth); }catch(e){ console.error(e); return alert('تعذر تأمين جلسة العميل. أعد تحميل الصفحة وحاول مرة أخرى.'); }
+            }
+            const customerUid=window.FB.auth.currentUser.uid;
+            const orderData={restaurant:restaurantId,table:tableNum||'عام',customerName:name,customerPhone:phone,customerUid,orderType,address:orderType==='delivery'?address:'',notes:notes||'',items:cart,total,paymentMethod:'cash',status:'pending',createdAt:new Date().toISOString()};
             try{
                 const docRef=await window.FB.addDoc(window.FB.collection(window.FB.db,'orders'),orderData);
                 saveCustomerSession(name,phone,orderType==='delivery'?address:(customerSession?.address||''));
-                const ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]');if(!ids.includes(docRef.id))ids.push(docRef.id);activeOrdersStorage.setItem(activeOrdersKey,JSON.stringify(ids));
+                const ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]');if(!ids.includes(docRef.id))ids.push(docRef.id);localStorage.setItem(activeOrdersKey,JSON.stringify(ids));
                 cart=[];updateCartUI();closeCartModal();showStatusModal(docRef.id);listenToOrderStatus(docRef.id);await loadOrderHistory();
             }catch(e){console.error('Order error:',e);alert('حدث خطأ أثناء إرسال الطلب');}
             finally{btn.disabled=false;btn.innerText='إرسال الطلب الآن';}
@@ -656,39 +507,38 @@
             activeOrderUnsubscribers[orderId]=window.FB.onSnapshot(window.FB.doc(window.FB.db,'orders',orderId),snap=>{
                 if(!snap.exists())return;
                 const status=snap.data().status||'pending';
-                if(status==='delivered'){
-                    const ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]').filter(id=>id!==orderId);activeOrdersStorage.setItem(activeOrdersKey,JSON.stringify(ids));
-                    try{activeOrderUnsubscribers[orderId]();}catch(e){}delete activeOrderUnsubscribers[orderId];
-                    hideLiveOrderBanner();
-                    closeStatusModal();
-                    // طلب الصالة ينتهي تلقائياً بمجرد أن يسجل المطبخ "تم التسليم".
-                    // بيانات الطلب تظل محفوظة في Firebase، لكن جلسة العميل على الجهاز تُمسح.
-                    if(tableNum){
-                        customerStorage.removeItem(customerSessionKey);
-                        activeOrdersStorage.removeItem(activeOrdersKey);
-                        customerSession=null;
-                        historyOrders=[];
-                        document.getElementById('custName').value='';
-                        document.getElementById('custPhone').value='';
-                        document.getElementById('custAddress').value='';
-                        loadCustomerSession();
-                        renderHistory();
-                    }
-                }else if(status==='canceled'){
-                    const ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]').filter(id=>id!==orderId);activeOrdersStorage.setItem(activeOrdersKey,JSON.stringify(ids));
+                if(status==='delivered'||status==='canceled'){
+                    const ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]').filter(id=>id!==orderId);localStorage.setItem(activeOrdersKey,JSON.stringify(ids));
                     try{activeOrderUnsubscribers[orderId]();}catch(e){}delete activeOrderUnsubscribers[orderId];hideLiveOrderBanner();
+                    if(status==='delivered') autoLogoutAfterDelivery();
                 }else updateLiveOrderBanner(orderId,status);
                 loadOrderHistory();
             },err=>console.error('Live status error:',err));
         }
-        function restoreActiveOrderListeners(){let ids=[];try{ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]');}catch(e){}ids.forEach(listenToOrderStatus);}
+        function autoLogoutAfterDelivery(){
+            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});
+            activeOrderUnsubscribers={};
+            localStorage.removeItem(customerSessionKey);
+            localStorage.removeItem(activeOrdersKey);
+            customerSession=null;
+            historyOrders=[];
+            const name=document.getElementById('custName'),phone=document.getElementById('custPhone'),address=document.getElementById('custAddress');
+            if(name)name.value=''; if(phone)phone.value=''; if(address)address.value='';
+            loadCustomerSession();
+            renderHistory();
+            hideLiveOrderBanner();
+            try{ if(window.FB?.auth?.currentUser?.isAnonymous) window.FB.signOut(window.FB.auth); }catch(e){}
+        }
+        function restoreActiveOrderListeners(){let ids=[];try{ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]');}catch(e){}ids.forEach(listenToOrderStatus);}
         function showStatusModal(orderId){document.getElementById('submittedOrderId').innerText=`#${orderId.substring(0,6)}`;document.getElementById('statusModal').classList.add('active');listenToOrderStatus(orderId);}
         function closeStatusModal(){document.getElementById('statusModal').classList.remove('active');}
 
         async function loadOrderHistory(){
             if(!window.FB||!customerSession||!customerSession.phone){historyOrders=[];renderHistory();return;}
             try{
-                const q=window.FB.query(window.FB.collection(window.FB.db,'orders'),window.FB.where('restaurant','==',restaurantId),window.FB.where('customerPhone','==',customerSession.phone));
+                const uid=window.FB?.auth?.currentUser?.uid;
+                if(!uid)return;
+                const q=window.FB.query(window.FB.collection(window.FB.db,'orders'),window.FB.where('restaurant','==',restaurantId),window.FB.where('customerUid','==',uid));
                 const snap=await window.FB.getDocs(q);historyOrders=[];snap.forEach(d=>historyOrders.push({id:d.id,...d.data()}));
                 historyOrders.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));renderHistory();
             }catch(e){console.error('History error:',e);document.getElementById('historyList').innerHTML='<p class="empty-cart">تعذر تحميل سجل الطلبات حالياً.</p>';}

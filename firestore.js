@@ -1,0 +1,64 @@
+// Shared Firebase bootstrap for the restaurant website
+// Firebase Web SDK 12.17.0
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
+  getDocs, query, where, orderBy, writeBatch, addDoc
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, signInAnonymously
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+  authDomain: "digital-menu-8d2b4.firebaseapp.com",
+  projectId: "digital-menu-8d2b4",
+  storageBucket: "digital-menu-8d2b4.firebasestorage.app",
+  messagingSenderId: "436566477044",
+  appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
+
+window.FB = {
+  db, auth, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
+  getDocs, query, where, orderBy, writeBatch, addDoc, ref, uploadBytes,
+  getDownloadURL, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, signInAnonymously
+};
+
+window.db = db;
+window.ownerAuth = auth;
+window.firestoreModules = {
+  db, auth, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
+  getDocs, query, where, orderBy, writeBatch, addDoc, ref, uploadBytes,
+  getDownloadURL, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, signInAnonymously
+};
+
+window.getOwnerProfile = async (uid) => {
+  const snap = await getDoc(doc(db, 'ownerProfiles', uid));
+  return snap.exists() ? snap.data() : null;
+};
+
+// The customer menu uses Firebase Anonymous Auth. The restaurant owner/admin
+// continues to use normal Email/Password authentication.
+const isOrdersPage = /(?:^|\/)orders(?:_fixed|_final)?\.html$/i.test(location.pathname);
+
+window.dispatchEvent(new Event('firebase-ready'));
+window.dispatchEvent(new Event('firebase-loaded-kitchen'));
+
+if (isOrdersPage) {
+  try {
+    await signInAnonymously(auth);
+    window.dispatchEvent(new Event('firebase-ready-orders'));
+  } catch (error) {
+    console.error('Anonymous customer authentication failed:', error);
+    window.dispatchEvent(new CustomEvent('firebase-orders-auth-error', { detail: error }));
+  }
+}
