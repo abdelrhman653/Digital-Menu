@@ -1,146 +1,612 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>لوحة مالك المنصة</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#0f1115;color:#f5f5f5}
-.wrap{max-width:1050px;margin:auto;padding:20px}.card{background:#181b21;border:1px solid #2a2f38;border-radius:18px;padding:20px;margin-bottom:18px}
-h1,h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#0f1115;color:#f5f5f5}
+.wrap{max-width:1050px;margin:auto;padding:20px}
+.card{background:#181b21;border:1px solid #2a2f38;border-radius:18px;padding:20px;margin-bottom:18px}
+h1,h2{margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 input,select,button{width:100%;padding:13px;border-radius:10px;border:1px solid #343a45;background:#101318;color:#fff;font-size:15px}
-button{cursor:pointer;background:#b51f2a;border:0;font-weight:700}button.secondary{background:#2b3039}
-.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}.hidden{display:none!important}.msg{padding:12px;border-radius:10px;background:#222732;margin-top:12px}
-table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid #2b3039;text-align:right}
-.ok{color:#55d98b}.bad{color:#ff6b6b}.muted{color:#aab1bd}.code{font-size:20px;letter-spacing:1px;font-weight:800}
+button{cursor:pointer;background:#b51f2a;border:0;font-weight:700}
+button.secondary{background:#2b3039}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+.hidden{display:none!important}
+.msg{padding:12px;border-radius:10px;background:#222732;margin-top:12px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px;border-bottom:1px solid #2b3039;text-align:right}
+.ok{color:#55d98b}
+.bad{color:#ff6b6b}
+.muted{color:#aab1bd}
+.code{font-size:20px;letter-spacing:1px;font-weight:800}@media(max-width:600px){
+.wrap{padding:12px}
+.card{padding:15px}
+.row{flex-direction:column}
+table{font-size:13px}
+th,td{padding:8px}
+}
 </style>
-</head>
-<body>
-<div class="wrap">
-  <div id="login" class="card">
-    <h1>👑 لوحة مالك المنصة</h1>
-    <p class="muted">هذه الصفحة لك أنت فقط لإصدار وتجديد اشتراكات المطاعم.</p>
-    <div class="grid">
-      <input id="email" type="email" placeholder="البريد الإلكتروني">
-      <input id="password" type="password" placeholder="كلمة المرور">
-    </div>
-    <div class="row" style="margin-top:12px">
-      <button id="loginBtn">تسجيل الدخول</button>
-      <button id="logoutBtn" class="secondary hidden">تسجيل الخروج</button>
-    </div>
-    <div id="msg"></div>
-  </div>
 
-  <div id="panel" class="hidden">
-    <div class="card">
-      <h2>➕ إنشاء كود اشتراك</h2>
-      <div class="grid">
-        <input id="restaurantId" placeholder="معرّف المطعم، مثال: ahmed-restaurant">
-        <select id="plan">
-          <option value="month">شهر</option>
-          <option value="3months">3 أشهر</option>
-          <option value="6months">6 أشهر</option>
-          <option value="year">سنة</option>
-          <option value="lifetime">مدى الحياة</option>
-        </select>
-      </div>
-      <button id="createBtn" style="margin-top:12px">إنشاء الكود</button>
-      <div id="newCode" class="msg hidden"></div>
-    </div>
+</head><body><div class="wrap">  <div id="login" class="card">
+    <h1>👑 لوحة مالك المنصة</h1><p class="muted">
+  هذه الصفحة لك أنت فقط لإصدار وتجديد اشتراكات المطاعم.
+</p>
 
-    <div class="card">
-      <h2>🔎 اشتراك مطعم</h2>
-      <div class="row">
-        <input id="lookupId" placeholder="معرّف المطعم">
-        <button id="lookupBtn">بحث</button>
-      </div>
-      <div id="restaurantInfo" class="msg hidden"></div>
-    </div>
-
-    <div class="card">
-      <h2>📋 الأكواد التي تم إصدارها</h2>
-      <div id="licenses">جارٍ التحميل...</div>
-    </div>
-  </div>
+<div class="grid">
+  <input id="email" type="email" placeholder="البريد الإلكتروني">
+  <input id="password" type="password" placeholder="كلمة المرور">
 </div>
 
-<script type="module">
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+<div class="row" style="margin-top:12px">
+  <button id="loginBtn">تسجيل الدخول</button>
+  <button id="logoutBtn" class="secondary hidden">تسجيل الخروج</button>
+</div>
 
-const firebaseConfig={
-  apiKey:"AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
-  authDomain:"digital-menu-8d2b4.firebaseapp.com",
-  projectId:"digital-menu-8d2b4",
-  storageBucket:"digital-menu-8d2b4.firebasestorage.app",
-  messagingSenderId:"436566477044",
-  appId:"1:436566477044:web:2a86cfb212b44229f0b6a1"
+<div id="msg"></div>
+
+  </div>  <div id="panel" class="hidden"><div class="card">
+  <h2>➕ إنشاء كود اشتراك</h2>
+
+  <div class="grid">
+    <input
+      id="restaurantId"
+      placeholder="معرّف المطعم، مثال: ahmed-restaurant"
+    >
+
+    <select id="plan">
+      <option value="month">شهر</option>
+      <option value="3months">3 أشهر</option>
+      <option value="6months">6 أشهر</option>
+      <option value="year">سنة</option>
+      <option value="lifetime">مدى الحياة</option>
+    </select>
+  </div>
+
+  <button id="createBtn" style="margin-top:12px">
+    إنشاء الكود
+  </button>
+
+  <div id="newCode" class="msg hidden"></div>
+</div>
+
+
+<div class="card">
+  <h2>🔎 اشتراك مطعم</h2>
+
+  <div class="row">
+    <input id="lookupId" placeholder="معرّف المطعم">
+    <button id="lookupBtn">بحث</button>
+  </div>
+
+  <div id="restaurantInfo" class="msg hidden"></div>
+</div>
+
+
+<div class="card">
+  <h2>📋 الأكواد التي تم إصدارها</h2>
+  <div id="licenses">جارٍ التحميل...</div>
+</div>
+
+  </div></div><script type="module">
+
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  getFirestore
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+
+
+/* =========================================================
+   Firebase Configuration
+========================================================= */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+  authDomain: "digital-menu-8d2b4.firebaseapp.com",
+  projectId: "digital-menu-8d2b4",
+  storageBucket: "digital-menu-8d2b4.firebasestorage.app",
+  messagingSenderId: "436566477044",
+  appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
 };
-const app=initializeApp(firebaseConfig);
-const db=await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js").then(m=>m.getFirestore(app));
-const auth=getAuth(app);
-const $=id=>document.getElementById(id);
-const msg=t=>{$("msg").textContent=t};
-const randomCode=()=>`DM-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}`;
 
-function addMonths(d,n){const x=new Date(d);x.setMonth(x.getMonth()+n);return x}
-function expiryFor(plan){
-  if(plan==="lifetime") return null;
-  const n={month:1,3months:3,6months:6,year:12}[plan];
-  return addMonths(new Date(),n).toISOString();
+
+/* =========================================================
+   Initialize Firebase
+========================================================= */
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+
+/* =========================================================
+   OWNER UID
+   هذا الحساب فقط مسموح له بدخول لوحة المالك
+========================================================= */
+
+const OWNER_UID = "9XrMCexywXh72WPvo756PcuVuhD3";
+
+
+/* =========================================================
+   Helpers
+========================================================= */
+
+const $ = id => document.getElementById(id);
+
+const msg = text => {
+  $("msg").textContent = text;
+};
+
+
+const randomCode = () =>
+  `DM-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}`;
+
+
+function addMonths(date, months){
+  const x = new Date(date);
+  x.setMonth(x.getMonth() + months);
+  return x;
 }
-function planName(p){return {month:"شهر",3months:"3 أشهر",6months:"6 أشهر",year:"سنة",lifetime:"مدى الحياة"}[p]||p}
 
-$("loginBtn").onclick=async()=>{
-  try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);msg("تم تسجيل الدخول.");}
-  catch(e){msg("فشل تسجيل الدخول: "+(e.code||e.message));}
-};
-$("logoutBtn").onclick=()=>signOut(auth);
 
-$("createBtn").onclick=async()=>{
-  const restaurantId=$("restaurantId").value.trim();
-  const plan=$("plan").value;
-  if(!restaurantId)return msg("اكتب معرّف المطعم أولًا.");
-  const code=randomCode();
-  const expiresAt=expiryFor(plan);
+function expiryFor(plan){
+
+  if(plan === "lifetime"){
+    return null;
+  }
+
+  const n = {
+    month: 1,
+    "3months": 3,
+    "6months": 6,
+    year: 12
+  }[plan];
+
+  return addMonths(new Date(), n).toISOString();
+}
+
+
+function planName(plan){
+
+  return {
+    month: "شهر",
+    "3months": "3 أشهر",
+    "6months": "6 أشهر",
+    year: "سنة",
+    lifetime: "مدى الحياة"
+  }[plan] || plan;
+}
+
+
+/* =========================================================
+   Security Check
+========================================================= */
+
+function isOwner(user){
+
+  return !!user && user.uid === OWNER_UID;
+
+}
+
+
+/* =========================================================
+   Login
+========================================================= */
+
+$("loginBtn").onclick = async () => {
+
+  const email = $("email").value.trim();
+  const password = $("password").value;
+
+  if(!email || !password){
+
+    msg("اكتب البريد الإلكتروني وكلمة المرور أولًا.");
+    return;
+
+  }
+
   try{
-    await setDoc(doc(db,"licenses",code),{
-      code,restaurantId,plan,expiresAt,status:"available",used:false,
-      createdAt:new Date().toISOString(),createdBy:auth.currentUser.uid
-    });
-    $("newCode").classList.remove("hidden");
-    $("newCode").innerHTML=`الكود: <span class="code">${code}</span><br><span class="muted">المدة: ${planName(plan)}</span>`;
-    loadLicenses();
-  }catch(e){msg("تعذر إنشاء الكود. تأكد من قواعد Firestore وأن حسابك هو حساب مالك المنصة.");}
+
+    const credential =
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    const user = credential.user;
+
+
+    /* -----------------------------------------
+       Check Owner UID
+    ----------------------------------------- */
+
+    if(!isOwner(user)){
+
+      msg("❌ هذا الحساب غير مصرح له بدخول لوحة المالك.");
+
+      await signOut(auth);
+
+      return;
+    }
+
+
+    msg("✅ تم تسجيل الدخول بنجاح.");
+
+  }catch(error){
+
+    console.error(error);
+
+    msg(
+      "فشل تسجيل الدخول: " +
+      (error.code || error.message)
+    );
+
+  }
+
 };
 
-$("lookupBtn").onclick=async()=>{
-  const id=$("lookupId").value.trim();
-  if(!id)return;
-  const s=await getDoc(doc(db,"restaurants",id));
-  $("restaurantInfo").classList.remove("hidden");
-  if(!s.exists()){$("restaurantInfo").textContent="المطعم غير موجود.";return}
-  const d=s.data();
-  $("restaurantInfo").innerHTML=`<b>${d.name||id}</b><br>الحالة: <span class="${d.licenseStatus==="active"?"ok":"bad"}">${d.licenseStatus||"غير معروف"}</span><br>الخطة: ${planName(d.plan)}<br>الانتهاء: ${d.licenseExpiresAt||"مدى الحياة"}`;
+
+/* =========================================================
+   Logout
+========================================================= */
+
+$("logoutBtn").onclick = async () => {
+
+  await signOut(auth);
+
 };
+
+
+/* =========================================================
+   Create License
+========================================================= */
+
+$("createBtn").onclick = async () => {
+
+  const user = auth.currentUser;
+
+  /* -----------------------------------------
+     Extra security check
+  ----------------------------------------- */
+
+  if(!isOwner(user)){
+
+    msg("❌ غير مصرح لك بتنفيذ هذا الإجراء.");
+
+    await signOut(auth);
+
+    return;
+  }
+
+
+  const restaurantId =
+    $("restaurantId").value.trim();
+
+  const plan =
+    $("plan").value;
+
+
+  if(!restaurantId){
+
+    msg("اكتب معرّف المطعم أولًا.");
+
+    return;
+  }
+
+
+  const code = randomCode();
+  const expiresAt = expiryFor(plan);
+
+
+  try{
+
+    await setDoc(
+      doc(db, "licenses", code),
+      {
+        code,
+        restaurantId,
+        plan,
+        expiresAt,
+        status: "available",
+        used: false,
+        createdAt: new Date().toISOString(),
+        createdBy: user.uid
+      }
+    );
+
+
+    $("newCode").classList.remove("hidden");
+
+
+    $("newCode").innerHTML = `
+      الكود:
+      <span class="code">${code}</span>
+      <br>
+      <span class="muted">
+        المدة: ${planName(plan)}
+      </span>
+    `;
+
+
+    msg("✅ تم إنشاء كود الاشتراك بنجاح.");
+
+    loadLicenses();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    msg(
+      "تعذر إنشاء الكود. تأكد من قواعد Firestore وأن حسابك هو حساب مالك المنصة."
+    );
+
+  }
+
+};
+
+
+/* =========================================================
+   Lookup Restaurant
+========================================================= */
+
+$("lookupBtn").onclick = async () => {
+
+  const user = auth.currentUser;
+
+
+  if(!isOwner(user)){
+
+    msg("❌ غير مصرح لك بتنفيذ هذا الإجراء.");
+
+    await signOut(auth);
+
+    return;
+  }
+
+
+  const id =
+    $("lookupId").value.trim();
+
+
+  if(!id){
+
+    msg("اكتب معرّف المطعم أولًا.");
+
+    return;
+  }
+
+
+  try{
+
+    const snapshot =
+      await getDoc(
+        doc(db, "restaurants", id)
+      );
+
+
+    $("restaurantInfo").classList.remove("hidden");
+
+
+    if(!snapshot.exists()){
+
+      $("restaurantInfo").textContent =
+        "المطعم غير موجود.";
+
+      return;
+    }
+
+
+    const data = snapshot.data();
+
+
+    $("restaurantInfo").innerHTML = `
+      <b>${data.name || id}</b>
+      <br>
+      الحالة:
+      <span class="${
+        data.licenseStatus === "active"
+        ? "ok"
+        : "bad"
+      }">
+        ${data.licenseStatus || "غير معروف"}
+      </span>
+      <br>
+      الخطة:
+      ${planName(data.plan)}
+      <br>
+      الانتهاء:
+      ${data.licenseExpiresAt || "مدى الحياة"}
+    `;
+
+
+  }catch(error){
+
+    console.error(error);
+
+    $("restaurantInfo").classList.remove("hidden");
+
+    $("restaurantInfo").textContent =
+      "حدث خطأ أثناء البحث عن المطعم.";
+
+  }
+
+};
+
+
+/* =========================================================
+   Load Licenses
+========================================================= */
 
 async function loadLicenses(){
-  try{
-    const snap=await getDocs(query(collection(db,"licenses"),orderBy("createdAt","desc"),limit(50)));
-    let html="<table><tr><th>الكود</th><th>المطعم</th><th>الخطة</th><th>الحالة</th></tr>";
-    snap.forEach(s=>{const d=s.data();html+=`<tr><td class="code">${d.code||s.id}</td><td>${d.restaurantId||"-"}</td><td>${planName(d.plan)}</td><td>${d.used?"مستخدم":"متاح"}</td></tr>`});
-    $("licenses").innerHTML=html+"</table>";
-  }catch(e){$("licenses").innerHTML='<span class="bad">لا يمكن قراءة الأكواد بهذه الصلاحيات.</span>'}
-}
-onAuthStateChanged(auth,u=>{
-  if(u){
-    $("panel").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("loginBtn").classList.add("hidden");
-    loadLicenses();
-  }else{
-    $("panel").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("loginBtn").classList.remove("hidden");
+
+  const user = auth.currentUser;
+
+
+  if(!isOwner(user)){
+
+    $("licenses").innerHTML =
+      '<span class="bad">غير مصرح لك بقراءة الأكواد.</span>';
+
+    return;
   }
+
+
+  try{
+
+    const snapshot =
+      await getDocs(
+        query(
+          collection(db, "licenses"),
+          orderBy("createdAt", "desc"),
+          limit(50)
+        )
+      );
+
+
+    let html = `
+      <table>
+        <tr>
+          <th>الكود</th>
+          <th>المطعم</th>
+          <th>الخطة</th>
+          <th>الحالة</th>
+        </tr>
+    `;
+
+
+    snapshot.forEach(snapshotItem => {
+
+      const data =
+        snapshotItem.data();
+
+
+      html += `
+        <tr>
+          <td class="code">
+            ${data.code || snapshotItem.id}
+          </td>
+
+          <td>
+            ${data.restaurantId || "-"}
+          </td>
+
+          <td>
+            ${planName(data.plan)}
+          </td>
+
+          <td>
+            ${
+              data.used
+              ? "مستخدم"
+              : "متاح"
+            }
+          </td>
+        </tr>
+      `;
+
+    });
+
+
+    html += "</table>";
+
+    $("licenses").innerHTML = html;
+
+
+  }catch(error){
+
+    console.error(error);
+
+    $("licenses").innerHTML =
+      '<span class="bad">لا يمكن قراءة الأكواد بهذه الصلاحيات.</span>';
+
+  }
+
+}
+
+
+/* =========================================================
+   Authentication State
+========================================================= */
+
+onAuthStateChanged(auth, async user => {
+
+  /* -----------------------------------------
+     No logged-in user
+  ----------------------------------------- */
+
+  if(!user){
+
+    $("panel").classList.add("hidden");
+
+    $("logoutBtn").classList.add("hidden");
+
+    $("loginBtn").classList.remove("hidden");
+
+    return;
+  }
+
+
+  /* -----------------------------------------
+     Check Owner UID
+  ----------------------------------------- */
+
+  if(!isOwner(user)){
+
+    $("panel").classList.add("hidden");
+
+    $("logoutBtn").classList.add("hidden");
+
+    $("loginBtn").classList.remove("hidden");
+
+    msg(
+      "❌ هذا الحساب غير مصرح له بدخول لوحة المالك."
+    );
+
+
+    await signOut(auth);
+
+    return;
+  }
+
+
+  /* -----------------------------------------
+     Authorized Owner
+  ----------------------------------------- */
+
+  $("panel").classList.remove("hidden");
+
+  $("logoutBtn").classList.remove("hidden");
+
+  $("loginBtn").classList.add("hidden");
+
+  msg("✅ تم التحقق من صلاحيات مالك المنصة.");
+
+  loadLicenses();
+
 });
-</script>
-</body>
+
+</script></body>
 </html>
