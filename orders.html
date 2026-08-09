@@ -287,6 +287,9 @@
         let activeOrderUnsubscribers = {};
         const customerSessionKey = `customer_session_${encodeURIComponent(restaurantId)}`;
         const activeOrdersKey = `customer_active_orders_${encodeURIComponent(restaurantId)}`;
+        // الصالة = جلسة مؤقتة لكل تبويب، الأونلاين = حساب محفوظ
+        const customerStorage = tableNum ? sessionStorage : localStorage;
+        const activeOrdersStorage = tableNum ? sessionStorage : localStorage;
         const statusMeta = {
             pending:{text:'قيد الانتظار ⏳',level:1}, preparing:{text:'جاري التجهيز بالمطبخ 👨‍🍳',level:2},
             ready:{text:'طلبك جاهز الآن! 🔔',level:3}, delivered:{text:'تم التسليم بنجاح ✅',level:4},
@@ -480,7 +483,7 @@
             document.getElementById('addressGroup').classList.toggle('hidden',type!=='delivery');
         }
         function loadCustomerSession(){
-            try{customerSession=JSON.parse(localStorage.getItem(customerSessionKey)||'null');}catch(e){customerSession=null;}
+            try{customerSession=JSON.parse(customerStorage.getItem(customerSessionKey)||'null');}catch(e){customerSession=null;}
             const name=document.getElementById('custName'),phone=document.getElementById('custPhone'),address=document.getElementById('custAddress');
             if(customerSession){
                 name.value=customerSession.name||'';phone.value=customerSession.phone||'';address.value=customerSession.address||'';
@@ -492,10 +495,10 @@
             }
             if(!tableNum) document.getElementById('addressGroup').classList.toggle('hidden',!!(customerSession&&customerSession.address));
         }
-        function saveCustomerSession(name,phone,address){customerSession={name,phone,address:address||''};localStorage.setItem(customerSessionKey,JSON.stringify(customerSession));loadCustomerSession();}
+        function saveCustomerSession(name,phone,address){customerSession={name,phone,address:address||''};customerStorage.setItem(customerSessionKey,JSON.stringify(customerSession));loadCustomerSession();}
         function customerLogout(){
             Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});activeOrderUnsubscribers={};
-            localStorage.removeItem(customerSessionKey);localStorage.removeItem(activeOrdersKey);customerSession=null;historyOrders=[];
+            customerStorage.removeItem(customerSessionKey);activeOrdersStorage.removeItem(activeOrdersKey);customerSession=null;historyOrders=[];
             document.getElementById('custName').value='';document.getElementById('custPhone').value='';document.getElementById('custAddress').value='';
             loadCustomerSession();hideLiveOrderBanner();renderHistory();alert('تم تسجيل الخروج. يمكنك الآن إدخال بيانات عميل جديد.');
         }
@@ -516,7 +519,7 @@
             try{
                 const docRef=await window.FB.addDoc(window.FB.collection(window.FB.db,'orders'),orderData);
                 saveCustomerSession(name,phone,orderType==='delivery'?address:(customerSession?.address||''));
-                const ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]');if(!ids.includes(docRef.id))ids.push(docRef.id);localStorage.setItem(activeOrdersKey,JSON.stringify(ids));
+                const ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]');if(!ids.includes(docRef.id))ids.push(docRef.id);activeOrdersStorage.setItem(activeOrdersKey,JSON.stringify(ids));
                 cart=[];updateCartUI();closeCartModal();showStatusModal(docRef.id);listenToOrderStatus(docRef.id);await loadOrderHistory();
             }catch(e){console.error('Order error:',e);alert('حدث خطأ أثناء إرسال الطلب');}
             finally{btn.disabled=false;btn.innerText='إرسال الطلب الآن';}
@@ -534,14 +537,32 @@
             activeOrderUnsubscribers[orderId]=window.FB.onSnapshot(window.FB.doc(window.FB.db,'orders',orderId),snap=>{
                 if(!snap.exists())return;
                 const status=snap.data().status||'pending';
-                if(status==='delivered'||status==='canceled'){
-                    const ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]').filter(id=>id!==orderId);localStorage.setItem(activeOrdersKey,JSON.stringify(ids));
+                if(status==='delivered'){
+                    const ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]').filter(id=>id!==orderId);activeOrdersStorage.setItem(activeOrdersKey,JSON.stringify(ids));
+                    try{activeOrderUnsubscribers[orderId]();}catch(e){}delete activeOrderUnsubscribers[orderId];
+                    hideLiveOrderBanner();
+                    closeStatusModal();
+                    // طلب الصالة ينتهي تلقائياً بمجرد أن يسجل المطبخ "تم التسليم".
+                    // بيانات الطلب تظل محفوظة في Firebase، لكن جلسة العميل على الجهاز تُمسح.
+                    if(tableNum){
+                        customerStorage.removeItem(customerSessionKey);
+                        activeOrdersStorage.removeItem(activeOrdersKey);
+                        customerSession=null;
+                        historyOrders=[];
+                        document.getElementById('custName').value='';
+                        document.getElementById('custPhone').value='';
+                        document.getElementById('custAddress').value='';
+                        loadCustomerSession();
+                        renderHistory();
+                    }
+                }else if(status==='canceled'){
+                    const ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]').filter(id=>id!==orderId);activeOrdersStorage.setItem(activeOrdersKey,JSON.stringify(ids));
                     try{activeOrderUnsubscribers[orderId]();}catch(e){}delete activeOrderUnsubscribers[orderId];hideLiveOrderBanner();
                 }else updateLiveOrderBanner(orderId,status);
                 loadOrderHistory();
             },err=>console.error('Live status error:',err));
         }
-        function restoreActiveOrderListeners(){let ids=[];try{ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]');}catch(e){}ids.forEach(listenToOrderStatus);}
+        function restoreActiveOrderListeners(){let ids=[];try{ids=JSON.parse(activeOrdersStorage.getItem(activeOrdersKey)||'[]');}catch(e){}ids.forEach(listenToOrderStatus);}
         function showStatusModal(orderId){document.getElementById('submittedOrderId').innerText=`#${orderId.substring(0,6)}`;document.getElementById('statusModal').classList.add('active');listenToOrderStatus(orderId);}
         function closeStatusModal(){document.getElementById('statusModal').classList.remove('active');}
 
