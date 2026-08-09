@@ -10,7 +10,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -23,7 +23,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        window.FB = { db, doc, getDoc, onSnapshot, collection, addDoc };
+        window.FB = { db, doc, getDoc, onSnapshot, collection, addDoc, getDocs, query, where };
         window.dispatchEvent(new Event('firebase-ready-orders'));
     </script>
 
@@ -148,7 +148,8 @@
             font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: var(--transition);
         }
 
-        .empty-cart { text-align: center; padding: 40px 0; color: var(--text-muted); }
+        .live-order-banner{position:sticky;top:77px;z-index:90;max-width:800px;margin:10px auto 0;padding:14px 16px;background:var(--surface-color);border:1px solid var(--primary);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(14px);}
+        .live-order-banner.hidden{display:none!important}.live-order-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.live-order-status{font-size:15px;font-weight:900;color:var(--accent)}.live-order-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}.live-order-step{height:6px;border-radius:99px;background:var(--border-color);transition:.3s}.live-order-step.active{background:var(--primary)}.account-actions{display:flex;align-items:center;gap:8px}.header-action-btn{background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);border-radius:12px;padding:8px 11px;cursor:pointer;font-weight:800;font-size:12px}.header-action-btn:hover{border-color:var(--primary);color:var(--primary)}.history-list{display:flex;flex-direction:column;gap:12px}.history-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:16px;padding:14px}.history-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.history-status{font-weight:800;color:var(--secondary)}.saved-customer-box{background:var(--input-bg);border:1px dashed var(--border-color);border-radius:12px;padding:12px;margin-bottom:15px;color:var(--text-muted);font-size:12px}.empty-cart { text-align: center; padding: 40px 0; color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -162,8 +163,17 @@
                 <div id="tableDisplay" class="table-badge">طلب عام</div>
             </div>
         </div>
-        <button class="theme-toggle-btn" onclick="toggleUserTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+        <div class="account-actions">
+            <button class="header-action-btn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
+            <button class="header-action-btn" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+            <button class="theme-toggle-btn" onclick="toggleUserTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+        </div>
     </header>
+
+    <div id="liveOrderBanner" class="live-order-banner hidden">
+        <div class="live-order-top"><div><div style="font-size:11px;color:var(--text-muted);">حالة طلبك المباشرة</div><div id="liveOrderNumber" style="font-weight:900;">#------</div></div><div id="liveOrderStatus" class="live-order-status">قيد الانتظار ⏳</div></div>
+        <div class="live-order-progress"><span class="live-order-step active"></span><span class="live-order-step"></span><span class="live-order-step"></span><span class="live-order-step"></span></div>
+    </div>
 
     <!-- Main Container -->
     <div class="container">
@@ -202,26 +212,20 @@
             <div id="cartItemsList"></div>
 
             <div id="checkoutFormSection" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                <div class="input-group">
+                <div class="input-group" id="custNameGroup">
                     <label>اسمك الكريـم</label>
                     <input type="text" id="custName" placeholder="أدخل اسمك...">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="custPhoneGroup">
                     <label>رقم التليفون</label>
                     <input type="tel" id="custPhone" placeholder="010XXXXXXXX">
                 </div>
-                <div class="input-group">
-                    <label>نوع الطلب</label>
-                    <select id="orderTypeSelect" onchange="toggleAddressField()">
-                        <option value="dine_in">داخل المطعم (صالة)</option>
-                        <option value="takeaway">تيك أواي (سفري)</option>
-                        <option value="delivery">توصيل (دليفري)</option>
-                    </select>
-                </div>
+                <input type="hidden" id="orderTypeSelect" value="delivery">
                 <div class="input-group hidden" id="addressGroup">
                     <label>عنوان التوصيل التفصيلي</label>
                     <input type="text" id="custAddress" placeholder="المنطقة، الشارع، العمارة...">
                 </div>
+                <div id="savedCustomerBox" class="saved-customer-box hidden"></div>
                 <div class="input-group">
                     <label><i class="fa-solid fa-money-bill-wave"></i> طريقة الدفع</label>
                     <select id="paymentMethodSelect" disabled style="background: var(--input-bg); opacity: 0.9;">
@@ -241,6 +245,13 @@
 
                 <button class="btn-submit" id="submitOrderBtn" onclick="submitOrder()"><i class="fa-solid fa-paper-plane"></i> إرسال الطلب الآن</button>
             </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal-overlay">
+        <div class="cart-modal" style="border-radius:24px;max-width:600px;text-align:right;padding:25px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><h3 style="font-size:20px;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i> سجل طلباتك</h3><button onclick="closeHistoryModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></div>
+            <div id="historyList" class="history-list"><p class="empty-cart">جاري تحميل السجل...</p></div>
         </div>
     </div>
 
@@ -270,6 +281,16 @@
         let selectedCategory = 'all';
         let cart = [];
         let userTheme = localStorage.getItem('user_app_theme') || 'dark';
+        let customerSession = null;
+        let historyOrders = [];
+        let activeOrderUnsubscribers = {};
+        const customerSessionKey = `customer_session_${encodeURIComponent(restaurantId)}`;
+        const activeOrdersKey = `customer_active_orders_${encodeURIComponent(restaurantId)}`;
+        const statusMeta = {
+            pending:{text:'قيد الانتظار ⏳',level:1}, preparing:{text:'جاري التجهيز بالمطبخ 👨‍🍳',level:2},
+            ready:{text:'طلبك جاهز الآن! 🔔',level:3}, delivered:{text:'تم التسليم بنجاح ✅',level:4},
+            canceled:{text:'تم إلغاء الطلب ❌',level:4}
+        };
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -294,35 +315,23 @@
 
         window.addEventListener('firebase-ready-orders', () => {
             applyThemeUI();
-            if (tableNum) {
-                document.getElementById('tableDisplay').innerText = `طاولة رقم ${tableNum}`;
-                document.getElementById('orderTypeSelect').value = 'dine_in';
-            } else {
-                document.getElementById('tableDisplay').innerText = `طلب أونلاين`;
-            }
+            configureOrderMode();
+            loadCustomerSession();
 
-            // Real-Time Listen Brand Colors & Menu
             window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", restaurantId), (docSnap) => {
-                if (docSnap.exists()) {
-                    restaurantData = docSnap.data();
-                    
-                    // Inject Brand Colors
-                    let root = document.documentElement;
-                    if (restaurantData.primaryColor) root.style.setProperty('--primary', restaurantData.primaryColor);
-                    if (restaurantData.secondaryColor) root.style.setProperty('--secondary', restaurantData.secondaryColor);
-                    if (restaurantData.accentColor) root.style.setProperty('--accent', restaurantData.accentColor);
-                    if (restaurantData.bgColor) root.style.setProperty('--bg-color', restaurantData.bgColor);
-                    if (restaurantData.surfaceColor) root.style.setProperty('--surface-color', restaurantData.surfaceColor);
-                    if (restaurantData.textColor) root.style.setProperty('--text-color', restaurantData.textColor);
-
-                    document.getElementById('restName').innerText = restaurantId.toUpperCase();
-                    if (restaurantData.logo) {
-                        let logo = document.getElementById('restLogo');
-                        logo.src = restaurantData.logo; logo.style.display = 'block';
-                    }
-
-                    renderCategories();
-                    renderItems();
+                if(docSnap.exists()) {
+                    restaurantData=docSnap.data();
+                    const root=document.documentElement;
+                    if(restaurantData.primaryColor) root.style.setProperty('--primary',restaurantData.primaryColor);
+                    if(restaurantData.secondaryColor) root.style.setProperty('--secondary',restaurantData.secondaryColor);
+                    if(restaurantData.accentColor) root.style.setProperty('--accent',restaurantData.accentColor);
+                    if(restaurantData.bgColor) root.style.setProperty('--bg-color',restaurantData.bgColor);
+                    if(restaurantData.surfaceColor) root.style.setProperty('--surface-color',restaurantData.surfaceColor);
+                    if(restaurantData.textColor) root.style.setProperty('--text-color',restaurantData.textColor);
+                    document.getElementById('restName').innerText=restaurantData.name||restaurantId;
+                    if(restaurantData.logo){const logo=document.getElementById('restLogo');logo.src=restaurantData.logo;logo.style.display='block';}
+                    renderCategories(); renderItems();
+                    restoreActiveOrderListeners(); loadOrderHistory();
                 }
             });
         });
@@ -445,78 +454,97 @@
             updateCartUI();
         }
 
-        function toggleAddressField() {
-            let type = document.getElementById('orderTypeSelect').value;
-            let group = document.getElementById('addressGroup');
-            if (type === 'delivery') group.classList.remove('hidden');
-            else group.classList.add('hidden');
+        function configureOrderMode(){
+            const typeEl=document.getElementById('orderTypeSelect'), tableDisplay=document.getElementById('tableDisplay'), addressGroup=document.getElementById('addressGroup');
+            if(tableNum){typeEl.value='dine_in';tableDisplay.innerText=`طاولة رقم ${tableNum}`;addressGroup.classList.add('hidden');}
+            else{typeEl.value='delivery';tableDisplay.innerText='طلب أونلاين';addressGroup.classList.remove('hidden');}
         }
-
-        function openCartModal() { document.getElementById('cartModal').classList.add('active'); }
-        function closeCartModal() { document.getElementById('cartModal').classList.remove('active'); }
-
-        async function submitOrder() {
-            let name = document.getElementById('custName').value.trim();
-            let phone = document.getElementById('custPhone').value.trim();
-            let orderType = document.getElementById('orderTypeSelect').value;
-            let address = document.getElementById('custAddress').value.trim();
-            let notes = document.getElementById('orderNotes').value.trim();
-            let total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-
-            if (!name || !phone) return alert('الرجاء إدخال الاسم ورقم الهاتف');
-            if (orderType === 'delivery' && !address) return alert('الرجاء إدخال عنوان التوصيل');
-
-            let btn = document.getElementById('submitOrderBtn');
-            btn.disabled = true; btn.innerText = 'جاري الإرسال...';
-
-            let orderData = {
-                restaurant: restaurantId,
-                table: tableNum || 'عام',
-                customerName: name,
-                customerPhone: phone,
-                orderType: orderType,
-                address: address || '',
-                notes: notes || '',
-                items: cart,
-                total: total,
-                paymentMethod: 'cash',
-                status: 'pending',
-                createdAt: new Date().toISOString()
-            };
-
-            try {
-                let docRef = await window.FB.addDoc(window.FB.collection(window.FB.db, "orders"), orderData);
-                cart = [];
-                updateCartUI();
-                closeCartModal();
-                showStatusModal(docRef.id);
-            } catch(e) {
-                console.error("Order error:", e);
-                alert('حدث خطأ أثناء إرسال الطلب');
-            } finally {
-                btn.disabled = false; btn.innerText = 'إرسال الطلب الآن';
+        function toggleAddressField(){
+            const type=tableNum?'dine_in':'delivery';document.getElementById('orderTypeSelect').value=type;
+            document.getElementById('addressGroup').classList.toggle('hidden',type!=='delivery');
+        }
+        function loadCustomerSession(){
+            try{customerSession=JSON.parse(localStorage.getItem(customerSessionKey)||'null');}catch(e){customerSession=null;}
+            const name=document.getElementById('custName'),phone=document.getElementById('custPhone'),address=document.getElementById('custAddress');
+            if(customerSession){
+                name.value=customerSession.name||'';phone.value=customerSession.phone||'';address.value=customerSession.address||'';
+                document.getElementById('custNameGroup').classList.add('hidden');document.getElementById('custPhoneGroup').classList.add('hidden');
+                const box=document.getElementById('savedCustomerBox');box.classList.remove('hidden');
+                box.innerHTML=`<i class="fa-solid fa-user-check" style="color:var(--secondary);"></i> بياناتك محفوظة: <strong>${escapeHtml(customerSession.name)}</strong> — ${escapeHtml(customerSession.phone)}.`;
+            }else{
+                document.getElementById('custNameGroup').classList.remove('hidden');document.getElementById('custPhoneGroup').classList.remove('hidden');document.getElementById('savedCustomerBox').classList.add('hidden');
             }
+            if(!tableNum) document.getElementById('addressGroup').classList.toggle('hidden',!!(customerSession&&customerSession.address));
+        }
+        function saveCustomerSession(name,phone,address){customerSession={name,phone,address:address||''};localStorage.setItem(customerSessionKey,JSON.stringify(customerSession));loadCustomerSession();}
+        function customerLogout(){
+            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});activeOrderUnsubscribers={};
+            localStorage.removeItem(customerSessionKey);localStorage.removeItem(activeOrdersKey);customerSession=null;historyOrders=[];
+            document.getElementById('custName').value='';document.getElementById('custPhone').value='';document.getElementById('custAddress').value='';
+            loadCustomerSession();hideLiveOrderBanner();renderHistory();alert('تم تسجيل الخروج. يمكنك الآن إدخال بيانات عميل جديد.');
+        }
+        function openCartModal(){document.getElementById('cartModal').classList.add('active');}
+        function closeCartModal(){document.getElementById('cartModal').classList.remove('active');}
+
+        async function submitOrder(){
+            const name=document.getElementById('custName').value.trim()||(customerSession&&customerSession.name)||'';
+            const phone=document.getElementById('custPhone').value.trim()||(customerSession&&customerSession.phone)||'';
+            const orderType=tableNum?'dine_in':'delivery';
+            const address=document.getElementById('custAddress').value.trim()||(customerSession&&customerSession.address)||'';
+            const notes=document.getElementById('orderNotes').value.trim();
+            const total=cart.reduce((acc,item)=>acc+(item.price*item.quantity),0);
+            if(!name||!phone)return alert('الرجاء إدخال الاسم ورقم الهاتف');
+            if(orderType==='delivery'&&!address)return alert('الرجاء إدخال عنوان التوصيل');
+            const btn=document.getElementById('submitOrderBtn');btn.disabled=true;btn.innerText='جاري الإرسال...';
+            const orderData={restaurant:restaurantId,table:tableNum||'عام',customerName:name,customerPhone:phone,orderType,address:orderType==='delivery'?address:'',notes:notes||'',items:cart,total,paymentMethod:'cash',status:'pending',createdAt:new Date().toISOString()};
+            try{
+                const docRef=await window.FB.addDoc(window.FB.collection(window.FB.db,'orders'),orderData);
+                saveCustomerSession(name,phone,orderType==='delivery'?address:(customerSession?.address||''));
+                const ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]');if(!ids.includes(docRef.id))ids.push(docRef.id);localStorage.setItem(activeOrdersKey,JSON.stringify(ids));
+                cart=[];updateCartUI();closeCartModal();showStatusModal(docRef.id);listenToOrderStatus(docRef.id);await loadOrderHistory();
+            }catch(e){console.error('Order error:',e);alert('حدث خطأ أثناء إرسال الطلب');}
+            finally{btn.disabled=false;btn.innerText='إرسال الطلب الآن';}
         }
 
-        function showStatusModal(orderId) {
-            document.getElementById('submittedOrderId').innerText = `#${orderId.substring(0,6)}`;
-            document.getElementById('statusModal').classList.add('active');
-
-            // Listen Live Order Status
-            window.FB.onSnapshot(window.FB.doc(window.FB.db, "orders", orderId), (docSnap) => {
-                if (docSnap.exists()) {
-                    let st = docSnap.data().status;
-                    let text = 'قيد الانتظار ⏳';
-                    if (st === 'preparing') text = 'جاري التجهيز بالمطبخ 👨‍🍳';
-                    if (st === 'ready') text = 'طلبك جاهز الآن! 🔔';
-                    if (st === 'delivered') text = 'تم التسليم بنجاح ✅';
-                    if (st === 'canceled') text = 'تم إلغاء الطلب ❌';
-                    document.getElementById('liveStatusText').innerText = text;
-                }
-            });
+        function updateLiveOrderBanner(orderId,status){
+            const meta=statusMeta[status]||statusMeta.pending,banner=document.getElementById('liveOrderBanner');banner.classList.remove('hidden');
+            document.getElementById('liveOrderNumber').innerText=`#${String(orderId).substring(0,8)}`;document.getElementById('liveOrderStatus').innerText=meta.text;
+            document.querySelectorAll('.live-order-step').forEach((s,i)=>s.classList.toggle('active',i<meta.level));
+            document.getElementById('liveStatusText').innerText=meta.text;
         }
+        function hideLiveOrderBanner(){document.getElementById('liveOrderBanner').classList.add('hidden');}
+        function listenToOrderStatus(orderId){
+            if(!orderId||activeOrderUnsubscribers[orderId])return;
+            activeOrderUnsubscribers[orderId]=window.FB.onSnapshot(window.FB.doc(window.FB.db,'orders',orderId),snap=>{
+                if(!snap.exists())return;
+                const status=snap.data().status||'pending';
+                if(status==='delivered'||status==='canceled'){
+                    const ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]').filter(id=>id!==orderId);localStorage.setItem(activeOrdersKey,JSON.stringify(ids));
+                    try{activeOrderUnsubscribers[orderId]();}catch(e){}delete activeOrderUnsubscribers[orderId];hideLiveOrderBanner();
+                }else updateLiveOrderBanner(orderId,status);
+                loadOrderHistory();
+            },err=>console.error('Live status error:',err));
+        }
+        function restoreActiveOrderListeners(){let ids=[];try{ids=JSON.parse(localStorage.getItem(activeOrdersKey)||'[]');}catch(e){}ids.forEach(listenToOrderStatus);}
+        function showStatusModal(orderId){document.getElementById('submittedOrderId').innerText=`#${orderId.substring(0,6)}`;document.getElementById('statusModal').classList.add('active');listenToOrderStatus(orderId);}
+        function closeStatusModal(){document.getElementById('statusModal').classList.remove('active');}
 
-        function closeStatusModal() { document.getElementById('statusModal').classList.remove('active'); }
+        async function loadOrderHistory(){
+            if(!window.FB||!customerSession||!customerSession.phone){historyOrders=[];renderHistory();return;}
+            try{
+                const q=window.FB.query(window.FB.collection(window.FB.db,'orders'),window.FB.where('restaurant','==',restaurantId),window.FB.where('customerPhone','==',customerSession.phone));
+                const snap=await window.FB.getDocs(q);historyOrders=[];snap.forEach(d=>historyOrders.push({id:d.id,...d.data()}));
+                historyOrders.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));renderHistory();
+            }catch(e){console.error('History error:',e);document.getElementById('historyList').innerHTML='<p class="empty-cart">تعذر تحميل سجل الطلبات حالياً.</p>';}
+        }
+        function renderHistory(){
+            const list=document.getElementById('historyList');
+            if(!historyOrders.length){list.innerHTML='<p class="empty-cart">لا يوجد طلبات سابقة لهذا الحساب.</p>';return;}
+            const statusText={pending:'قيد الانتظار',preparing:'جاري التجهيز',ready:'جاهز',delivered:'تم التسليم',canceled:'ملغي',on_way:'في الطريق'};
+            list.innerHTML=historyOrders.map(o=>`<div class="history-card"><div class="history-head"><strong>#${escapeHtml(o.id.substring(0,8))}</strong><span class="history-status">${escapeHtml(statusText[o.status]||'غير معروف')}</span></div><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">${new Date(o.createdAt||Date.now()).toLocaleString('ar-EG')} — ${o.orderType==='dine_in'?`صالة / طاولة ${escapeHtml(o.table)}`:'أونلاين'}</div><div style="font-size:13px;">${(o.items||[]).map(i=>`${escapeHtml(i.quantity)}× ${escapeHtml(i.name)}`).join('، ')}</div><div style="margin-top:8px;font-weight:900;color:var(--secondary);">${escapeHtml(o.total)} ج.م</div></div>`).join('');
+        }
+        function openHistoryModal(){document.getElementById('historyModal').classList.add('active');loadOrderHistory();}
+        function closeHistoryModal(){document.getElementById('historyModal').classList.remove('active');}
     </script>
 </body>
 </html>

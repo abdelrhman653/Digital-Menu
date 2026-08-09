@@ -173,6 +173,8 @@
             transition: var(--transition);
         }
         .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.15); }
+        .date-filter-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center}.date-filter-row .search-input{margin:0}.date-filter-btn{background:var(--dark-bg);color:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;font-weight:800}.date-filter-btn:hover{border-color:var(--primary)}
+        @media(max-width:600px){.date-filter-row{grid-template-columns:1fr 1fr}.date-filter-btn{grid-column:1/-1}}
 
         /* Modern Order Cards */
         #kitchenOrdersList {
@@ -334,7 +336,12 @@
 
         <!-- Filter -->
         <div class="filter-box">
-            <input type="text" class="search-input" id="kitchenSearch" placeholder="بحث برقم الطلب، العميل، الطاولة..." onkeyup="renderKitchenOrders()">
+            <input type="text" class="search-input" id="kitchenSearch" placeholder="بحث برقم الطلب، العميل، الهاتف، الطاولة..." onkeyup="renderKitchenOrders()">
+            <div class="date-filter-row">
+                <input type="date" class="search-input" id="kitchenDateFilter" onchange="renderKitchenOrders()" title="التاريخ">
+                <input type="time" class="search-input" id="kitchenTimeFilter" onchange="renderKitchenOrders()" title="الوقت">
+                <button class="date-filter-btn" onclick="clearKitchenFilters()"><i class="fa-solid fa-rotate-left"></i> مسح التاريخ والوقت</button>
+            </div>
         </div>
 
         <!-- Orders Grid -->
@@ -351,6 +358,7 @@
         let currentTab = 'active';
         let allKitchenOrders = [];
         let previousOrdersCount = -1;
+        let restaurantDisplayName = restaurantId;
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -381,6 +389,7 @@
             onSnapshot(doc(window.db, "restaurants", restaurantId), (docSnap) => {
                 if (docSnap.exists()) {
                     let data = docSnap.data();
+                    restaurantDisplayName = data.name || restaurantId;
                     let root = document.documentElement;
                     if (data.primaryColor) root.style.setProperty('--primary', data.primaryColor);
                     if (data.secondaryColor) root.style.setProperty('--secondary', data.secondaryColor);
@@ -388,6 +397,8 @@
                     if (data.bgColor) root.style.setProperty('--dark-bg', data.bgColor);
                     if (data.surfaceColor) root.style.setProperty('--dark-card', data.surfaceColor);
                     if (data.textColor) root.style.setProperty('--white', data.textColor);
+                    if (data.primaryColor) root.style.setProperty('--primary-gradient', `linear-gradient(135deg, ${data.primaryColor} 0%, ${data.primaryColor} 100%)`);
+                    if (data.secondaryColor) root.style.setProperty('--secondary-gradient', `linear-gradient(135deg, ${data.secondaryColor} 0%, ${data.secondaryColor} 100%)`);
 
                     if (data.logo) {
                         let logo = document.getElementById('kitchenLogo');
@@ -440,6 +451,8 @@
         function renderKitchenOrders() {
             let container = document.getElementById('kitchenOrdersList');
             let search = document.getElementById('kitchenSearch').value.toLowerCase().trim();
+            let dateFilter = document.getElementById('kitchenDateFilter').value;
+            let timeFilter = document.getElementById('kitchenTimeFilter').value;
 
             let filtered = allKitchenOrders.filter(o => {
                 let matchTab = true;
@@ -449,10 +462,26 @@
 
                 let matchSearch = !search || 
                     (o.id && o.id.toLowerCase().includes(search)) ||
-                    (o.customerName && o.customerName.toLowerCase().includes(search)) ||
-                    (o.table && String(o.table).includes(search));
+                    (o.customerName && String(o.customerName).toLowerCase().includes(search)) ||
+                    (o.customerPhone && String(o.customerPhone).includes(search)) ||
+                    (o.table && String(o.table).toLowerCase().includes(search));
 
-                return matchTab && matchSearch;
+                let matchDate = true, matchTime = true;
+                if (o.createdAt) {
+                    const d = new Date(o.createdAt);
+                    if (dateFilter) {
+                        const localDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                        matchDate = localDate === dateFilter;
+                    }
+                    if (timeFilter) {
+                        const localTime = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                        matchTime = localTime === timeFilter;
+                    }
+                } else if (dateFilter || timeFilter) {
+                    matchDate = false; matchTime = false;
+                }
+
+                return matchTab && matchSearch && matchDate && matchTime;
             });
 
             if (filtered.length === 0) {
@@ -520,6 +549,13 @@
             }).join('');
         }
 
+        function clearKitchenFilters() {
+            document.getElementById('kitchenSearch').value='';
+            document.getElementById('kitchenDateFilter').value='';
+            document.getElementById('kitchenTimeFilter').value='';
+            renderKitchenOrders();
+        }
+
         async function changeStatus(orderId, newStatus) {
             try {
                 const { doc, updateDoc } = window.firestoreModules;
@@ -536,7 +572,7 @@
             let area = document.getElementById('kitchenReceiptArea');
             area.innerHTML = `
                 <div style="text-align:center; margin-bottom:10px;">
-                    <h2>${escapeHtml(restaurantId.toUpperCase())}</h2>
+                    <h2>${escapeHtml(restaurantDisplayName)}</h2>
                     <p>فاتورة مطبخ / عميل</p>
                     <p>رقم الطلب: #${escapeHtml(order.id.substring(0,8))}</p>
                     <p>التاريخ: ${new Date(order.createdAt || Date.now()).toLocaleString('ar-EG')}</p>
