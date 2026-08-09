@@ -731,6 +731,7 @@
         
         let uploadedImageFile = null;
         let uploadedLogoFile = null;
+        let uploadedLogoBase64 = null; // Backup Base64 string for immediate & reliable saving
         let aiMenuImageFile = null;
         let defaultCategories = ["مشروبات / Drinks", "أكلات / Foods", "حلويات / Desserts"];
         let restaurantDataCache = { 
@@ -946,12 +947,12 @@
                     
                     applyBrandColors(restaurantDataCache);
 
-                    // Logo Fix
+                    // Logo Fix & Sync
                     if (restaurantDataCache.logo) {
                         let headerLogo = document.getElementById('headerLogoImg');
                         let previewLogo = document.getElementById('settingsLogoPreview');
-                        headerLogo.src = restaurantDataCache.logo; headerLogo.style.display = 'block';
-                        previewLogo.src = restaurantDataCache.logo; previewLogo.style.display = 'block';
+                        if (headerLogo) { headerLogo.src = restaurantDataCache.logo; headerLogo.style.display = 'block'; }
+                        if (previewLogo) { previewLogo.src = restaurantDataCache.logo; previewLogo.style.display = 'block'; }
                     }
 
                     document.getElementById('dashboardItemsCount').innerText = restaurantDataCache.items.length;
@@ -1098,11 +1099,11 @@
         }
         function closeOrderDetails() { document.getElementById('orderDetailsModal').classList.remove('active'); }
 
-        // Settings & Identity Upload Fix
+        // Settings & Data Persistence
         async function saveRestaurantDataToCloud() {
             if (!window.FB) return;
             try { await window.FB.setDoc(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), restaurantDataCache, { merge: true }); }
-            catch(e) { console.error(e); }
+            catch(e) { console.error("Firestore Save Error:", e); }
         }
 
         async function uploadFileToStorage(file, folder) {
@@ -1112,21 +1113,28 @@
                 await window.FB.uploadBytes(fileRef, file);
                 return await window.FB.getDownloadURL(fileRef);
             } catch (e) { 
-                console.error("Storage Error:", e);
+                console.error("Storage Upload Error:", e);
                 return ""; 
             }
         }
 
+        // Handle Logo Selection (Reads into File Object + Base64 Stream Immediately)
         function handleLogoUpload(e) {
             uploadedLogoFile = e.target.files[0];
             if (uploadedLogoFile) {
                 document.getElementById('logoFileNameDisplay').innerText = uploadedLogoFile.name;
-                let preview = document.getElementById('settingsLogoPreview');
-                preview.src = URL.createObjectURL(uploadedLogoFile);
-                preview.style.display = 'block';
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    uploadedLogoBase64 = evt.target.result;
+                    let preview = document.getElementById('settingsLogoPreview');
+                    preview.src = uploadedLogoBase64;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(uploadedLogoFile);
             }
         }
 
+        // Complete & Fixed Logo Saving Logic (Supports Storage & Guaranteed Base64 Fallback)
         async function updateRestaurantIdentity() {
             try {
                 restaurantDataCache.primaryColor = document.getElementById('brandPrimaryColor').value;
@@ -1136,11 +1144,17 @@
                 restaurantDataCache.surfaceColor = document.getElementById('brandSurfaceColor').value;
                 restaurantDataCache.textColor = document.getElementById('brandTextColor').value;
 
+                // Priority 1: Upload to Firebase Storage
                 if (uploadedLogoFile) {
                     let logoUrl = await uploadFileToStorage(uploadedLogoFile, "logos");
                     if (logoUrl) {
                         restaurantDataCache.logo = logoUrl;
+                    } else if (uploadedLogoBase64) {
+                        // Priority 2: Direct Base64 fallback if Storage bucket fails
+                        restaurantDataCache.logo = uploadedLogoBase64;
                     }
+                } else if (uploadedLogoBase64) {
+                    restaurantDataCache.logo = uploadedLogoBase64;
                 }
 
                 await saveRestaurantDataToCloud();
@@ -1148,12 +1162,17 @@
                 
                 if (restaurantDataCache.logo) {
                     let headerLogo = document.getElementById('headerLogoImg');
-                    headerLogo.src = restaurantDataCache.logo; headerLogo.style.display = 'block';
+                    if (headerLogo) {
+                        headerLogo.src = restaurantDataCache.logo;
+                        headerLogo.style.display = 'block';
+                    }
                 }
-                showCustomAlert(currentLang === 'ar' ? 'تم حفظ الهوية والألوان والشعار بنجاح!' : 'Settings & logo saved!');
+                
+                uploadedLogoFile = null; // Reset temp upload file after success
+                showCustomAlert(currentLang === 'ar' ? 'تم حفظ الهوية والألوان والشعار بنجاح!' : 'Settings & logo saved successfully!');
             } catch(e) {
                 console.error(e);
-                showCustomAlert('حدث خطأ أثناء حفظ الإعدادات');
+                showCustomAlert(currentLang === 'ar' ? 'حدث خطأ أثناء حفظ الإعدادات' : 'Error saving settings');
             }
         }
 
@@ -1281,7 +1300,7 @@
             } catch(e) { stat.innerText = ''; btn.innerHTML = '<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕'; showCustomAlert('خطأ في التحليل'); }
         }
 
-        // QR Generate & Printing Fixes
+        // QR Generate & Printing
         function generateTablesQR() {
             let count = parseInt(document.getElementById('tablesCountInput').value) || 4;
             let container = document.getElementById('qrResultsContainer'); container.innerHTML = '';
@@ -1308,7 +1327,6 @@
             }
         }
 
-        // Fix Print One Bug
         function printSingleTableQR(tableNum) {
             let printArea = document.getElementById('printArea');
             let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
@@ -1337,7 +1355,6 @@
             setTimeout(() => { window.print(); }, 300);
         }
 
-        // Fix Print All Bug (Only QR cards without UI)
         function printAllTablesQR() {
             let count = parseInt(document.getElementById('tablesCountInput').value) || 4;
             let printArea = document.getElementById('printArea');
