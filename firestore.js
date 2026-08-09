@@ -9,7 +9,6 @@ import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -23,12 +22,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const storage = getStorage(app);
 
 window.FB = {
   db, auth, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
-  getDocs, query, where, orderBy, writeBatch, addDoc, ref, uploadBytes,
-  getDownloadURL, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  getDocs, query, where, orderBy, writeBatch, addDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously
 };
 
@@ -36,8 +33,7 @@ window.db = db;
 window.ownerAuth = auth;
 window.firestoreModules = {
   db, auth, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
-  getDocs, query, where, orderBy, writeBatch, addDoc, ref, uploadBytes,
-  getDownloadURL, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  getDocs, query, where, orderBy, writeBatch, addDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously
 };
 

@@ -706,12 +706,13 @@
         </main>
     </div>
 
+    <script src="storage.js"></script>
+
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -724,11 +725,10 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app);
         const auth = getAuth(app);
 
         window.FB = { 
-            db, storage, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, ref, uploadBytes, getDownloadURL, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+            db, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
         };
 
         window.dispatchEvent(new Event('firebase-ready'));
@@ -1214,14 +1214,16 @@
         }
 
         async function uploadFileToStorage(file, folder) {
-            if (!window.FB || !file) return "";
+            if (!file) return "";
             try {
-                let fileRef = window.FB.ref(window.FB.storage, `${folder}/${currentRestaurant}_${Date.now()}_${file.name}`);
-                await window.FB.uploadBytes(fileRef, file);
-                return await window.FB.getDownloadURL(fileRef);
-            } catch (e) { 
-                console.error("Storage Error:", e);
-                return ""; 
+                // Firebase Storage is intentionally not used. The image is resized
+                // in the browser and stored as a compact data URL in Firestore.
+                const maxSize = folder === "logo" ? 500 : 600;
+                return await window.fileToDataURL(file, { maxSize, quality: 0.55 });
+            } catch (e) {
+                console.error("Image conversion error:", e);
+                showCustomAlert('تعذر تجهيز الصورة. جرّب صورة أخرى.');
+                return "";
             }
         }
 

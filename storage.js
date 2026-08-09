@@ -1,16 +1,47 @@
-// Shared Firebase Storage helper.
-// The actual authorization is enforced by Firebase Storage Rules.
-export async function uploadRestaurantFile(file, restaurantId, folder = 'uploads') {
-  if (!file || !restaurantId || !window.FB?.storage) return '';
-  const user = window.FB?.auth?.currentUser;
-  if (!user) throw new Error('يجب تسجيل الدخول قبل رفع الملفات.');
-  const safeName = String(file.name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
-  const fileRef = window.FB.ref(
-    window.FB.storage,
-    `${folder}/${restaurantId}_${Date.now()}_${safeName}`
-  );
-  await window.FB.uploadBytes(fileRef, file);
-  return await window.FB.getDownloadURL(fileRef);
-}
+/*
+ * No Firebase Storage version.
+ * Firebase Storage is optional in this project, so uploaded images are
+ * resized in the browser and saved as compact data URLs inside Firestore.
+ * This works on Firebase's no-billing setup and keeps the existing UI/API.
+ */
+(function () {
+  function fileToDataURL(file, options) {
+    options = options || {};
+    if (!file) return Promise.resolve('');
 
-window.uploadRestaurantFile = uploadRestaurantFile;
+    const maxSize = Number(options.maxSize || 600);
+    const quality = Number(options.quality || 0.55);
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('تعذر قراءة الصورة.'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          if (!w || !h) return reject(new Error('الصورة غير صالحة.'));
+
+          const scale = Math.min(1, maxSize / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale));
+          h = Math.max(1, Math.round(h * scale));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d', { alpha: false });
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => reject(new Error('تعذر معالجة الصورة.'));
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  window.fileToDataURL = fileToDataURL;
+})();
