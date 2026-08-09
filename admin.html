@@ -1,109 +1,349 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>لوحة مالك المنصة</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#0f1115;color:#f5f5f5}
-.wrap{max-width:1050px;margin:auto;padding:20px}
-.card{background:#181b21;border:1px solid #2a2f38;border-radius:18px;padding:20px;margin-bottom:18px}
-h1,h2{margin-top:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-input,select,button{width:100%;padding:13px;border-radius:10px;border:1px solid #343a45;background:#101318;color:#fff;font-size:15px}
-button{cursor:pointer;background:#b51f2a;border:0;font-weight:700}
-button.secondary{background:#2b3039}
-.row{display:flex;gap:10px;align-items:center}
-.row>*{flex:1}
-.hidden{display:none!important}
-.msg{padding:12px;border-radius:10px;background:#222732;margin-top:12px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:11px;border-bottom:1px solid #2b3039;text-align:right}
-.ok{color:#55d98b}
-.bad{color:#ff6b6b}
-.muted{color:#aab1bd}
-.code{font-size:20px;letter-spacing:1px;font-weight:800}@media(max-width:600px){
-.wrap{padding:12px}
-.card{padding:15px}
-.row{flex-direction:column}
-table{font-size:13px}
-th,td{padding:8px}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#0f1115;
+  color:#f5f5f5
+}
+
+.wrap{
+  max-width:1100px;
+  margin:auto;
+  padding:20px
+}
+
+.card{
+  background:#181b21;
+  border:1px solid #2a2f38;
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:18px
+}
+
+h1,h2{
+  margin-top:0
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px
+}
+
+input,select,button{
+  width:100%;
+  padding:13px;
+  border-radius:10px;
+  border:1px solid #343a45;
+  background:#101318;
+  color:#fff;
+  font-size:15px
+}
+
+button{
+  cursor:pointer;
+  background:#b51f2a;
+  border:0;
+  font-weight:700
+}
+
+button.secondary{
+  background:#2b3039
+}
+
+button.green{
+  background:#16834d
+}
+
+button.orange{
+  background:#b86b00
+}
+
+button.danger{
+  background:#8f1722
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center
+}
+
+.row>*{
+  flex:1
+}
+
+.hidden{
+  display:none!important
+}
+
+.msg{
+  padding:12px;
+  border-radius:10px;
+  background:#222732;
+  margin-top:12px
+}
+
+table{
+  width:100%;
+  border-collapse:collapse
+}
+
+th,td{
+  padding:11px;
+  border-bottom:1px solid #2b3039;
+  text-align:right
+}
+
+.ok{
+  color:#55d98b
+}
+
+.bad{
+  color:#ff6b6b
+}
+
+.warn{
+  color:#ffbd5c
+}
+
+.muted{
+  color:#aab1bd
+}
+
+.code{
+  font-size:20px;
+  letter-spacing:1px;
+  font-weight:800
+}
+
+.status-box{
+  padding:15px;
+  border-radius:12px;
+  background:#11151b;
+  border:1px solid #2b3039;
+  margin-top:15px
+}
+
+.actions{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+  margin-top:15px
+}
+
+.actions button{
+  margin:0
+}
+
+.restaurant-title{
+  font-size:22px;
+  font-weight:800;
+  margin-bottom:12px
+}
+
+.info-line{
+  padding:7px 0;
+  border-bottom:1px solid #292e37
+}
+
+.info-line:last-child{
+  border-bottom:0
+}
+
+@media(max-width:600px){
+  .wrap{
+    padding:12px
+  }
+
+  .card{
+    padding:15px
+  }
+
+  .row{
+    flex-direction:column
+  }
+
+  table{
+    font-size:13px
+  }
+
+  th,td{
+    padding:8px
+  }
+
+  .actions{
+    grid-template-columns:1fr 1fr
+  }
 }
 </style>
+</head>
 
-</head><body><div class="wrap">  <div id="login" class="card">
-    <h1>👑 لوحة مالك المنصة</h1><p class="muted">
-  هذه الصفحة لك أنت فقط لإصدار وتجديد اشتراكات المطاعم.
-</p>
+<body>
 
-<div class="grid">
-  <input id="email" type="email" placeholder="البريد الإلكتروني">
-  <input id="password" type="password" placeholder="كلمة المرور">
-</div>
+<div class="wrap">
 
-<div class="row" style="margin-top:12px">
-  <button id="loginBtn">تسجيل الدخول</button>
-  <button id="logoutBtn" class="secondary hidden">تسجيل الخروج</button>
-</div>
+  <!-- LOGIN -->
+  <div id="login" class="card">
 
-<div id="msg"></div>
+    <h1>👑 لوحة مالك المنصة</h1>
 
-  </div>  <div id="panel" class="hidden"><div class="card">
-  <h2>➕ إنشاء كود اشتراك</h2>
+    <p class="muted">
+      هذه الصفحة لك أنت فقط لإدارة اشتراكات المطاعم.
+    </p>
 
-  <div class="grid">
-    <input
-      id="restaurantId"
-      placeholder="معرّف المطعم، مثال: ahmed-restaurant"
-    >
+    <div class="grid">
 
-    <select id="plan">
-      <option value="month">شهر</option>
-      <option value="3months">3 أشهر</option>
-      <option value="6months">6 أشهر</option>
-      <option value="year">سنة</option>
-      <option value="lifetime">مدى الحياة</option>
-    </select>
+      <input
+        id="email"
+        type="email"
+        placeholder="البريد الإلكتروني"
+      >
+
+      <input
+        id="password"
+        type="password"
+        placeholder="كلمة المرور"
+      >
+
+    </div>
+
+    <div class="row" style="margin-top:12px">
+
+      <button id="loginBtn">
+        تسجيل الدخول
+      </button>
+
+      <button
+        id="logoutBtn"
+        class="secondary hidden"
+      >
+        تسجيل الخروج
+      </button>
+
+    </div>
+
+    <div id="msg" class="msg hidden"></div>
+
   </div>
 
-  <button id="createBtn" style="margin-top:12px">
-    إنشاء الكود
-  </button>
 
-  <div id="newCode" class="msg hidden"></div>
-</div>
+  <!-- ADMIN PANEL -->
+  <div id="panel" class="hidden">
+
+    <!-- CREATE LICENSE -->
+    <div class="card">
+
+      <h2>➕ إنشاء كود اشتراك</h2>
+
+      <div class="grid">
+
+        <input
+          id="restaurantId"
+          placeholder="معرّف المطعم"
+        >
+
+        <select id="plan">
+
+          <option value="month">
+            شهر
+          </option>
+
+          <option value="3months">
+            3 أشهر
+          </option>
+
+          <option value="6months">
+            6 أشهر
+          </option>
+
+          <option value="year">
+            سنة
+          </option>
+
+          <option value="lifetime">
+            مدى الحياة
+          </option>
+
+        </select>
+
+      </div>
+
+      <button
+        id="createBtn"
+        style="margin-top:12px"
+      >
+        إنشاء الكود
+      </button>
+
+      <div
+        id="newCode"
+        class="msg hidden"
+      ></div>
+
+    </div>
 
 
-<div class="card">
-  <h2>🔎 اشتراك مطعم</h2>
+    <!-- RESTAURANT SEARCH -->
+    <div class="card">
 
-  <div class="row">
-    <input id="lookupId" placeholder="معرّف المطعم">
-    <button id="lookupBtn">بحث</button>
+      <h2>🔎 اشتراك مطعم</h2>
+
+      <p class="muted">
+        اكتب اسم المطعم أو معرّف المطعم ثم اضغط بحث.
+      </p>
+
+      <div class="row">
+
+        <input
+          id="lookupId"
+          placeholder="اسم المطعم أو معرّف المطعم"
+        >
+
+        <button id="lookupBtn">
+          بحث
+        </button>
+
+      </div>
+
+      <div
+        id="restaurantInfo"
+        class="msg hidden"
+      ></div>
+
+    </div>
+
+
+    <!-- LICENSES -->
+    <div class="card">
+
+      <h2>📋 الأكواد التي تم إصدارها</h2>
+
+      <div id="licenses">
+        جارٍ التحميل...
+      </div>
+
+    </div>
+
   </div>
 
-  <div id="restaurantInfo" class="msg hidden"></div>
 </div>
 
 
-<div class="card">
-  <h2>📋 الأكواد التي تم إصدارها</h2>
-  <div id="licenses">جارٍ التحميل...</div>
-</div>
-
-  </div></div><script type="module">
+<script type="module">
 
 import {
-  doc,
-  getDoc,
-  setDoc,
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  getFirestore
-} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 
 import {
   getAuth,
@@ -113,196 +353,1018 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
 import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 
 /* =========================================================
-   Firebase Configuration
+   FIREBASE
 ========================================================= */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
-  authDomain: "digital-menu-8d2b4.firebaseapp.com",
-  projectId: "digital-menu-8d2b4",
-  storageBucket: "digital-menu-8d2b4.firebasestorage.app",
-  messagingSenderId: "436566477044",
-  appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
+  apiKey:"AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+  authDomain:"digital-menu-8d2b4.firebaseapp.com",
+  projectId:"digital-menu-8d2b4",
+  storageBucket:"digital-menu-8d2b4.firebasestorage.app",
+  messagingSenderId:"436566477044",
+  appId:"1:436566477044:web:2a86cfb212b44229f0b6a1"
 };
 
-
-/* =========================================================
-   Initialize Firebase
-========================================================= */
-
 const app = initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
+
 const auth = getAuth(app);
 
 
 /* =========================================================
    OWNER UID
-   هذا الحساب فقط مسموح له بدخول لوحة المالك
 ========================================================= */
 
-const OWNER_UID = "9XrMCexywXh72WPvo756PcuVuhD3";
+const OWNER_UID =
+  "9XrMCexywXh72WPvo756PcuVuhD3";
 
 
 /* =========================================================
-   Helpers
+   HELPERS
 ========================================================= */
 
-const $ = id => document.getElementById(id);
-
-const msg = text => {
-  $("msg").textContent = text;
-};
+const $ = id =>
+  document.getElementById(id);
 
 
-const randomCode = () =>
-  `DM-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}`;
+function showMsg(text,type="normal"){
 
+  const el = $("msg");
 
-function addMonths(date, months){
-  const x = new Date(date);
-  x.setMonth(x.getMonth() + months);
-  return x;
+  el.classList.remove("hidden");
+
+  el.textContent = text;
+
+  el.className = "msg";
+
+  if(type === "error"){
+    el.classList.add("bad");
+  }
+
+  if(type === "success"){
+    el.classList.add("ok");
+  }
+
 }
 
 
-function expiryFor(plan){
+function hideMsg(){
+  $("msg").classList.add("hidden");
+}
 
-  if(plan === "lifetime"){
-    return null;
-  }
 
-  const n = {
-    month: 1,
-    "3months": 3,
-    "6months": 6,
-    year: 12
-  }[plan];
+function isOwner(user){
 
-  return addMonths(new Date(), n).toISOString();
+  return !!user &&
+         user.uid === OWNER_UID;
+
+}
+
+
+function randomCode(){
+
+  return `DM-${crypto
+    .randomUUID()
+    .replaceAll("-","")
+    .slice(0,4)
+    .toUpperCase()}-${crypto
+    .randomUUID()
+    .replaceAll("-","")
+    .slice(0,4)
+    .toUpperCase()}`;
+
+}
+
+
+function addMonths(date,months){
+
+  const d = new Date(date);
+
+  d.setMonth(
+    d.getMonth() + months
+  );
+
+  return d;
+
 }
 
 
 function planName(plan){
 
   return {
-    month: "شهر",
-    "3months": "3 أشهر",
-    "6months": "6 أشهر",
-    year: "سنة",
-    lifetime: "مدى الحياة"
-  }[plan] || plan;
-}
 
+    month:"شهر",
 
-/* =========================================================
-   Security Check
-========================================================= */
+    "3months":"3 أشهر",
 
-function isOwner(user){
+    "6months":"6 أشهر",
 
-  return !!user && user.uid === OWNER_UID;
+    year:"سنة",
+
+    lifetime:"مدى الحياة"
+
+  }[plan] || "غير محدد";
 
 }
 
 
+function planMonths(plan){
+
+  return {
+
+    month:1,
+
+    "3months":3,
+
+    "6months":6,
+
+    year:12
+
+  }[plan] || 0;
+
+}
+
+
+function expiryForPlan(plan,baseDate=new Date()){
+
+  if(plan === "lifetime"){
+    return null;
+  }
+
+  return addMonths(
+    baseDate,
+    planMonths(plan)
+  ).toISOString();
+
+}
+
+
+function formatDate(value){
+
+  if(!value){
+    return "مدى الحياة";
+  }
+
+  const d = new Date(value);
+
+  if(Number.isNaN(d.getTime())){
+    return value;
+  }
+
+  return d.toLocaleString(
+    "ar-EG",
+    {
+      year:"numeric",
+      month:"long",
+      day:"numeric",
+      hour:"2-digit",
+      minute:"2-digit"
+    }
+  );
+
+}
+
+
+function statusName(status){
+
+  return {
+
+    active:"نشط",
+
+    paused:"متوقف",
+
+    cancelled:"ملغي",
+
+    canceled:"ملغي",
+
+    expired:"منتهي",
+
+    available:"متاح",
+
+    used:"مستخدم"
+
+  }[status] || status || "غير معروف";
+
+}
+
+
+function statusClass(status){
+
+  if(status === "active"){
+    return "ok";
+  }
+
+  if(
+    status === "paused" ||
+    status === "expired"
+  ){
+    return "warn";
+  }
+
+  return "bad";
+
+}
+
+
 /* =========================================================
-   Login
+   GET LICENSE FOR RESTAURANT
 ========================================================= */
 
-$("loginBtn").onclick = async () => {
+async function getRestaurantLicense(restaurant){
 
-  const email = $("email").value.trim();
-  const password = $("password").value;
+  const licenseCode =
+    restaurant.licenseCode;
 
-  if(!email || !password){
-
-    msg("اكتب البريد الإلكتروني وكلمة المرور أولًا.");
-    return;
-
+  if(!licenseCode){
+    return null;
   }
 
   try{
 
-    const credential =
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
+    const snap =
+      await getDoc(
+        doc(
+          db,
+          "licenses",
+          licenseCode
+        )
       );
 
-    const user = credential.user;
+    if(!snap.exists()){
+      return null;
+    }
+
+    return {
+      id:snap.id,
+      ...snap.data()
+    };
+
+  }catch(error){
+
+    console.error(
+      "License error:",
+      error
+    );
+
+    return null;
+
+  }
+
+}
 
 
-    /* -----------------------------------------
-       Check Owner UID
-    ----------------------------------------- */
+/* =========================================================
+   FIND RESTAURANT
+========================================================= */
 
-    if(!isOwner(user)){
+async function findRestaurant(search){
 
-      msg("❌ هذا الحساب غير مصرح له بدخول لوحة المالك.");
+  search = search.trim();
 
-      await signOut(auth);
+  if(!search){
+    return null;
+  }
 
-      return;
+
+  /*
+   * أول محاولة:
+   * البحث مباشرة بالـ Document ID
+   */
+
+  const direct =
+    await getDoc(
+      doc(
+        db,
+        "restaurants",
+        search
+      )
+    );
+
+  if(direct.exists()){
+
+    return {
+      id:direct.id,
+      ...direct.data()
+    };
+
+  }
+
+
+  /*
+   * ثاني محاولة:
+   * البحث في جميع المطاعم بالاسم
+   */
+
+  const snap =
+    await getDocs(
+      collection(
+        db,
+        "restaurants"
+      )
+    );
+
+
+  const normalized =
+    search.toLowerCase();
+
+
+  let exact = null;
+  let partial = null;
+
+
+  snap.forEach(item => {
+
+    const data = item.data();
+
+    const name =
+      String(data.name || "")
+        .toLowerCase();
+
+    const id =
+      String(item.id || "")
+        .toLowerCase();
+
+
+    if(
+      name === normalized ||
+      id === normalized
+    ){
+
+      exact = {
+        id:item.id,
+        ...data
+      };
+
     }
 
 
-    msg("✅ تم تسجيل الدخول بنجاح.");
+    if(
+      !partial &&
+      (
+        name.includes(normalized) ||
+        id.includes(normalized)
+      )
+    ){
+
+      partial = {
+        id:item.id,
+        ...data
+      };
+
+    }
+
+  });
+
+
+  return exact || partial;
+
+}
+
+
+/* =========================================================
+   DISPLAY RESTAURANT
+========================================================= */
+
+async function displayRestaurant(restaurant){
+
+  const box =
+    $("restaurantInfo");
+
+  box.classList.remove("hidden");
+
+  box.innerHTML =
+    "جارٍ تحميل بيانات الاشتراك...";
+
+
+  const license =
+    await getRestaurantLicense(
+      restaurant
+    );
+
+
+  const status =
+    restaurant.licenseStatus ||
+    license?.status ||
+    "غير معروف";
+
+
+  const plan =
+    license?.plan ||
+    restaurant.plan ||
+    "غير محدد";
+
+
+  const expiresAt =
+    restaurant.licenseExpiresAt ||
+    license?.expiresAt ||
+    null;
+
+
+  const licenseCode =
+    restaurant.licenseCode ||
+    license?.code ||
+    "غير موجود";
+
+
+  box.innerHTML = `
+
+    <div class="restaurant-title">
+      ${escapeHtml(
+        restaurant.name ||
+        restaurant.id
+      )}
+    </div>
+
+    <div class="status-box">
+
+      <div class="info-line">
+        <b>معرّف المطعم:</b>
+        ${escapeHtml(restaurant.id)}
+      </div>
+
+      <div class="info-line">
+        <b>الحالة:</b>
+        <span class="${statusClass(status)}">
+          ${statusName(status)}
+        </span>
+      </div>
+
+      <div class="info-line">
+        <b>الخطة:</b>
+        ${planName(plan)}
+      </div>
+
+      <div class="info-line">
+        <b>تاريخ الانتهاء:</b>
+        ${formatDate(expiresAt)}
+      </div>
+
+      <div class="info-line">
+        <b>كود الاشتراك:</b>
+        <span class="code">
+          ${escapeHtml(licenseCode)}
+        </span>
+      </div>
+
+      <div class="info-line">
+        <b>البريد:</b>
+        ${escapeHtml(
+          restaurant.ownerEmail ||
+          "-"
+        )}
+      </div>
+
+      <div class="info-line">
+        <b>الهاتف:</b>
+        ${escapeHtml(
+          restaurant.phone ||
+          "-"
+        )}
+      </div>
+
+    </div>
+
+    <div class="actions">
+
+      <button
+        class="green"
+        id="renewBtn"
+      >
+        🔄 تجديد
+      </button>
+
+      <button
+        class="orange"
+        id="pauseBtn"
+      >
+        ⏸️ إيقاف
+      </button>
+
+      <button
+        class="green"
+        id="activateBtn"
+      >
+        ▶️ تفعيل
+      </button>
+
+      <button
+        class="danger"
+        id="cancelBtn"
+      >
+        ❌ إلغاء
+      </button>
+
+    </div>
+
+  `;
+
+
+  $("renewBtn").onclick =
+    () => renewRestaurant(
+      restaurant,
+      license,
+      plan
+    );
+
+
+  $("pauseBtn").onclick =
+    () => pauseRestaurant(
+      restaurant,
+      license
+    );
+
+
+  $("activateBtn").onclick =
+    () => activateRestaurant(
+      restaurant,
+      license
+    );
+
+
+  $("cancelBtn").onclick =
+    () => cancelRestaurant(
+      restaurant,
+      license
+    );
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHtml(value){
+
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+
+}
+
+
+/* =========================================================
+   RENEW
+========================================================= */
+
+async function renewRestaurant(
+  restaurant,
+  license,
+  currentPlan
+){
+
+  if(!isOwner(auth.currentUser)){
+    return;
+  }
+
+
+  const selected =
+    prompt(
+      "اكتب مدة التجديد:\n\n" +
+      "month = شهر\n" +
+      "3months = 3 أشهر\n" +
+      "6months = 6 أشهر\n" +
+      "year = سنة\n" +
+      "lifetime = مدى الحياة\n\n" +
+      "مثال: 3months",
+      currentPlan || "month"
+    );
+
+
+  if(!selected){
+    return;
+  }
+
+
+  const allowed = [
+    "month",
+    "3months",
+    "6months",
+    "year",
+    "lifetime"
+  ];
+
+
+  if(!allowed.includes(selected)){
+
+    alert(
+      "الخطة غير صحيحة."
+    );
+
+    return;
+
+  }
+
+
+  const currentExpiry =
+    restaurant.licenseExpiresAt ||
+    license?.expiresAt ||
+    null;
+
+
+  let baseDate =
+    new Date();
+
+
+  if(
+    currentExpiry &&
+    new Date(currentExpiry) > new Date()
+  ){
+
+    baseDate =
+      new Date(currentExpiry);
+
+  }
+
+
+  const newExpiry =
+    expiryForPlan(
+      selected,
+      baseDate
+    );
+
+
+  try{
+
+    /*
+     * تحديث المطعم
+     */
+
+    await updateDoc(
+      doc(
+        db,
+        "restaurants",
+        restaurant.id
+      ),
+      {
+        licenseStatus:"active",
+        licenseExpiresAt:newExpiry
+      }
+    );
+
+
+    /*
+     * تحديث الترخيص
+     */
+
+    if(license){
+
+      await updateDoc(
+        doc(
+          db,
+          "licenses",
+          license.id
+        ),
+        {
+          plan:selected,
+          expiresAt:newExpiry,
+          status:"used",
+          used:true
+        }
+      );
+
+    }
+
+
+    showMsg(
+      "✅ تم تجديد الاشتراك بنجاح.",
+      "success"
+    );
+
+
+    await displayRestaurant({
+      ...restaurant,
+      licenseStatus:"active",
+      licenseExpiresAt:newExpiry
+    });
+
+
+    loadLicenses();
 
   }catch(error){
 
     console.error(error);
 
-    msg(
-      "فشل تسجيل الدخول: " +
-      (error.code || error.message)
+    showMsg(
+      "❌ فشل التجديد: " +
+      (error.code || error.message),
+      "error"
     );
 
   }
 
-};
+}
 
 
 /* =========================================================
-   Logout
+   PAUSE
 ========================================================= */
 
-$("logoutBtn").onclick = async () => {
+async function pauseRestaurant(
+  restaurant,
+  license
+){
 
-  await signOut(auth);
+  if(!isOwner(auth.currentUser)){
+    return;
+  }
 
-};
+
+  if(
+    !confirm(
+      "هل تريد إيقاف اشتراك هذا المطعم؟"
+    )
+  ){
+    return;
+  }
+
+
+  try{
+
+    await updateDoc(
+      doc(
+        db,
+        "restaurants",
+        restaurant.id
+      ),
+      {
+        licenseStatus:"paused"
+      }
+    );
+
+
+    if(license){
+
+      await updateDoc(
+        doc(
+          db,
+          "licenses",
+          license.id
+        ),
+        {
+          status:"paused"
+        }
+      );
+
+    }
+
+
+    showMsg(
+      "⏸️ تم إيقاف الاشتراك.",
+      "success"
+    );
+
+
+    await displayRestaurant({
+      ...restaurant,
+      licenseStatus:"paused"
+    });
+
+
+    loadLicenses();
+
+  }catch(error){
+
+    console.error(error);
+
+    showMsg(
+      "❌ فشل إيقاف الاشتراك: " +
+      (error.code || error.message),
+      "error"
+    );
+
+  }
+
+}
 
 
 /* =========================================================
-   Create License
+   ACTIVATE
+========================================================= */
+
+async function activateRestaurant(
+  restaurant,
+  license
+){
+
+  if(!isOwner(auth.currentUser)){
+    return;
+  }
+
+
+  const expiresAt =
+    restaurant.licenseExpiresAt ||
+    license?.expiresAt ||
+    null;
+
+
+  if(
+    expiresAt &&
+    new Date(expiresAt) <= new Date()
+  ){
+
+    alert(
+      "الاشتراك منتهي بالفعل. استخدم «تجديد» أولًا."
+    );
+
+    return;
+
+  }
+
+
+  if(
+    !confirm(
+      "هل تريد تفعيل اشتراك هذا المطعم؟"
+    )
+  ){
+    return;
+  }
+
+
+  try{
+
+    await updateDoc(
+      doc(
+        db,
+        "restaurants",
+        restaurant.id
+      ),
+      {
+        licenseStatus:"active"
+      }
+    );
+
+
+    if(license){
+
+      await updateDoc(
+        doc(
+          db,
+          "licenses",
+          license.id
+        ),
+        {
+          status:"used",
+          used:true
+        }
+      );
+
+    }
+
+
+    showMsg(
+      "▶️ تم تفعيل الاشتراك.",
+      "success"
+    );
+
+
+    await displayRestaurant({
+      ...restaurant,
+      licenseStatus:"active"
+    });
+
+
+    loadLicenses();
+
+  }catch(error){
+
+    console.error(error);
+
+    showMsg(
+      "❌ فشل تفعيل الاشتراك: " +
+      (error.code || error.message),
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   CANCEL
+========================================================= */
+
+async function cancelRestaurant(
+  restaurant,
+  license
+){
+
+  if(!isOwner(auth.currentUser)){
+    return;
+  }
+
+
+  if(
+    !confirm(
+      "⚠️ هل أنت متأكد من إلغاء الاشتراك؟\n\n" +
+      "سيتم منع المطعم من استخدام النظام."
+    )
+  ){
+    return;
+  }
+
+
+  try{
+
+    await updateDoc(
+      doc(
+        db,
+        "restaurants",
+        restaurant.id
+      ),
+      {
+        licenseStatus:"cancelled",
+        licenseExpiresAt:new Date().toISOString()
+      }
+    );
+
+
+    if(license){
+
+      await updateDoc(
+        doc(
+          db,
+          "licenses",
+          license.id
+        ),
+        {
+          status:"cancelled"
+        }
+      );
+
+    }
+
+
+    showMsg(
+      "❌ تم إلغاء الاشتراك.",
+      "success"
+    );
+
+
+    await displayRestaurant({
+      ...restaurant,
+      licenseStatus:"cancelled",
+      licenseExpiresAt:new Date().toISOString()
+    });
+
+
+    loadLicenses();
+
+  }catch(error){
+
+    console.error(error);
+
+    showMsg(
+      "❌ فشل إلغاء الاشتراك: " +
+      (error.code || error.message),
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE LICENSE
 ========================================================= */
 
 $("createBtn").onclick = async () => {
 
-  const user = auth.currentUser;
+  if(!isOwner(auth.currentUser)){
 
-  /* -----------------------------------------
-     Extra security check
-  ----------------------------------------- */
-
-  if(!isOwner(user)){
-
-    msg("❌ غير مصرح لك بتنفيذ هذا الإجراء.");
-
-    await signOut(auth);
+    showMsg(
+      "❌ غير مصرح لك.",
+      "error"
+    );
 
     return;
+
   }
 
 
   const restaurantId =
     $("restaurantId").value.trim();
+
 
   const plan =
     $("plan").value;
@@ -310,39 +1372,59 @@ $("createBtn").onclick = async () => {
 
   if(!restaurantId){
 
-    msg("اكتب معرّف المطعم أولًا.");
+    showMsg(
+      "اكتب معرّف المطعم أولًا.",
+      "error"
+    );
 
     return;
+
   }
 
 
-  const code = randomCode();
-  const expiresAt = expiryFor(plan);
+  const code =
+    randomCode();
+
+
+  const expiresAt =
+    expiryForPlan(plan);
 
 
   try{
 
     await setDoc(
-      doc(db, "licenses", code),
+      doc(
+        db,
+        "licenses",
+        code
+      ),
       {
         code,
         restaurantId,
         plan,
         expiresAt,
-        status: "available",
-        used: false,
-        createdAt: new Date().toISOString(),
-        createdBy: user.uid
+        status:"available",
+        used:false,
+        createdAt:new Date().toISOString(),
+        createdBy:auth.currentUser.uid
       }
     );
 
 
-    $("newCode").classList.remove("hidden");
+    $("newCode").classList.remove(
+      "hidden"
+    );
 
 
     $("newCode").innerHTML = `
       الكود:
-      <span class="code">${code}</span>
+      <span class="code">
+        ${escapeHtml(code)}
+      </span>
+      <br>
+      <span class="muted">
+        المطعم: ${escapeHtml(restaurantId)}
+      </span>
       <br>
       <span class="muted">
         المدة: ${planName(plan)}
@@ -350,17 +1432,24 @@ $("createBtn").onclick = async () => {
     `;
 
 
-    msg("✅ تم إنشاء كود الاشتراك بنجاح.");
+    showMsg(
+      "✅ تم إنشاء الكود بنجاح.",
+      "success"
+    );
+
+
+    $("restaurantId").value = "";
 
     loadLicenses();
-
 
   }catch(error){
 
     console.error(error);
 
-    msg(
-      "تعذر إنشاء الكود. تأكد من قواعد Firestore وأن حسابك هو حساب مالك المنصة."
+    showMsg(
+      "❌ تعذر إنشاء الكود: " +
+      (error.code || error.message),
+      "error"
     );
 
   }
@@ -369,87 +1458,79 @@ $("createBtn").onclick = async () => {
 
 
 /* =========================================================
-   Lookup Restaurant
+   SEARCH
 ========================================================= */
 
 $("lookupBtn").onclick = async () => {
 
-  const user = auth.currentUser;
+  if(!isOwner(auth.currentUser)){
 
-
-  if(!isOwner(user)){
-
-    msg("❌ غير مصرح لك بتنفيذ هذا الإجراء.");
-
-    await signOut(auth);
+    showMsg(
+      "❌ غير مصرح لك.",
+      "error"
+    );
 
     return;
+
   }
 
 
-  const id =
+  const search =
     $("lookupId").value.trim();
 
 
-  if(!id){
+  if(!search){
 
-    msg("اكتب معرّف المطعم أولًا.");
+    showMsg(
+      "اكتب اسم المطعم أو المعرّف أولًا.",
+      "error"
+    );
 
     return;
+
   }
+
+
+  const box =
+    $("restaurantInfo");
+
+
+  box.classList.remove(
+    "hidden"
+  );
+
+
+  box.textContent =
+    "جارٍ البحث...";
 
 
   try{
 
-    const snapshot =
-      await getDoc(
-        doc(db, "restaurants", id)
-      );
+    const restaurant =
+      await findRestaurant(search);
 
 
-    $("restaurantInfo").classList.remove("hidden");
+    if(!restaurant){
 
-
-    if(!snapshot.exists()){
-
-      $("restaurantInfo").textContent =
+      box.textContent =
         "المطعم غير موجود.";
 
       return;
+
     }
 
 
-    const data = snapshot.data();
-
-
-    $("restaurantInfo").innerHTML = `
-      <b>${data.name || id}</b>
-      <br>
-      الحالة:
-      <span class="${
-        data.licenseStatus === "active"
-        ? "ok"
-        : "bad"
-      }">
-        ${data.licenseStatus || "غير معروف"}
-      </span>
-      <br>
-      الخطة:
-      ${planName(data.plan)}
-      <br>
-      الانتهاء:
-      ${data.licenseExpiresAt || "مدى الحياة"}
-    `;
+    await displayRestaurant(
+      restaurant
+    );
 
 
   }catch(error){
 
     console.error(error);
 
-    $("restaurantInfo").classList.remove("hidden");
-
-    $("restaurantInfo").textContent =
-      "حدث خطأ أثناء البحث عن المطعم.";
+    box.textContent =
+      "حدث خطأ أثناء البحث.";
 
   }
 
@@ -457,82 +1538,140 @@ $("lookupBtn").onclick = async () => {
 
 
 /* =========================================================
-   Load Licenses
+   ENTER SEARCH
+========================================================= */
+
+$("lookupId").addEventListener(
+  "keydown",
+  event => {
+
+    if(event.key === "Enter"){
+
+      $("lookupBtn").click();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   LOAD LICENSES
 ========================================================= */
 
 async function loadLicenses(){
 
-  const user = auth.currentUser;
-
-
-  if(!isOwner(user)){
+  if(!isOwner(auth.currentUser)){
 
     $("licenses").innerHTML =
-      '<span class="bad">غير مصرح لك بقراءة الأكواد.</span>';
+      '<span class="bad">غير مصرح لك.</span>';
 
     return;
+
   }
 
 
   try{
 
-    const snapshot =
+    const snap =
       await getDocs(
         query(
-          collection(db, "licenses"),
-          orderBy("createdAt", "desc"),
-          limit(50)
+          collection(db,"licenses"),
+          orderBy(
+            "createdAt",
+            "desc"
+          ),
+          limit(100)
         )
       );
 
 
+    if(snap.empty){
+
+      $("licenses").innerHTML =
+        '<span class="muted">لا توجد أكواد حتى الآن.</span>';
+
+      return;
+
+    }
+
+
     let html = `
+      <div style="overflow-x:auto">
       <table>
         <tr>
           <th>الكود</th>
           <th>المطعم</th>
           <th>الخطة</th>
           <th>الحالة</th>
+          <th>الانتهاء</th>
         </tr>
     `;
 
 
-    snapshot.forEach(snapshotItem => {
+    snap.forEach(item => {
 
       const data =
-        snapshotItem.data();
+        item.data();
+
+
+      let status =
+        data.status;
+
+
+      if(
+        data.used &&
+        status === "available"
+      ){
+        status = "used";
+      }
 
 
       html += `
         <tr>
+
           <td class="code">
-            ${data.code || snapshotItem.id}
+            ${escapeHtml(
+              data.code ||
+              item.id
+            )}
           </td>
 
           <td>
-            ${data.restaurantId || "-"}
+            ${escapeHtml(
+              data.restaurantId ||
+              "-"
+            )}
           </td>
 
           <td>
             ${planName(data.plan)}
           </td>
 
-          <td>
-            ${
-              data.used
-              ? "مستخدم"
-              : "متاح"
-            }
+          <td class="${statusClass(status)}">
+            ${statusName(status)}
           </td>
+
+          <td>
+            ${formatDate(
+              data.expiresAt
+            )}
+          </td>
+
         </tr>
       `;
 
     });
 
 
-    html += "</table>";
+    html += `
+      </table>
+      </div>
+    `;
 
-    $("licenses").innerHTML = html;
+
+    $("licenses").innerHTML =
+      html;
 
 
   }catch(error){
@@ -540,7 +1679,13 @@ async function loadLicenses(){
     console.error(error);
 
     $("licenses").innerHTML =
-      '<span class="bad">لا يمكن قراءة الأكواد بهذه الصلاحيات.</span>';
+      `<span class="bad">
+        لا يمكن قراءة الأكواد:
+        ${escapeHtml(
+          error.code ||
+          error.message
+        )}
+      </span>`;
 
   }
 
@@ -548,65 +1693,101 @@ async function loadLicenses(){
 
 
 /* =========================================================
-   Authentication State
+   AUTH STATE
 ========================================================= */
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(
+  auth,
+  async user => {
 
-  /* -----------------------------------------
-     No logged-in user
-  ----------------------------------------- */
+    if(!user){
 
-  if(!user){
+      $("panel")
+        .classList
+        .add("hidden");
 
-    $("panel").classList.add("hidden");
+      $("logoutBtn")
+        .classList
+        .add("hidden");
 
-    $("logoutBtn").classList.add("hidden");
+      $("loginBtn")
+        .classList
+        .remove("hidden");
 
-    $("loginBtn").classList.remove("hidden");
+      hideMsg();
 
-    return;
-  }
+      return;
+
+    }
 
 
-  /* -----------------------------------------
-     Check Owner UID
-  ----------------------------------------- */
+    if(!isOwner(user)){
 
-  if(!isOwner(user)){
+      $("panel")
+        .classList
+        .add("hidden");
 
-    $("panel").classList.add("hidden");
+      $("logoutBtn")
+        .classList
+        .add("hidden");
 
-    $("logoutBtn").classList.add("hidden");
+      $("loginBtn")
+        .classList
+        .remove("hidden");
 
-    $("loginBtn").classList.remove("hidden");
 
-    msg(
-      "❌ هذا الحساب غير مصرح له بدخول لوحة المالك."
+      showMsg(
+        "❌ هذا الحساب غير مصرح له بدخول لوحة المالك.",
+        "error"
+      );
+
+
+      await signOut(auth);
+
+      return;
+
+    }
+
+
+    $("panel")
+      .classList
+      .remove("hidden");
+
+
+    $("logoutBtn")
+      .classList
+      .remove("hidden");
+
+
+    $("loginBtn")
+      .classList
+      .add("hidden");
+
+
+    showMsg(
+      "✅ تم تسجيل الدخول كمالك المنصة.",
+      "success"
     );
 
 
+    loadLicenses();
+
+  }
+);
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+$("logoutBtn").onclick =
+  async () => {
+
     await signOut(auth);
 
-    return;
-  }
+  };
 
+</script>
 
-  /* -----------------------------------------
-     Authorized Owner
-  ----------------------------------------- */
-
-  $("panel").classList.remove("hidden");
-
-  $("logoutBtn").classList.remove("hidden");
-
-  $("loginBtn").classList.add("hidden");
-
-  msg("✅ تم التحقق من صلاحيات مالك المنصة.");
-
-  loadLicenses();
-
-});
-
-</script></body>
+</body>
 </html>
