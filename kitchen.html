@@ -293,12 +293,19 @@
 
         /* Printable Receipt */
         @media print {
+            @page { margin: 8mm; size: auto; }
+            html, body { background: #fff !important; }
             body * { visibility: hidden !important; }
             #kitchenReceiptArea, #kitchenReceiptArea * { visibility: visible !important; }
             #kitchenReceiptArea {
+                display: block !important;
                 position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important;
+                min-height: 1px !important;
                 background: #fff !important; color: #000 !important; padding: 15px !important; font-family: monospace !important;
+                opacity: 1 !important;
+                z-index: 999999 !important;
             }
+            #kitchenReceiptArea * { color: #000 !important; background: transparent !important; }
         }
         #kitchenReceiptArea { display: none; }
     </style>
@@ -338,9 +345,14 @@
         <div class="filter-box">
             <input type="text" class="search-input" id="kitchenSearch" placeholder="بحث برقم الطلب، العميل، الهاتف، الطاولة..." onkeyup="renderKitchenOrders()">
             <div class="date-filter-row">
-                <input type="date" class="search-input" id="kitchenDateFilter" onchange="renderKitchenOrders()" title="التاريخ">
+                <select class="search-input" id="kitchenDateMode" onchange="changeKitchenDateMode()" aria-label="نوع التاريخ">
+                    <option value="day">بحث باليوم</option>
+                    <option value="month">بحث بالشهر</option>
+                    <option value="year">بحث بالسنة</option>
+                </select>
+                <input type="date" class="search-input" id="kitchenDateFilter" onchange="renderKitchenOrders()" title="اختيار اليوم">
                 <input type="time" class="search-input" id="kitchenTimeFilter" onchange="renderKitchenOrders()" title="الوقت">
-                <button class="date-filter-btn" onclick="clearKitchenFilters()"><i class="fa-solid fa-rotate-left"></i> مسح التاريخ والوقت</button>
+                <button class="date-filter-btn" onclick="clearKitchenFilters()"><i class="fa-solid fa-rotate-left"></i> مسح الفلاتر</button>
             </div>
         </div>
 
@@ -452,6 +464,7 @@
             let container = document.getElementById('kitchenOrdersList');
             let search = document.getElementById('kitchenSearch').value.toLowerCase().trim();
             let dateFilter = document.getElementById('kitchenDateFilter').value;
+            let dateMode = document.getElementById('kitchenDateMode').value;
             let timeFilter = document.getElementById('kitchenTimeFilter').value;
 
             let filtered = allKitchenOrders.filter(o => {
@@ -470,8 +483,12 @@
                 if (o.createdAt) {
                     const d = new Date(o.createdAt);
                     if (dateFilter) {
-                        const localDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                        matchDate = localDate === dateFilter;
+                        const year = String(d.getFullYear());
+                        const month = `${year}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                        const day = `${month}-${String(d.getDate()).padStart(2,'0')}`;
+                        if (dateMode === 'year') matchDate = year === dateFilter;
+                        else if (dateMode === 'month') matchDate = month === dateFilter;
+                        else matchDate = day === dateFilter;
                     }
                     if (timeFilter) {
                         const localTime = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -549,9 +566,38 @@
             }).join('');
         }
 
+        function changeKitchenDateMode() {
+            const mode = document.getElementById('kitchenDateMode').value;
+            const input = document.getElementById('kitchenDateFilter');
+            input.value = '';
+            if (mode === 'year') {
+                input.type = 'number';
+                input.min = '2000';
+                input.max = '2100';
+                input.placeholder = 'مثال: 2026';
+                input.title = 'اختيار السنة';
+            } else if (mode === 'month') {
+                input.type = 'month';
+                input.removeAttribute('min');
+                input.removeAttribute('max');
+                input.placeholder = '';
+                input.title = 'اختيار الشهر';
+            } else {
+                input.type = 'date';
+                input.removeAttribute('min');
+                input.removeAttribute('max');
+                input.placeholder = '';
+                input.title = 'اختيار اليوم';
+            }
+            renderKitchenOrders();
+        }
+
         function clearKitchenFilters() {
             document.getElementById('kitchenSearch').value='';
-            document.getElementById('kitchenDateFilter').value='';
+            document.getElementById('kitchenDateMode').value='day';
+            const dateInput = document.getElementById('kitchenDateFilter');
+            dateInput.type='date';
+            dateInput.value='';
             document.getElementById('kitchenTimeFilter').value='';
             renderKitchenOrders();
         }

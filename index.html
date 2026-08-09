@@ -141,7 +141,8 @@
             flex-direction: column;
             gap: 8px;
         }
-        .color-picker-item label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin: 0; }
+        .color-picker-item label { font-size: 13px; font-weight: 800; color: var(--text-main); margin: 0; }
+        .color-picker-item small { font-size: 10px; line-height: 1.5; color: var(--text-muted); min-height: 30px; }
         .color-picker-item input[type="color"] { width: 100%; height: 40px; padding: 2px; border-radius: 8px; cursor: pointer; border: none; }
 
         /* === Layout === */
@@ -663,33 +664,33 @@
 
                         <hr style="border-color: var(--panel-border); margin: 24px 0;">
 
-                        <h4 style="margin-bottom: 15px; color: var(--primary);"><i class="fa-solid fa-brush"></i> نظام ألوان البراند (تطبق على جميع الصفحات تلقائياً)</h4>
+                        <h4 style="margin-bottom: 8px; color: var(--primary);"><i class="fa-solid fa-brush"></i> ألوان الموقع</h4>
+                        <p style="font-size:12px; margin-bottom:15px;">اختار 4 ألوان فقط. كل لون مكتوب تحته وظيفته، واللوجو يقدر يختار الألوان تلقائياً عند رفعه.</p>
                         
                         <div class="brand-colors-grid">
                             <div class="color-picker-item">
-                                <label>Primary Color</label>
+                                <label>اللون الأساسي</label>
+                                <small>الأزرار الرئيسية، العناوين واللون المميز</small>
                                 <input type="color" id="brandPrimaryColor" value="#FF4757">
                             </div>
                             <div class="color-picker-item">
-                                <label>Secondary Color</label>
+                                <label>لون النجاح والأسعار</label>
+                                <small>الأسعار، التأكيد وحالات النجاح</small>
                                 <input type="color" id="brandSecondaryColor" value="#2ED573">
                             </div>
                             <div class="color-picker-item">
-                                <label>Accent Color</label>
+                                <label>لون التنبيه والتمييز</label>
+                                <small>التنبيهات، الحالات المهمة والعناصر المميزة</small>
                                 <input type="color" id="brandAccentColor" value="#FFA502">
                             </div>
                             <div class="color-picker-item">
-                                <label>Background</label>
+                                <label>لون خلفية الموقع</label>
+                                <small>الخلفية العامة للموقع</small>
                                 <input type="color" id="brandBgColor" value="#0c090a">
                             </div>
-                            <div class="color-picker-item">
-                                <label>Surface Color</label>
-                                <input type="color" id="brandSurfaceColor" value="#191414">
-                            </div>
-                            <div class="color-picker-item">
-                                <label>Text Color</label>
-                                <input type="color" id="brandTextColor" value="#ffffff">
-                            </div>
+                        </div>
+                        <div style="margin-top:12px; padding:12px 14px; border-radius:12px; background:rgba(46,213,115,.08); border:1px solid rgba(46,213,115,.15); font-size:12px; color:var(--text-muted);">
+                            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--secondary);"></i> لون البطاقات والنصوص يتم ضبطهما تلقائياً بما يناسب الخلفية والبراند، لذلك لن تحتاج إلى اختيار ألوان إضافية.
                         </div>
 
                         <button class="btn" style="width: 100%; margin-top: 10px;" onclick="updateRestaurantIdentity()"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_settings">حفظ الإعدادات والشعار والألوان</span></button>
@@ -949,8 +950,9 @@
                     document.getElementById('brandSecondaryColor').value = restaurantDataCache.secondaryColor || '#2ED573';
                     document.getElementById('brandAccentColor').value = restaurantDataCache.accentColor || '#FFA502';
                     document.getElementById('brandBgColor').value = restaurantDataCache.bgColor || '#0c090a';
-                    document.getElementById('brandSurfaceColor').value = restaurantDataCache.surfaceColor || '#191414';
-                    document.getElementById('brandTextColor').value = restaurantDataCache.textColor || '#ffffff';
+                    // ألوان البطاقات والنصوص يتم حسابها تلقائياً ولا تظهر للعميل كخيارات إضافية.
+                    if (!restaurantDataCache.surfaceColor) restaurantDataCache.surfaceColor = '#191414';
+                    if (!restaurantDataCache.textColor) restaurantDataCache.textColor = '#ffffff';
                     
                     applyBrandColors(restaurantDataCache);
 
@@ -1125,6 +1127,13 @@
             }
         }
 
+        function hexToRgb(hex) {
+            const m = String(hex || '').replace('#','').match(/^([0-9a-f]{6})$/i);
+            if (!m) return [12,9,10];
+            const n = parseInt(m[1],16);
+            return [(n>>16)&255,(n>>8)&255,n&255];
+        }
+
         function rgbToHex(r, g, b) {
             return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase();
         }
@@ -1218,7 +1227,7 @@
 
         function setBrandColorInputs(colors) {
             if(!colors) return;
-            const map={primaryColor:'brandPrimaryColor',secondaryColor:'brandSecondaryColor',accentColor:'brandAccentColor',bgColor:'brandBgColor',surfaceColor:'brandSurfaceColor',textColor:'brandTextColor'};
+            const map={primaryColor:'brandPrimaryColor',secondaryColor:'brandSecondaryColor',accentColor:'brandAccentColor',bgColor:'brandBgColor'};
             Object.entries(colors).forEach(([key,value])=>{ const el=document.getElementById(map[key]); if(el) el.value=value; });
         }
 
@@ -1250,8 +1259,14 @@
                 restaurantDataCache.secondaryColor=document.getElementById('brandSecondaryColor').value;
                 restaurantDataCache.accentColor=document.getElementById('brandAccentColor').value;
                 restaurantDataCache.bgColor=document.getElementById('brandBgColor').value;
-                restaurantDataCache.surfaceColor=document.getElementById('brandSurfaceColor').value;
-                restaurantDataCache.textColor=document.getElementById('brandTextColor').value;
+                // اشتقاق لون البطاقات تلقائياً من اللون الأساسي، مع إبقاء الحقول القديمة متوافقة.
+                try {
+                    const bgHsl = rgbToHsl(...hexToRgb(restaurantDataCache.bgColor));
+                    restaurantDataCache.surfaceColor = hslToHex(bgHsl.h, Math.min(.35, bgHsl.s), Math.min(.16, Math.max(.08, bgHsl.l + .045)));
+                } catch(e) {
+                    restaurantDataCache.surfaceColor = restaurantDataCache.surfaceColor || '#191414';
+                }
+                restaurantDataCache.textColor = '#FFFFFF';
 
                 await saveRestaurantDataToCloud();
                 applyBrandColors(restaurantDataCache);
