@@ -55,6 +55,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        .hidden { display: none !important; }
         body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; padding-bottom: 90px; transition: var(--transition); }
 
         /* Header */
@@ -317,6 +318,7 @@
             applyThemeUI();
             configureOrderMode();
             loadCustomerSession();
+            configureOrderMode();
 
             window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", restaurantId), (docSnap) => {
                 if(docSnap.exists()) {
@@ -455,9 +457,23 @@
         }
 
         function configureOrderMode(){
-            const typeEl=document.getElementById('orderTypeSelect'), tableDisplay=document.getElementById('tableDisplay'), addressGroup=document.getElementById('addressGroup');
-            if(tableNum){typeEl.value='dine_in';tableDisplay.innerText=`طاولة رقم ${tableNum}`;addressGroup.classList.add('hidden');}
-            else{typeEl.value='delivery';tableDisplay.innerText='طلب أونلاين';addressGroup.classList.remove('hidden');}
+            const typeEl=document.getElementById('orderTypeSelect');
+            const tableDisplay=document.getElementById('tableDisplay');
+            const addressGroup=document.getElementById('addressGroup');
+            const addressInput=document.getElementById('custAddress');
+
+            if(tableNum){
+                // QR from a restaurant table = dine-in. Never ask for an address.
+                typeEl.value='dine_in';
+                tableDisplay.innerText=`طاولة رقم ${tableNum}`;
+                addressGroup.classList.add('hidden');
+                addressInput.value='';
+            }else{
+                // Direct menu link = online/delivery. Address is required for the first order.
+                typeEl.value='delivery';
+                tableDisplay.innerText='طلب أونلاين';
+                addressGroup.classList.remove('hidden');
+            }
         }
         function toggleAddressField(){
             const type=tableNum?'dine_in':'delivery';document.getElementById('orderTypeSelect').value=type;
