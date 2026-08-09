@@ -1,0 +1,96 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function restaurantExists(restaurantId) {
+      return exists(/databases/$(database)/documents/restaurants/$(restaurantId));
+    }
+
+    function activeRestaurant(restaurantId) {
+      return restaurantExists(restaurantId)
+        && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.licenseStatus == 'active'
+        && (
+          get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.plan == 'lifetime'
+          || (
+            get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.licenseExpiresAt is timestamp
+            && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.licenseExpiresAt > request.time
+          )
+        );
+    }
+
+    function ownerOfRestaurant(restaurantId) {
+      return signedIn()
+        && restaurantExists(restaurantId)
+        && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerUid == request.auth.uid;
+    }
+
+    function activeOwnerOfRestaurant(restaurantId) {
+      return ownerOfRestaurant(restaurantId) && activeRestaurant(restaurantId);
+    }
+
+    match /licenses/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create, delete: if false;
+
+      allow update: if signedIn()
+        && resource.data.status == 'available'
+        && resource.data.used == false
+        && request.resource.data.status == 'used'
+        && request.resource.data.used == true
+        && request.resource.data.usedBy == request.auth.uid
+        && request.resource.data.restaurantId is string;
+    }
+
+    match /ownerProfiles/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.restaurantId == resource.data.restaurantId;
+      allow delete: if false;
+    }
+
+    match /restaurants/{restaurantId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.auth.uid == request.resource.data.ownerUid
+        && request.resource.data.licenseStatus == 'active'
+        && request.resource.data.licenseCode is string
+        && exists(/databases/$(database)/documents/licenses/$(request.resource.data.licenseCode))
+        && getAfter(/databases/$(database)/documents/licenses/$(request.resource.data.licenseCode)).data.usedBy == request.auth.uid
+        && getAfter(/databases/$(database)/documents/licenses/$(request.resource.data.licenseCode)).data.restaurantId == restaurantId;
+
+      allow update: if activeOwnerOfRestaurant(restaurantId)
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.licenseCode == resource.data.licenseCode
+        && request.resource.data.licenseExpiresAt == resource.data.licenseExpiresAt
+        && request.resource.data.licenseStatus == resource.data.licenseStatus
+        && request.resource.data.plan == resource.data.plan;
+
+      allow delete: if false;
+    }
+
+    match /orders/{orderId} {
+      allow create: if request.resource.data.restaurant is string
+        && activeRestaurant(request.resource.data.restaurant);
+
+      allow read: if resource.data.restaurant is string
+        && activeRestaurant(resource.data.restaurant);
+
+      allow update: if resource.data.restaurant is string
+        && activeOwnerOfRestaurant(resource.data.restaurant);
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

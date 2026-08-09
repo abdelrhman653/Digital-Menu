@@ -46,6 +46,13 @@ window.getOwnerProfile = async (uid) => {
   return snap.exists() ? snap.data() : null;
 };
 
+window.isActiveRestaurantLicense = (data) => {
+  if (!data || data.licenseStatus !== 'active') return false;
+  if (data.plan === 'lifetime') return true;
+  const expiry = data.licenseExpiresAt ? new Date(data.licenseExpiresAt) : null;
+  return !!expiry && expiry.getTime() > Date.now();
+};
+
 // The customer menu uses Firebase Anonymous Auth. The restaurant owner/admin
 // continues to use normal Email/Password authentication.
 const isOrdersPage = /(?:^|\/)orders(?:_fixed|_final)?\.html$/i.test(location.pathname);

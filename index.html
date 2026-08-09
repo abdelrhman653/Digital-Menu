@@ -706,9 +706,33 @@
         </main>
     </div>
 
-    <!-- Shared Firebase modules -->
-    <script type="module" src="firestore.js"></script>
-    <script type="module" src="storage.js"></script>
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+            authDomain: "digital-menu-8d2b4.firebaseapp.com",
+            projectId: "digital-menu-8d2b4",
+            storageBucket: "digital-menu-8d2b4.firebasestorage.app",
+            messagingSenderId: "436566477044",
+            appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const auth = getAuth(app);
+
+        window.FB = { 
+            db, storage, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, ref, uploadBytes, getDownloadURL, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+        };
+
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
 
     <!-- Main Logic -->
     <script>
@@ -879,6 +903,7 @@
         }
         function licenseIsActive(data){
             if(!data || data.licenseStatus !== 'active') return false;
+            if(data.plan === 'lifetime') return true;
             const expiry = parseLicenseDate(data.licenseExpiresAt);
             return !!expiry && expiry.getTime() > Date.now();
         }
@@ -932,7 +957,9 @@
                 if(!licenseSnap.exists()) return showCustomAlert('كود الترخيص غير صحيح.');
                 const license=licenseSnap.data();
                 const expiry=parseLicenseDate(license.expiresAt);
-                if(license.used || license.status!=='available' || !expiry || expiry.getTime()<=Date.now()) return showCustomAlert('كود الترخيص مستخدم أو منتهي الصلاحية.');
+                const licenseActive = license.status==='available' && !license.used &&
+                    (license.plan === 'lifetime' || (!!expiry && expiry.getTime() > Date.now()));
+                if(!licenseActive) return showCustomAlert('كود الترخيص مستخدم أو منتهي الصلاحية.');
                 const ownerEmail=makeOwnerEmail(nameInput,phoneInput);
                 const cred=await window.FB.createUserWithEmailAndPassword(window.FB.auth,ownerEmail,passwordInput);
                 const uid=cred.user.uid;
@@ -994,9 +1021,25 @@
             
             // 1. Restaurant Document Listener
             if (unsubscribeRestaurant) unsubscribeRestaurant();
-            unsubscribeRestaurant = window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), (docSnap) => {
+            unsubscribeRestaurant = window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), async (docSnap) => {
                 if (docSnap.exists()) {
                     restaurantDataCache = docSnap.data();
+
+                    // Live subscription check: if the owner expires or is suspended while
+                    // the dashboard is open, immediately lock the dashboard.
+                    if (!licenseIsActive(restaurantDataCache) || restaurantDataCache.ownerUid !== currentOwnerUser?.uid) {
+                        ownerAccessAllowed = false;
+                        if (unsubscribeRestaurant) { unsubscribeRestaurant(); unsubscribeRestaurant = null; }
+                        if (unsubscribeOrders) { unsubscribeOrders(); unsubscribeOrders = null; }
+                        currentRestaurant = null;
+                        localStorage.removeItem('current_restaurant');
+                        document.getElementById('app').classList.add('hidden');
+                        document.getElementById('authSection').classList.remove('hidden');
+                        showCustomAlert('انتهى اشتراك المطعم أو تم إيقافه. يرجى تجديد الاشتراك للمتابعة.');
+                        try { await window.FB.signOut(window.FB.auth); } catch (_) {}
+                        return;
+                    }
+
                     if (!restaurantDataCache.categories) restaurantDataCache.categories = [...defaultCategories];
                     if (!restaurantDataCache.items) restaurantDataCache.items = [];
                     
@@ -1173,7 +1216,7 @@
         async function uploadFileToStorage(file, folder) {
             if (!window.FB || !file) return "";
             try {
-                let fileRef = window.FB.ref(window.FB.storage, `restaurants/${currentRestaurant}/${folder}/${Date.now()}_${file.name}`);
+                let fileRef = window.FB.ref(window.FB.storage, `${folder}/${currentRestaurant}_${Date.now()}_${file.name}`);
                 await window.FB.uploadBytes(fileRef, file);
                 return await window.FB.getDownloadURL(fileRef);
             } catch (e) { 

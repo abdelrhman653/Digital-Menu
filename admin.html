@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة مالك المنصة</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#0f1115;color:#f5f5f5}
+.wrap{max-width:1050px;margin:auto;padding:20px}.card{background:#181b21;border:1px solid #2a2f38;border-radius:18px;padding:20px;margin-bottom:18px}
+h1,h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+input,select,button{width:100%;padding:13px;border-radius:10px;border:1px solid #343a45;background:#101318;color:#fff;font-size:15px}
+button{cursor:pointer;background:#b51f2a;border:0;font-weight:700}button.secondary{background:#2b3039}
+.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}.hidden{display:none!important}.msg{padding:12px;border-radius:10px;background:#222732;margin-top:12px}
+table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid #2b3039;text-align:right}
+.ok{color:#55d98b}.bad{color:#ff6b6b}.muted{color:#aab1bd}.code{font-size:20px;letter-spacing:1px;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="login" class="card">
+    <h1>👑 لوحة مالك المنصة</h1>
+    <p class="muted">هذه الصفحة لك أنت فقط لإصدار وتجديد اشتراكات المطاعم.</p>
+    <div class="grid">
+      <input id="email" type="email" placeholder="البريد الإلكتروني">
+      <input id="password" type="password" placeholder="كلمة المرور">
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="loginBtn">تسجيل الدخول</button>
+      <button id="logoutBtn" class="secondary hidden">تسجيل الخروج</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <div id="panel" class="hidden">
+    <div class="card">
+      <h2>➕ إنشاء كود اشتراك</h2>
+      <div class="grid">
+        <input id="restaurantId" placeholder="معرّف المطعم، مثال: ahmed-restaurant">
+        <select id="plan">
+          <option value="month">شهر</option>
+          <option value="3months">3 أشهر</option>
+          <option value="6months">6 أشهر</option>
+          <option value="year">سنة</option>
+          <option value="lifetime">مدى الحياة</option>
+        </select>
+      </div>
+      <button id="createBtn" style="margin-top:12px">إنشاء الكود</button>
+      <div id="newCode" class="msg hidden"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔎 اشتراك مطعم</h2>
+      <div class="row">
+        <input id="lookupId" placeholder="معرّف المطعم">
+        <button id="lookupBtn">بحث</button>
+      </div>
+      <div id="restaurantInfo" class="msg hidden"></div>
+    </div>
+
+    <div class="card">
+      <h2>📋 الأكواد التي تم إصدارها</h2>
+      <div id="licenses">جارٍ التحميل...</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+  authDomain:"digital-menu-8d2b4.firebaseapp.com",
+  projectId:"digital-menu-8d2b4",
+  storageBucket:"digital-menu-8d2b4.firebasestorage.app",
+  messagingSenderId:"436566477044",
+  appId:"1:436566477044:web:2a86cfb212b44229f0b6a1"
+};
+const app=initializeApp(firebaseConfig);
+const db=await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js").then(m=>m.getFirestore(app));
+const auth=getAuth(app);
+const $=id=>document.getElementById(id);
+const msg=t=>{$("msg").textContent=t};
+const randomCode=()=>`DM-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}-${crypto.randomUUID().replaceAll("-","").slice(0,4).toUpperCase()}`;
+
+function addMonths(d,n){const x=new Date(d);x.setMonth(x.getMonth()+n);return x}
+function expiryFor(plan){
+  if(plan==="lifetime") return null;
+  const n={month:1,3months:3,6months:6,year:12}[plan];
+  return addMonths(new Date(),n).toISOString();
+}
+function planName(p){return {month:"شهر",3months:"3 أشهر",6months:"6 أشهر",year:"سنة",lifetime:"مدى الحياة"}[p]||p}
+
+$("loginBtn").onclick=async()=>{
+  try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);msg("تم تسجيل الدخول.");}
+  catch(e){msg("فشل تسجيل الدخول: "+(e.code||e.message));}
+};
+$("logoutBtn").onclick=()=>signOut(auth);
+
+$("createBtn").onclick=async()=>{
+  const restaurantId=$("restaurantId").value.trim();
+  const plan=$("plan").value;
+  if(!restaurantId)return msg("اكتب معرّف المطعم أولًا.");
+  const code=randomCode();
+  const expiresAt=expiryFor(plan);
+  try{
+    await setDoc(doc(db,"licenses",code),{
+      code,restaurantId,plan,expiresAt,status:"available",used:false,
+      createdAt:new Date().toISOString(),createdBy:auth.currentUser.uid
+    });
+    $("newCode").classList.remove("hidden");
+    $("newCode").innerHTML=`الكود: <span class="code">${code}</span><br><span class="muted">المدة: ${planName(plan)}</span>`;
+    loadLicenses();
+  }catch(e){msg("تعذر إنشاء الكود. تأكد من قواعد Firestore وأن حسابك هو حساب مالك المنصة.");}
+};
+
+$("lookupBtn").onclick=async()=>{
+  const id=$("lookupId").value.trim();
+  if(!id)return;
+  const s=await getDoc(doc(db,"restaurants",id));
+  $("restaurantInfo").classList.remove("hidden");
+  if(!s.exists()){$("restaurantInfo").textContent="المطعم غير موجود.";return}
+  const d=s.data();
+  $("restaurantInfo").innerHTML=`<b>${d.name||id}</b><br>الحالة: <span class="${d.licenseStatus==="active"?"ok":"bad"}">${d.licenseStatus||"غير معروف"}</span><br>الخطة: ${planName(d.plan)}<br>الانتهاء: ${d.licenseExpiresAt||"مدى الحياة"}`;
+};
+
+async function loadLicenses(){
+  try{
+    const snap=await getDocs(query(collection(db,"licenses"),orderBy("createdAt","desc"),limit(50)));
+    let html="<table><tr><th>الكود</th><th>المطعم</th><th>الخطة</th><th>الحالة</th></tr>";
+    snap.forEach(s=>{const d=s.data();html+=`<tr><td class="code">${d.code||s.id}</td><td>${d.restaurantId||"-"}</td><td>${planName(d.plan)}</td><td>${d.used?"مستخدم":"متاح"}</td></tr>`});
+    $("licenses").innerHTML=html+"</table>";
+  }catch(e){$("licenses").innerHTML='<span class="bad">لا يمكن قراءة الأكواد بهذه الصلاحيات.</span>'}
+}
+onAuthStateChanged(auth,u=>{
+  if(u){
+    $("panel").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");$("loginBtn").classList.add("hidden");
+    loadLicenses();
+  }else{
+    $("panel").classList.add("hidden");$("logoutBtn").classList.add("hidden");$("loginBtn").classList.remove("hidden");
+  }
+});
+</script>
+</body>
+</html>

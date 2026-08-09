@@ -7,9 +7,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Shared Firebase modules -->
-    <script type="module" src="firestore.js"></script>
-    <script type="module" src="storage.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+      import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+      import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
+        authDomain: "digital-menu-8d2b4.firebaseapp.com",
+        projectId: "digital-menu-8d2b4",
+        storageBucket: "digital-menu-8d2b4.firebasestorage.app",
+        messagingSenderId: "436566477044",
+        appId: "1:436566477044:web:2a86cfb212b44229f0b6a1"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+      window.db = db;
+      window.ownerAuth = auth;
+      window.firestoreModules = { collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy, onAuthStateChanged, signOut };
+      window.getOwnerProfile = async (uid) => { const snap = await getDoc(doc(db,'ownerProfiles',uid)); return snap.exists() ? snap.data() : null; };
+
+      window.dispatchEvent(new Event('firebase-loaded-kitchen'));
+    </script>
 
     <style>
         :root {
@@ -419,6 +441,18 @@
             onSnapshot(doc(window.db, "restaurants", restaurantId), (docSnap) => {
                 if (docSnap.exists()) {
                     let data = docSnap.data();
+                    const expiry = data.licenseExpiresAt ? new Date(data.licenseExpiresAt) : null;
+                    const stillActive =
+                        data.ownerUid === window.ownerAuth.currentUser?.uid &&
+                        data.licenseStatus === 'active' &&
+                        !!expiry &&
+                        expiry.getTime() > Date.now();
+
+                    if(!stillActive){
+                        denyKitchen('انتهى اشتراك هذا المطعم أو تم إيقافه. يرجى التجديد للمتابعة.');
+                        return;
+                    }
+
                     restaurantDisplayName = data.name || restaurantId;
                     let root = document.documentElement;
                     if (data.primaryColor) root.style.setProperty('--primary', data.primaryColor);
