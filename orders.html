@@ -165,8 +165,9 @@
             </div>
         </div>
         <div class="account-actions">
-            <button class="header-action-btn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
-            <button class="header-action-btn" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+            <button id="historyHeaderBtn" class="header-action-btn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
+            <button id="loginHeaderBtn" class="header-action-btn" onclick="openLoginModal()"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</button>
+            <button id="profileHeaderBtn" class="header-action-btn hidden" onclick="openProfileModal()"><i class="fa-solid fa-user"></i> معلوماتي</button>
             <button class="theme-toggle-btn" onclick="toggleUserTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
         </div>
     </header>
@@ -253,6 +254,35 @@
         <div class="cart-modal" style="border-radius:24px;max-width:600px;text-align:right;padding:25px 20px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><h3 style="font-size:20px;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i> سجل طلباتك</h3><button onclick="closeHistoryModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></div>
             <div id="historyList" class="history-list"><p class="empty-cart">جاري تحميل السجل...</p></div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="cart-modal" style="border-radius:24px;max-width:500px;text-align:right;padding:25px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="font-size:20px;"><i class="fa-solid fa-right-to-bracket" style="color:var(--primary);"></i> تسجيل الدخول</h3>
+                <button onclick="closeLoginModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="input-group"><label>الاسم</label><input type="text" id="loginName" placeholder="اكتب اسمك..."></div>
+            <div class="input-group"><label>رقم التليفون</label><input type="tel" id="loginPhone" placeholder="010XXXXXXXX"></div>
+            <div class="input-group"><label>العنوان</label><input type="text" id="loginAddress" placeholder="المنطقة، الشارع، العمارة..."></div>
+            <button class="btn-submit" onclick="loginCustomer()"><i class="fa-solid fa-check"></i> دخول</button>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal-overlay">
+        <div class="cart-modal" style="border-radius:24px;max-width:500px;text-align:right;padding:25px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="font-size:20px;"><i class="fa-solid fa-user" style="color:var(--primary);"></i> معلوماتي</h3>
+                <button onclick="closeProfileModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="input-group"><label>الاسم</label><input type="text" id="profileName" placeholder="الاسم"></div>
+            <div class="input-group"><label>رقم التليفون</label><input type="tel" id="profilePhone" placeholder="010XXXXXXXX"></div>
+            <div class="input-group"><label>العنوان</label><input type="text" id="profileAddress" placeholder="المنطقة، الشارع، العمارة..."></div>
+            <button class="btn-submit" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> حفظ التعديلات</button>
+            <button class="header-action-btn" style="width:100%;margin-top:10px;padding:13px;" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج</button>
         </div>
     </div>
 
@@ -482,25 +512,114 @@
             const type=tableNum?'dine_in':'delivery';document.getElementById('orderTypeSelect').value=type;
             document.getElementById('addressGroup').classList.toggle('hidden',type!=='delivery');
         }
+        function updateAccountButtons(){
+            const historyBtn=document.getElementById('historyHeaderBtn');
+            const loginBtn=document.getElementById('loginHeaderBtn');
+            const profileBtn=document.getElementById('profileHeaderBtn');
+            if(tableNum){
+                // الصالة: لا سجل ولا تسجيل دخول/خروج دائم. الجلسة مؤقتة وتنتهي بعد التسليم.
+                historyBtn.classList.add('hidden');
+                loginBtn.classList.add('hidden');
+                profileBtn.classList.add('hidden');
+                return;
+            }
+            historyBtn.classList.toggle('hidden', !customerSession);
+            loginBtn.classList.toggle('hidden', !!customerSession);
+            profileBtn.classList.toggle('hidden', !customerSession);
+        }
+
         function loadCustomerSession(){
             try{customerSession=JSON.parse(customerStorage.getItem(customerSessionKey)||'null');}catch(e){customerSession=null;}
             const name=document.getElementById('custName'),phone=document.getElementById('custPhone'),address=document.getElementById('custAddress');
             if(customerSession){
-                name.value=customerSession.name||'';phone.value=customerSession.phone||'';address.value=customerSession.address||'';
-                document.getElementById('custNameGroup').classList.add('hidden');document.getElementById('custPhoneGroup').classList.add('hidden');
-                const box=document.getElementById('savedCustomerBox');box.classList.remove('hidden');
+                name.value=customerSession.name||'';
+                phone.value=customerSession.phone||'';
+                address.value=customerSession.address||'';
+                document.getElementById('custNameGroup').classList.add('hidden');
+                document.getElementById('custPhoneGroup').classList.add('hidden');
+                const box=document.getElementById('savedCustomerBox');
+                box.classList.remove('hidden');
                 box.innerHTML=`<i class="fa-solid fa-user-check" style="color:var(--secondary);"></i> بياناتك محفوظة: <strong>${escapeHtml(customerSession.name)}</strong> — ${escapeHtml(customerSession.phone)}.`;
             }else{
-                document.getElementById('custNameGroup').classList.remove('hidden');document.getElementById('custPhoneGroup').classList.remove('hidden');document.getElementById('savedCustomerBox').classList.add('hidden');
+                document.getElementById('custNameGroup').classList.remove('hidden');
+                document.getElementById('custPhoneGroup').classList.remove('hidden');
+                document.getElementById('savedCustomerBox').classList.add('hidden');
+                name.value='';
+                phone.value='';
+                if(tableNum) address.value='';
             }
-            if(!tableNum) document.getElementById('addressGroup').classList.toggle('hidden',!!(customerSession&&customerSession.address));
+            // العنوان مطلوب فقط للأونلاين، ومخفي تماماً في الصالة.
+            if(tableNum){
+                document.getElementById('addressGroup').classList.add('hidden');
+                address.value='';
+            }else{
+                document.getElementById('addressGroup').classList.toggle('hidden', !!customerSession);
+            }
+            updateAccountButtons();
         }
-        function saveCustomerSession(name,phone,address){customerSession={name,phone,address:address||''};customerStorage.setItem(customerSessionKey,JSON.stringify(customerSession));loadCustomerSession();}
+
+        function saveCustomerSession(name,phone,address){
+            customerSession={name:name.trim(),phone:phone.trim(),address:(address||'').trim()};
+            customerStorage.setItem(customerSessionKey,JSON.stringify(customerSession));
+            loadCustomerSession();
+        }
+
+        function openLoginModal(){
+            if(tableNum)return;
+            document.getElementById('loginName').value='';
+            document.getElementById('loginPhone').value='';
+            document.getElementById('loginAddress').value='';
+            document.getElementById('loginModal').classList.add('active');
+        }
+        function closeLoginModal(){document.getElementById('loginModal').classList.remove('active');}
+
+        function loginCustomer(){
+            const name=document.getElementById('loginName').value.trim();
+            const phone=document.getElementById('loginPhone').value.trim();
+            const address=document.getElementById('loginAddress').value.trim();
+            if(!name||!phone||!address)return alert('الرجاء إدخال الاسم ورقم التليفون والعنوان');
+            saveCustomerSession(name,phone,address);
+            closeLoginModal();
+            loadOrderHistory();
+            alert('تم تسجيل الدخول بنجاح. أهلاً بك 👋');
+        }
+
+        function openProfileModal(){
+            if(!customerSession)return openLoginModal();
+            document.getElementById('profileName').value=customerSession.name||'';
+            document.getElementById('profilePhone').value=customerSession.phone||'';
+            document.getElementById('profileAddress').value=customerSession.address||'';
+            document.getElementById('profileModal').classList.add('active');
+        }
+        function closeProfileModal(){document.getElementById('profileModal').classList.remove('active');}
+
+        function saveProfile(){
+            const name=document.getElementById('profileName').value.trim();
+            const phone=document.getElementById('profilePhone').value.trim();
+            const address=document.getElementById('profileAddress').value.trim();
+            if(!name||!phone||!address)return alert('الرجاء إدخال الاسم ورقم التليفون والعنوان');
+            saveCustomerSession(name,phone,address);
+            closeProfileModal();
+            loadOrderHistory();
+            alert('تم حفظ معلوماتك بنجاح ✅');
+        }
+
         function customerLogout(){
-            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});activeOrderUnsubscribers={};
-            customerStorage.removeItem(customerSessionKey);activeOrdersStorage.removeItem(activeOrdersKey);customerSession=null;historyOrders=[];
-            document.getElementById('custName').value='';document.getElementById('custPhone').value='';document.getElementById('custAddress').value='';
-            loadCustomerSession();hideLiveOrderBanner();renderHistory();alert('تم تسجيل الخروج. يمكنك الآن إدخال بيانات عميل جديد.');
+            if(tableNum)return;
+            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});
+            activeOrderUnsubscribers={};
+            customerStorage.removeItem(customerSessionKey);
+            activeOrdersStorage.removeItem(activeOrdersKey);
+            customerSession=null;
+            historyOrders=[];
+            document.getElementById('custName').value='';
+            document.getElementById('custPhone').value='';
+            document.getElementById('custAddress').value='';
+            closeProfileModal();
+            loadCustomerSession();
+            hideLiveOrderBanner();
+            renderHistory();
+            alert('تم تسجيل الخروج. يمكنك الآن تسجيل الدخول بحساب آخر.');
         }
         function openCartModal(){document.getElementById('cartModal').classList.add('active');}
         function closeCartModal(){document.getElementById('cartModal').classList.remove('active');}
