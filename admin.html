@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>لوحة مالك المنصة</title>
-
-<style>
+<title>لوحة مالك المنصة</title><style>
 *{box-sizing:border-box}
 
 body{
@@ -56,6 +53,11 @@ button{
   font-weight:700
 }
 
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed
+}
+
 button.secondary{
   background:#2b3039
 }
@@ -91,6 +93,14 @@ button.danger{
   border-radius:10px;
   background:#222732;
   margin-top:12px
+}
+
+.msg.ok{
+  color:#55d98b
+}
+
+.msg.bad{
+  color:#ff6b6b
 }
 
 table{
@@ -136,13 +146,9 @@ th,td{
 
 .actions{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  grid-template-columns:repeat(2,1fr);
   gap:10px;
   margin-top:15px
-}
-
-.actions button{
-  margin:0
 }
 
 .restaurant-title{
@@ -152,7 +158,7 @@ th,td{
 }
 
 .info-line{
-  padding:7px 0;
+  padding:8px 0;
   border-bottom:1px solid #292e37
 }
 
@@ -161,6 +167,7 @@ th,td{
 }
 
 @media(max-width:600px){
+
   .wrap{
     padding:12px
   }
@@ -185,161 +192,149 @@ th,td{
     grid-template-columns:1fr 1fr
   }
 }
-</style>
-</head>
+</style></head><body><div class="wrap">  <!-- ================= LOGIN ================= -->  <div id="login" class="card"><h1>👑 لوحة مالك المنصة</h1>
 
-<body>
+<p class="muted">
+  هذه الصفحة لك أنت فقط لإدارة اشتراكات المطاعم.
+</p>
 
-<div class="wrap">
+<div class="grid">
 
-  <!-- LOGIN -->
-  <div id="login" class="card">
+  <input
+    id="email"
+    type="email"
+    placeholder="البريد الإلكتروني"
+    autocomplete="email"
+  >
 
-    <h1>👑 لوحة مالك المنصة</h1>
+  <input
+    id="password"
+    type="password"
+    placeholder="كلمة المرور"
+    autocomplete="current-password"
+  >
 
-    <p class="muted">
-      هذه الصفحة لك أنت فقط لإدارة اشتراكات المطاعم.
-    </p>
+</div>
 
-    <div class="grid">
+<div class="row" style="margin-top:12px">
 
-      <input
-        id="email"
-        type="email"
-        placeholder="البريد الإلكتروني"
-      >
+  <button id="loginBtn">
+    تسجيل الدخول
+  </button>
 
-      <input
-        id="password"
-        type="password"
-        placeholder="كلمة المرور"
-      >
+  <button
+    id="logoutBtn"
+    class="secondary hidden"
+  >
+    تسجيل الخروج
+  </button>
 
-    </div>
+</div>
 
-    <div class="row" style="margin-top:12px">
+<div id="msg" class="msg hidden"></div>
 
-      <button id="loginBtn">
-        تسجيل الدخول
-      </button>
+  </div>  <!-- ================= ADMIN PANEL ================= -->  <div id="panel" class="hidden"><!-- CREATE LICENSE -->
 
-      <button
-        id="logoutBtn"
-        class="secondary hidden"
-      >
-        تسجيل الخروج
-      </button>
+<div class="card">
 
-    </div>
+  <h2>➕ إنشاء كود اشتراك</h2>
 
-    <div id="msg" class="msg hidden"></div>
+  <div class="grid">
 
-  </div>
+    <input
+      id="restaurantId"
+      placeholder="معرّف المطعم"
+    >
 
+    <select id="plan">
 
-  <!-- ADMIN PANEL -->
-  <div id="panel" class="hidden">
+      <option value="month">
+        شهر
+      </option>
 
-    <!-- CREATE LICENSE -->
-    <div class="card">
+      <option value="3months">
+        3 أشهر
+      </option>
 
-      <h2>➕ إنشاء كود اشتراك</h2>
+      <option value="6months">
+        6 أشهر
+      </option>
 
-      <div class="grid">
+      <option value="year">
+        سنة
+      </option>
 
-        <input
-          id="restaurantId"
-          placeholder="معرّف المطعم"
-        >
+      <option value="lifetime">
+        مدى الحياة
+      </option>
 
-        <select id="plan">
-
-          <option value="month">
-            شهر
-          </option>
-
-          <option value="3months">
-            3 أشهر
-          </option>
-
-          <option value="6months">
-            6 أشهر
-          </option>
-
-          <option value="year">
-            سنة
-          </option>
-
-          <option value="lifetime">
-            مدى الحياة
-          </option>
-
-        </select>
-
-      </div>
-
-      <button
-        id="createBtn"
-        style="margin-top:12px"
-      >
-        إنشاء الكود
-      </button>
-
-      <div
-        id="newCode"
-        class="msg hidden"
-      ></div>
-
-    </div>
-
-
-    <!-- RESTAURANT SEARCH -->
-    <div class="card">
-
-      <h2>🔎 اشتراك مطعم</h2>
-
-      <p class="muted">
-        اكتب اسم المطعم أو معرّف المطعم ثم اضغط بحث.
-      </p>
-
-      <div class="row">
-
-        <input
-          id="lookupId"
-          placeholder="اسم المطعم أو معرّف المطعم"
-        >
-
-        <button id="lookupBtn">
-          بحث
-        </button>
-
-      </div>
-
-      <div
-        id="restaurantInfo"
-        class="msg hidden"
-      ></div>
-
-    </div>
-
-
-    <!-- LICENSES -->
-    <div class="card">
-
-      <h2>📋 الأكواد التي تم إصدارها</h2>
-
-      <div id="licenses">
-        جارٍ التحميل...
-      </div>
-
-    </div>
+    </select>
 
   </div>
+
+  <button
+    id="createBtn"
+    style="margin-top:12px"
+  >
+    إنشاء الكود
+  </button>
+
+  <div
+    id="newCode"
+    class="msg hidden"
+  ></div>
 
 </div>
 
 
-<script type="module">
+<!-- SEARCH -->
+
+<div class="card">
+
+  <h2>🔎 اشتراك مطعم</h2>
+
+  <p class="muted">
+    اكتب اسم المطعم أو معرّف المطعم.
+  </p>
+
+  <div class="row">
+
+    <input
+      id="lookupId"
+      placeholder="اسم المطعم أو معرّف المطعم"
+    >
+
+    <button id="lookupBtn">
+      بحث
+    </button>
+
+  </div>
+
+  <div
+    id="restaurantInfo"
+    class="msg hidden"
+  ></div>
+
+</div>
+
+
+<!-- LICENSES -->
+
+<div class="card">
+
+  <h2>📋 الأكواد التي تم إصدارها</h2>
+
+  <div id="licenses">
+    جارٍ التحميل...
+  </div>
+
+</div>
+
+  </div></div><script type="module">
+
+/* =========================================================
+   FIREBASE IMPORTS
+========================================================= */
 
 import {
   initializeApp
@@ -367,7 +362,7 @@ import {
 
 
 /* =========================================================
-   FIREBASE
+   FIREBASE CONFIG
 ========================================================= */
 
 const firebaseConfig = {
@@ -379,11 +374,16 @@ const firebaseConfig = {
   appId:"1:436566477044:web:2a86cfb212b44229f0b6a1"
 };
 
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
 const app = initializeApp(firebaseConfig);
 
-const db = getFirestore(app);
-
 const auth = getAuth(app);
+
+const db = getFirestore(app);
 
 
 /* =========================================================
@@ -395,38 +395,48 @@ const OWNER_UID =
 
 
 /* =========================================================
-   HELPERS
+   DOM
 ========================================================= */
 
 const $ = id =>
   document.getElementById(id);
 
 
+/* =========================================================
+   MESSAGES
+========================================================= */
+
 function showMsg(text,type="normal"){
 
   const el = $("msg");
+
+  el.className = "msg";
 
   el.classList.remove("hidden");
 
   el.textContent = text;
 
-  el.className = "msg";
+  if(type === "success"){
+    el.classList.add("ok");
+  }
 
   if(type === "error"){
     el.classList.add("bad");
-  }
-
-  if(type === "success"){
-    el.classList.add("ok");
   }
 
 }
 
 
 function hideMsg(){
+
   $("msg").classList.add("hidden");
+
 }
 
+
+/* =========================================================
+   OWNER CHECK
+========================================================= */
 
 function isOwner(user){
 
@@ -436,33 +446,48 @@ function isOwner(user){
 }
 
 
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHtml(value){
+
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+
+}
+
+
+/* =========================================================
+   RANDOM LICENSE CODE
+========================================================= */
+
 function randomCode(){
 
-  return `DM-${crypto
-    .randomUUID()
-    .replaceAll("-","")
-    .slice(0,4)
-    .toUpperCase()}-${crypto
-    .randomUUID()
-    .replaceAll("-","")
-    .slice(0,4)
-    .toUpperCase()}`;
+  const a =
+    crypto.randomUUID()
+      .replaceAll("-","")
+      .slice(0,4)
+      .toUpperCase();
+
+  const b =
+    crypto.randomUUID()
+      .replaceAll("-","")
+      .slice(0,4)
+      .toUpperCase();
+
+  return `DM-${a}-${b}`;
 
 }
 
 
-function addMonths(date,months){
-
-  const d = new Date(date);
-
-  d.setMonth(
-    d.getMonth() + months
-  );
-
-  return d;
-
-}
-
+/* =========================================================
+   PLAN
+========================================================= */
 
 function planName(plan){
 
@@ -500,19 +525,34 @@ function planMonths(plan){
 }
 
 
-function expiryForPlan(plan,baseDate=new Date()){
+/* =========================================================
+   EXPIRY
+========================================================= */
+
+function calculateExpiry(plan,baseDate=new Date()){
 
   if(plan === "lifetime"){
     return null;
   }
 
-  return addMonths(
-    baseDate,
-    planMonths(plan)
-  ).toISOString();
+  const months =
+    planMonths(plan);
+
+  const date =
+    new Date(baseDate);
+
+  date.setMonth(
+    date.getMonth() + months
+  );
+
+  return date.toISOString();
 
 }
 
+
+/* =========================================================
+   DATE FORMAT
+========================================================= */
 
 function formatDate(value){
 
@@ -520,13 +560,14 @@ function formatDate(value){
     return "مدى الحياة";
   }
 
-  const d = new Date(value);
+  const date =
+    new Date(value);
 
-  if(Number.isNaN(d.getTime())){
-    return value;
+  if(Number.isNaN(date.getTime())){
+    return String(value);
   }
 
-  return d.toLocaleString(
+  return date.toLocaleString(
     "ar-EG",
     {
       year:"numeric",
@@ -539,6 +580,10 @@ function formatDate(value){
 
 }
 
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 function statusName(status){
 
@@ -582,50 +627,170 @@ function statusClass(status){
 
 
 /* =========================================================
-   GET LICENSE FOR RESTAURANT
+   LOGIN
 ========================================================= */
 
-async function getRestaurantLicense(restaurant){
+$("loginBtn").addEventListener(
+  "click",
+  async function(){
 
-  const licenseCode =
-    restaurant.licenseCode;
+    const email =
+      $("email").value.trim();
 
-  if(!licenseCode){
-    return null;
-  }
+    const password =
+      $("password").value;
 
-  try{
 
-    const snap =
-      await getDoc(
-        doc(
-          db,
-          "licenses",
-          licenseCode
-        )
+    if(!email || !password){
+
+      showMsg(
+        "⚠️ اكتب البريد الإلكتروني وكلمة المرور أولًا.",
+        "error"
       );
 
-    if(!snap.exists()){
-      return null;
+      return;
+
     }
 
-    return {
-      id:snap.id,
-      ...snap.data()
-    };
 
-  }catch(error){
+    const button =
+      $("loginBtn");
 
-    console.error(
-      "License error:",
-      error
-    );
 
-    return null;
+    button.disabled = true;
+
+    button.textContent =
+      "جارٍ تسجيل الدخول...";
+
+
+    try{
+
+      const result =
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+
+      const user =
+        result.user;
+
+
+      console.log(
+        "Firebase UID:",
+        user.uid
+      );
+
+
+      if(user.uid !== OWNER_UID){
+
+        await signOut(auth);
+
+        showMsg(
+          "❌ هذا الحساب غير مصرح له بدخول لوحة المالك.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      showMsg(
+        "✅ تم تسجيل الدخول بنجاح.",
+        "success"
+      );
+
+
+    }catch(error){
+
+      console.error(
+        "LOGIN ERROR:",
+        error
+      );
+
+
+      let message =
+        "فشل تسجيل الدخول.";
+
+
+      if(error.code === "auth/invalid-credential"){
+
+        message =
+          "❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+
+      }
+      else if(error.code === "auth/user-not-found"){
+
+        message =
+          "❌ الحساب غير موجود في Firebase Authentication.";
+
+      }
+      else if(error.code === "auth/wrong-password"){
+
+        message =
+          "❌ كلمة المرور غير صحيحة.";
+
+      }
+      else if(error.code === "auth/invalid-email"){
+
+        message =
+          "❌ البريد الإلكتروني غير صحيح.";
+
+      }
+      else if(error.code === "auth/too-many-requests"){
+
+        message =
+          "⚠️ محاولات تسجيل دخول كثيرة. انتظر قليلًا ثم حاول مرة أخرى.";
+
+      }
+      else if(error.code === "auth/network-request-failed"){
+
+        message =
+          "❌ يوجد مشكلة في الاتصال بالإنترنت.";
+
+      }
+      else{
+
+        message =
+          "❌ " +
+          (error.code || error.message);
+
+      }
+
+
+      showMsg(
+        message,
+        "error"
+      );
+
+
+    }finally{
+
+      button.disabled = false;
+
+      button.textContent =
+        "تسجيل الدخول";
+
+    }
 
   }
+);
 
-}
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+$("logoutBtn").addEventListener(
+  "click",
+  async function(){
+
+    await signOut(auth);
+
+  }
+);
 
 
 /* =========================================================
@@ -634,7 +799,9 @@ async function getRestaurantLicense(restaurant){
 
 async function findRestaurant(search){
 
-  search = search.trim();
+  search =
+    search.trim();
+
 
   if(!search){
     return null;
@@ -642,8 +809,7 @@ async function findRestaurant(search){
 
 
   /*
-   * أول محاولة:
-   * البحث مباشرة بالـ Document ID
+   * أولًا نجرب الـ Document ID
    */
 
   const direct =
@@ -654,6 +820,7 @@ async function findRestaurant(search){
         search
       )
     );
+
 
   if(direct.exists()){
 
@@ -666,11 +833,10 @@ async function findRestaurant(search){
 
 
   /*
-   * ثاني محاولة:
-   * البحث في جميع المطاعم بالاسم
+   * بعد ذلك نبحث بالاسم
    */
 
-  const snap =
+  const snapshot =
     await getDocs(
       collection(
         db,
@@ -679,33 +845,37 @@ async function findRestaurant(search){
     );
 
 
-  const normalized =
+  const wanted =
     search.toLowerCase();
 
 
-  let exact = null;
   let partial = null;
 
 
-  snap.forEach(item => {
+  for(const item of snapshot.docs){
 
-    const data = item.data();
+    const data =
+      item.data();
+
 
     const name =
-      String(data.name || "")
-        .toLowerCase();
+      String(
+        data.name || ""
+      ).toLowerCase();
+
 
     const id =
-      String(item.id || "")
-        .toLowerCase();
+      String(
+        item.id || ""
+      ).toLowerCase();
 
 
     if(
-      name === normalized ||
-      id === normalized
+      name === wanted ||
+      id === wanted
     ){
 
-      exact = {
+      return {
         id:item.id,
         ...data
       };
@@ -716,8 +886,8 @@ async function findRestaurant(search){
     if(
       !partial &&
       (
-        name.includes(normalized) ||
-        id.includes(normalized)
+        name.includes(wanted) ||
+        id.includes(wanted)
       )
     ){
 
@@ -728,10 +898,58 @@ async function findRestaurant(search){
 
     }
 
-  });
+  }
 
 
-  return exact || partial;
+  return partial;
+
+}
+
+
+/* =========================================================
+   GET LICENSE
+========================================================= */
+
+async function getLicense(restaurant){
+
+  if(!restaurant.licenseCode){
+    return null;
+  }
+
+
+  try{
+
+    const snapshot =
+      await getDoc(
+        doc(
+          db,
+          "licenses",
+          restaurant.licenseCode
+        )
+      );
+
+
+    if(!snapshot.exists()){
+      return null;
+    }
+
+
+    return {
+      id:snapshot.id,
+      ...snapshot.data()
+    };
+
+
+  }catch(error){
+
+    console.error(
+      "LICENSE ERROR:",
+      error
+    );
+
+    return null;
+
+  }
 
 }
 
@@ -740,19 +958,25 @@ async function findRestaurant(search){
    DISPLAY RESTAURANT
 ========================================================= */
 
-async function displayRestaurant(restaurant){
+async function displayRestaurant(
+  restaurant
+){
 
   const box =
     $("restaurantInfo");
 
-  box.classList.remove("hidden");
+
+  box.classList.remove(
+    "hidden"
+  );
+
 
   box.innerHTML =
-    "جارٍ تحميل بيانات الاشتراك...";
+    "جارٍ تحميل بيانات المطعم...";
 
 
   const license =
-    await getRestaurantLicense(
+    await getLicense(
       restaurant
     );
 
@@ -775,7 +999,7 @@ async function displayRestaurant(restaurant){
     null;
 
 
-  const licenseCode =
+  const code =
     restaurant.licenseCode ||
     license?.code ||
     "غير موجود";
@@ -794,7 +1018,9 @@ async function displayRestaurant(restaurant){
 
       <div class="info-line">
         <b>معرّف المطعم:</b>
-        ${escapeHtml(restaurant.id)}
+        ${escapeHtml(
+          restaurant.id
+        )}
       </div>
 
       <div class="info-line">
@@ -810,30 +1036,28 @@ async function displayRestaurant(restaurant){
       </div>
 
       <div class="info-line">
-        <b>تاريخ الانتهاء:</b>
+        <b>الانتهاء:</b>
         ${formatDate(expiresAt)}
       </div>
 
       <div class="info-line">
         <b>كود الاشتراك:</b>
         <span class="code">
-          ${escapeHtml(licenseCode)}
+          ${escapeHtml(code)}
         </span>
       </div>
 
       <div class="info-line">
         <b>البريد:</b>
         ${escapeHtml(
-          restaurant.ownerEmail ||
-          "-"
+          restaurant.ownerEmail || "-"
         )}
       </div>
 
       <div class="info-line">
         <b>الهاتف:</b>
         ${escapeHtml(
-          restaurant.phone ||
-          "-"
+          restaurant.phone || "-"
         )}
       </div>
 
@@ -842,29 +1066,29 @@ async function displayRestaurant(restaurant){
     <div class="actions">
 
       <button
-        class="green"
         id="renewBtn"
+        class="green"
       >
         🔄 تجديد
       </button>
 
       <button
-        class="orange"
         id="pauseBtn"
+        class="orange"
       >
         ⏸️ إيقاف
       </button>
 
       <button
-        class="green"
         id="activateBtn"
+        class="green"
       >
         ▶️ تفعيل
       </button>
 
       <button
-        class="danger"
         id="cancelBtn"
+        class="danger"
       >
         ❌ إلغاء
       </button>
@@ -906,19 +1130,254 @@ async function displayRestaurant(restaurant){
 
 
 /* =========================================================
-   ESCAPE HTML
+   SEARCH BUTTON
 ========================================================= */
 
-function escapeHtml(value){
+$("lookupBtn").addEventListener(
+  "click",
+  async function(){
 
-  return String(value ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+    if(!isOwner(auth.currentUser)){
 
-}
+      showMsg(
+        "❌ غير مصرح لك.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    const search =
+      $("lookupId").value.trim();
+
+
+    if(!search){
+
+      showMsg(
+        "اكتب اسم المطعم أو المعرّف أولًا.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    const box =
+      $("restaurantInfo");
+
+
+    box.classList.remove(
+      "hidden"
+    );
+
+
+    box.textContent =
+      "🔎 جارٍ البحث...";
+
+
+    try{
+
+      const restaurant =
+        await findRestaurant(
+          search
+        );
+
+
+      if(!restaurant){
+
+        box.textContent =
+          "المطعم غير موجود.";
+
+        return;
+
+      }
+
+
+      await displayRestaurant(
+        restaurant
+      );
+
+
+    }catch(error){
+
+      console.error(error);
+
+      box.textContent =
+        "❌ حدث خطأ أثناء البحث: " +
+        (error.code || error.message);
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   ENTER SEARCH
+========================================================= */
+
+$("lookupId").addEventListener(
+  "keydown",
+  function(event){
+
+    if(event.key === "Enter"){
+
+      $("lookupBtn").click();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   CREATE LICENSE
+========================================================= */
+
+$("createBtn").addEventListener(
+  "click",
+  async function(){
+
+    if(!isOwner(auth.currentUser)){
+
+      showMsg(
+        "❌ غير مصرح لك.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    const restaurantId =
+      $("restaurantId").value.trim();
+
+
+    const plan =
+      $("plan").value;
+
+
+    if(!restaurantId){
+
+      showMsg(
+        "اكتب معرّف المطعم أولًا.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    const code =
+      randomCode();
+
+
+    const expiresAt =
+      calculateExpiry(plan);
+
+
+    const button =
+      $("createBtn");
+
+
+    button.disabled = true;
+
+    button.textContent =
+      "جارٍ إنشاء الكود...";
+
+
+    try{
+
+      await setDoc(
+        doc(
+          db,
+          "licenses",
+          code
+        ),
+        {
+          code,
+          restaurantId,
+          plan,
+          expiresAt,
+          status:"available",
+          used:false,
+          createdAt:
+            new Date().toISOString(),
+          createdBy:
+            auth.currentUser.uid
+        }
+      );
+
+
+      $("newCode")
+        .classList
+        .remove("hidden");
+
+
+      $("newCode").innerHTML = `
+
+        الكود:
+        <span class="code">
+          ${escapeHtml(code)}
+        </span>
+
+        <br>
+
+        <span class="muted">
+          المطعم:
+          ${escapeHtml(restaurantId)}
+        </span>
+
+        <br>
+
+        <span class="muted">
+          المدة:
+          ${planName(plan)}
+        </span>
+
+      `;
+
+
+      showMsg(
+        "✅ تم إنشاء كود الاشتراك بنجاح.",
+        "success"
+      );
+
+
+      $("restaurantId").value =
+        "";
+
+
+      await loadLicenses();
+
+
+    }catch(error){
+
+      console.error(error);
+
+      showMsg(
+        "❌ تعذر إنشاء الكود: " +
+        (error.code || error.message),
+        "error"
+      );
+
+
+    }finally{
+
+      button.disabled = false;
+
+      button.textContent =
+        "إنشاء الكود";
+
+    }
+
+  }
+);
 
 
 /* =========================================================
@@ -945,7 +1404,9 @@ async function renewRestaurant(
       "year = سنة\n" +
       "lifetime = مدى الحياة\n\n" +
       "مثال: 3months",
-      currentPlan || "month"
+      currentPlan !== "غير محدد"
+        ? currentPlan
+        : "month"
     );
 
 
@@ -966,7 +1427,7 @@ async function renewRestaurant(
   if(!allowed.includes(selected)){
 
     alert(
-      "الخطة غير صحيحة."
+      "❌ الخطة غير صحيحة."
     );
 
     return;
@@ -996,17 +1457,13 @@ async function renewRestaurant(
 
 
   const newExpiry =
-    expiryForPlan(
+    calculateExpiry(
       selected,
       baseDate
     );
 
 
   try{
-
-    /*
-     * تحديث المطعم
-     */
 
     await updateDoc(
       doc(
@@ -1020,10 +1477,6 @@ async function renewRestaurant(
       }
     );
 
-
-    /*
-     * تحديث الترخيص
-     */
 
     if(license){
 
@@ -1057,7 +1510,8 @@ async function renewRestaurant(
     });
 
 
-    loadLicenses();
+    await loadLicenses();
+
 
   }catch(error){
 
@@ -1093,7 +1547,9 @@ async function pauseRestaurant(
       "هل تريد إيقاف اشتراك هذا المطعم؟"
     )
   ){
+
     return;
+
   }
 
 
@@ -1139,7 +1595,8 @@ async function pauseRestaurant(
     });
 
 
-    loadLicenses();
+    await loadLicenses();
+
 
   }catch(error){
 
@@ -1182,7 +1639,7 @@ async function activateRestaurant(
   ){
 
     alert(
-      "الاشتراك منتهي بالفعل. استخدم «تجديد» أولًا."
+      "الاشتراك منتهي بالفعل.\nاستخدم «تجديد» أولًا."
     );
 
     return;
@@ -1195,7 +1652,9 @@ async function activateRestaurant(
       "هل تريد تفعيل اشتراك هذا المطعم؟"
     )
   ){
+
     return;
+
   }
 
 
@@ -1242,7 +1701,8 @@ async function activateRestaurant(
     });
 
 
-    loadLicenses();
+    await loadLicenses();
+
 
   }catch(error){
 
@@ -1279,7 +1739,9 @@ async function cancelRestaurant(
       "سيتم منع المطعم من استخدام النظام."
     )
   ){
+
     return;
+
   }
 
 
@@ -1292,8 +1754,7 @@ async function cancelRestaurant(
         restaurant.id
       ),
       {
-        licenseStatus:"cancelled",
-        licenseExpiresAt:new Date().toISOString()
+        licenseStatus:"cancelled"
       }
     );
 
@@ -1322,12 +1783,12 @@ async function cancelRestaurant(
 
     await displayRestaurant({
       ...restaurant,
-      licenseStatus:"cancelled",
-      licenseExpiresAt:new Date().toISOString()
+      licenseStatus:"cancelled"
     });
 
 
-    loadLicenses();
+    await loadLicenses();
+
 
   }catch(error){
 
@@ -1342,217 +1803,6 @@ async function cancelRestaurant(
   }
 
 }
-
-
-/* =========================================================
-   CREATE LICENSE
-========================================================= */
-
-$("createBtn").onclick = async () => {
-
-  if(!isOwner(auth.currentUser)){
-
-    showMsg(
-      "❌ غير مصرح لك.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const restaurantId =
-    $("restaurantId").value.trim();
-
-
-  const plan =
-    $("plan").value;
-
-
-  if(!restaurantId){
-
-    showMsg(
-      "اكتب معرّف المطعم أولًا.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const code =
-    randomCode();
-
-
-  const expiresAt =
-    expiryForPlan(plan);
-
-
-  try{
-
-    await setDoc(
-      doc(
-        db,
-        "licenses",
-        code
-      ),
-      {
-        code,
-        restaurantId,
-        plan,
-        expiresAt,
-        status:"available",
-        used:false,
-        createdAt:new Date().toISOString(),
-        createdBy:auth.currentUser.uid
-      }
-    );
-
-
-    $("newCode").classList.remove(
-      "hidden"
-    );
-
-
-    $("newCode").innerHTML = `
-      الكود:
-      <span class="code">
-        ${escapeHtml(code)}
-      </span>
-      <br>
-      <span class="muted">
-        المطعم: ${escapeHtml(restaurantId)}
-      </span>
-      <br>
-      <span class="muted">
-        المدة: ${planName(plan)}
-      </span>
-    `;
-
-
-    showMsg(
-      "✅ تم إنشاء الكود بنجاح.",
-      "success"
-    );
-
-
-    $("restaurantId").value = "";
-
-    loadLicenses();
-
-  }catch(error){
-
-    console.error(error);
-
-    showMsg(
-      "❌ تعذر إنشاء الكود: " +
-      (error.code || error.message),
-      "error"
-    );
-
-  }
-
-};
-
-
-/* =========================================================
-   SEARCH
-========================================================= */
-
-$("lookupBtn").onclick = async () => {
-
-  if(!isOwner(auth.currentUser)){
-
-    showMsg(
-      "❌ غير مصرح لك.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const search =
-    $("lookupId").value.trim();
-
-
-  if(!search){
-
-    showMsg(
-      "اكتب اسم المطعم أو المعرّف أولًا.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const box =
-    $("restaurantInfo");
-
-
-  box.classList.remove(
-    "hidden"
-  );
-
-
-  box.textContent =
-    "جارٍ البحث...";
-
-
-  try{
-
-    const restaurant =
-      await findRestaurant(search);
-
-
-    if(!restaurant){
-
-      box.textContent =
-        "المطعم غير موجود.";
-
-      return;
-
-    }
-
-
-    await displayRestaurant(
-      restaurant
-    );
-
-
-  }catch(error){
-
-    console.error(error);
-
-    box.textContent =
-      "حدث خطأ أثناء البحث.";
-
-  }
-
-};
-
-
-/* =========================================================
-   ENTER SEARCH
-========================================================= */
-
-$("lookupId").addEventListener(
-  "keydown",
-  event => {
-
-    if(event.key === "Enter"){
-
-      $("lookupBtn").click();
-
-    }
-
-  }
-);
 
 
 /* =========================================================
@@ -1573,10 +1823,13 @@ async function loadLicenses(){
 
   try{
 
-    const snap =
+    const snapshot =
       await getDocs(
         query(
-          collection(db,"licenses"),
+          collection(
+            db,
+            "licenses"
+          ),
           orderBy(
             "createdAt",
             "desc"
@@ -1586,7 +1839,7 @@ async function loadLicenses(){
       );
 
 
-    if(snap.empty){
+    if(snapshot.empty){
 
       $("licenses").innerHTML =
         '<span class="muted">لا توجد أكواد حتى الآن.</span>';
@@ -1597,19 +1850,23 @@ async function loadLicenses(){
 
 
     let html = `
+
       <div style="overflow-x:auto">
-      <table>
-        <tr>
-          <th>الكود</th>
-          <th>المطعم</th>
-          <th>الخطة</th>
-          <th>الحالة</th>
-          <th>الانتهاء</th>
-        </tr>
+
+        <table>
+
+          <tr>
+            <th>الكود</th>
+            <th>المطعم</th>
+            <th>الخطة</th>
+            <th>الحالة</th>
+            <th>الانتهاء</th>
+          </tr>
+
     `;
 
 
-    snap.forEach(item => {
+    snapshot.forEach(item => {
 
       const data =
         item.data();
@@ -1623,11 +1880,15 @@ async function loadLicenses(){
         data.used &&
         status === "available"
       ){
-        status = "used";
+
+        status =
+          "used";
+
       }
 
 
       html += `
+
         <tr>
 
           <td class="code">
@@ -1659,14 +1920,18 @@ async function loadLicenses(){
           </td>
 
         </tr>
+
       `;
 
     });
 
 
     html += `
-      </table>
+
+        </table>
+
       </div>
+
     `;
 
 
@@ -1678,14 +1943,17 @@ async function loadLicenses(){
 
     console.error(error);
 
-    $("licenses").innerHTML =
-      `<span class="bad">
+    $("licenses").innerHTML = `
+
+      <span class="bad">
         لا يمكن قراءة الأكواد:
         ${escapeHtml(
           error.code ||
           error.message
         )}
-      </span>`;
+      </span>
+
+    `;
 
   }
 
@@ -1700,6 +1968,12 @@ onAuthStateChanged(
   auth,
   async user => {
 
+    console.log(
+      "Auth state:",
+      user ? user.uid : "No user"
+    );
+
+
     if(!user){
 
       $("panel")
@@ -1713,8 +1987,6 @@ onAuthStateChanged(
       $("loginBtn")
         .classList
         .remove("hidden");
-
-      hideMsg();
 
       return;
 
@@ -1770,24 +2042,19 @@ onAuthStateChanged(
     );
 
 
-    loadLicenses();
+    await loadLicenses();
 
   }
 );
 
 
 /* =========================================================
-   LOGOUT
+   START
 ========================================================= */
 
-$("logoutBtn").onclick =
-  async () => {
+console.log(
+  "Admin panel loaded successfully."
+);
 
-    await signOut(auth);
-
-  };
-
-</script>
-
-</body>
+</script></body>
 </html>
