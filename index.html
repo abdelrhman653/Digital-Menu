@@ -906,6 +906,10 @@
         }
         function parseLicenseDate(value){
             if(!value) return null;
+            if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+            if(typeof value.toDate === 'function') {
+                try { const d = value.toDate(); return Number.isNaN(d.getTime()) ? null : d; } catch(_) {}
+            }
             const d = new Date(value);
             return Number.isNaN(d.getTime()) ? null : d;
         }
@@ -975,13 +979,13 @@
                 const restSnap=await window.FB.getDoc(restRef);
                 if(restSnap.exists() && restSnap.data().ownerUid) { await window.FB.signOut(window.FB.auth); return showCustomAlert('اسم/كود المطعم مستخدم بالفعل.'); }
                 const baseData=restSnap.exists()?restSnap.data():{};
-                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? window.FB.Timestamp.fromDate(new Date(license.expiresAt)) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? (typeof license.expiresAt.toDate === 'function' ? license.expiresAt : window.FB.Timestamp.fromDate(parseLicenseDate(license.expiresAt))) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
                 const batch=window.FB.writeBatch(window.FB.db);
                 batch.set(restRef,restaurantData,{merge:true});
                 batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString()});
                 batch.update(licenseRef,{status:'used',used:true,usedBy:uid,restaurantId:nameInput,usedAt:new Date().toISOString()});
                 await batch.commit();
-                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.expiresAt; ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
+                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.plan === 'lifetime' ? null : parseLicenseDate(license.expiresAt); ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
                 startDataListeners(); showDashboard(); switchTab('dashboard');
             }catch(e){
                 console.error('Registration error:',e);
@@ -1330,7 +1334,7 @@
             try {
                 // Firebase Storage is intentionally NOT used.
                 // Images are resized/compressed in the browser and stored as Data URLs in Firestore.
-                return await window.fileToDataURL(file, { maxSize, quality: 0.55 });
+                return await window.fileToDataURL(file, { maxSize, quality: 0.48 });
             } catch (e) {
                 console.error('Image preparation error:', e);
                 throw new Error('تعذر تجهيز الصورة. جرّب صورة أخرى.');
@@ -1678,7 +1682,7 @@
                 } catch(uploadErr) {
                     console.warn('Menu source upload failed; OCR result will still be saved.', uploadErr);
                     const status=document.getElementById('aiMenuSavedStatus');
-                    if(status) status.innerText='تم حفظ الأصناف والتصنيفات، وتعذر رفع الصورة الأصلية إلى التخزين.';
+                    if(status) status.innerText='تم حفظ الأصناف والتصنيفات، وتعذر تجهيز الصورة الأصلية.';
                 }
                 await saveRestaurantDataToCloud();
                 stat.innerText = '';

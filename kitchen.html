@@ -486,8 +486,11 @@
                             }
                         }catch(licenseErr){ console.warn('Kitchen license compatibility lookup failed:',licenseErr); }
                     }
-                    const expiry=kitchenRestaurantData.licenseExpiresAt?new Date(kitchenRestaurantData.licenseExpiresAt):null;
-                    if(kitchenRestaurantData.ownerUid!==user.uid || kitchenRestaurantData.licenseStatus!=='active' || (kitchenRestaurantData.plan!=='lifetime' && (!expiry || expiry.getTime()<=Date.now()))) return denyKitchen('انتهى ترخيص المطعم أو تم إيقافه.');
+                    let expiry=null;
+                    if(kitchenRestaurantData.licenseExpiresAt){
+                        try{ expiry=typeof kitchenRestaurantData.licenseExpiresAt.toDate==='function' ? kitchenRestaurantData.licenseExpiresAt.toDate() : new Date(kitchenRestaurantData.licenseExpiresAt); }catch(_){ expiry=null; }
+                    }
+                    if(kitchenRestaurantData.ownerUid!==user.uid || kitchenRestaurantData.licenseStatus!=='active' || (kitchenRestaurantData.plan!=='lifetime' && (!expiry || Number.isNaN(expiry.getTime()) || expiry.getTime()<=Date.now()))) return denyKitchen('انتهى ترخيص المطعم أو تم إيقافه.');
                     kitchenAccessAllowed=true;
                     document.getElementById('accessGate').style.display='none';
                     document.getElementById('kitchenLoginForm').style.display='none';
@@ -509,7 +512,7 @@
         async function startKitchenDataListeners(){
             if(!kitchenAccessAllowed) return;
             const { doc, onSnapshot, collection, query, where } = window.firestoreModules;
-            onSnapshot(doc(window.db, "restaurants", restaurantId), (docSnap) => {
+            onSnapshot(doc(window.db, "restaurants", restaurantId), async (docSnap) => {
                 if (docSnap.exists()) {
                     let data = docSnap.data() || {};
                     if(!data.plan && data.licenseCode){
@@ -521,11 +524,14 @@
                             }
                         }catch(licenseErr){ console.warn('Kitchen live license lookup failed:',licenseErr); }
                     }
-                    const expiry = data.licenseExpiresAt ? new Date(data.licenseExpiresAt) : null;
+                    let expiry = null;
+                    if(data.licenseExpiresAt){
+                        try{ expiry=typeof data.licenseExpiresAt.toDate==='function' ? data.licenseExpiresAt.toDate() : new Date(data.licenseExpiresAt); }catch(_){ expiry=null; }
+                    }
                     const stillActive =
                         data.ownerUid === window.ownerAuth.currentUser?.uid &&
                         data.licenseStatus === 'active' &&
-                        (data.plan === 'lifetime' || (!!expiry && expiry.getTime() > Date.now()));
+                        (data.plan === 'lifetime' || (!!expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() > Date.now()));
 
                     if(!stillActive){
                         denyKitchen('انتهى اشتراك هذا المطعم أو تم إيقافه. يرجى التجديد للمتابعة.');

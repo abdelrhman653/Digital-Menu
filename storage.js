@@ -9,8 +9,8 @@
     options = options || {};
     if (!file) return Promise.resolve('');
 
-    const maxSize = Number(options.maxSize || 600);
-    const quality = Number(options.quality || 0.55);
+    const maxSize = Number(options.maxSize || 400);
+    const quality = Number(options.quality || 0.48);
 
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

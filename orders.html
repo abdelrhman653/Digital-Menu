@@ -356,11 +356,13 @@
                 if(docSnap.exists()) {
                     restaurantData=docSnap.data();
 
-                    const expiry = restaurantData.licenseExpiresAt ? new Date(restaurantData.licenseExpiresAt) : null;
+                    let expiry = null;
+                    if (restaurantData.licenseExpiresAt) {
+                        try { expiry = typeof restaurantData.licenseExpiresAt.toDate === 'function' ? restaurantData.licenseExpiresAt.toDate() : new Date(restaurantData.licenseExpiresAt); } catch(_) { expiry = null; }
+                    }
                     restaurantSubscriptionActive =
                         restaurantData.licenseStatus === 'active' &&
-                        !!expiry &&
-                        expiry.getTime() > Date.now();
+                        (restaurantData.plan === 'lifetime' || (!!expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() > Date.now()));
 
                     const gate = document.getElementById('subscriptionGate');
                     if (!restaurantSubscriptionActive) {

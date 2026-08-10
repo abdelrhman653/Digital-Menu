@@ -529,24 +529,22 @@ function planMonths(plan){
    EXPIRY
 ========================================================= */
 
-function calculateExpiry(plan,baseDate=new Date()){
-
-  if(plan === "lifetime"){
-    return null;
+function asDate(value){
+  if(!value) return null;
+  if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if(typeof value.toDate === 'function'){
+    try{ const d=value.toDate(); return Number.isNaN(d.getTime()) ? null : d; }catch(_){ return null; }
   }
+  const d=new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
-  const months =
-    planMonths(plan);
-
-  const date =
-    new Date(baseDate);
-
-  date.setMonth(
-    date.getMonth() + months
-  );
-
-  return date.toISOString();
-
+function calculateExpiry(plan,baseDate=new Date()){
+  if(plan === "lifetime") return null;
+  const months=planMonths(plan);
+  const date=asDate(baseDate) || new Date();
+  date.setMonth(date.getMonth()+months);
+  return date;
 }
 
 
@@ -560,10 +558,9 @@ function formatDate(value){
     return "مدى الحياة";
   }
 
-  const date =
-    new Date(value);
+  const date = asDate(value);
 
-  if(Number.isNaN(date.getTime())){
+  if(!date){
     return String(value);
   }
 
@@ -1445,14 +1442,9 @@ async function renewRestaurant(
     new Date();
 
 
-  if(
-    currentExpiry &&
-    new Date(currentExpiry) > new Date()
-  ){
-
-    baseDate =
-      new Date(currentExpiry);
-
+  const parsedCurrentExpiry=asDate(currentExpiry);
+  if(parsedCurrentExpiry && parsedCurrentExpiry > new Date()){
+    baseDate=parsedCurrentExpiry;
   }
 
 
@@ -1633,10 +1625,8 @@ async function activateRestaurant(
     null;
 
 
-  if(
-    expiresAt &&
-    new Date(expiresAt) <= new Date()
-  ){
+  const parsedExpiry=asDate(expiresAt);
+  if(parsedExpiry && parsedExpiry <= new Date()){
 
     alert(
       "الاشتراك منتهي بالفعل.\nاستخدم «تجديد» أولًا."
