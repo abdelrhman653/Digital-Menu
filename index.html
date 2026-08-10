@@ -753,6 +753,7 @@
         let aiMenuImageFile = null;
         let restaurantSaveInFlight = false;
         let restaurantSaveQueued = false;
+        let restaurantSavePromise = Promise.resolve();
         let restaurantLocalRevision = 0;
         let restaurantSnapshotRevision = 0;
         let defaultCategories = ["مشروبات / Drinks", "أكلات / Foods", "حلويات / Desserts"];
@@ -1241,70 +1242,26 @@
 
         // Settings & Identity Upload Fix
         async function saveRestaurantDataToCloud() {
-            if (!window.FB || !ownerAccessAllowed || !currentOwnerUser || !currentRestaurant) {
+            if (!window.FB || !currentOwnerUser || !currentRestaurant) {
                 throw new Error('جلسة الإدارة غير صالحة.');
             }
 
-            // Keep the UI responsive and prevent the real-time listener from
-            // immediately restoring an older snapshot while a write is pending.
-            restaurantLocalRevision++;
-            if (restaurantSaveInFlight) {
-                restaurantSaveQueued = true;
-                return;
-            }
-
-            restaurantSaveInFlight = true;
-            const revisionAtStart = restaurantLocalRevision;
-            try {
+            const requestedRevision = ++restaurantLocalRevision;
+            const runSave = async () => {
+                restaurantSaveInFlight = true;
                 const restRef = window.FB.doc(window.FB.db, 'restaurants', currentRestaurant);
                 const freshSnap = await window.FB.getDoc(restRef);
                 if (!freshSnap.exists()) throw new Error('بيانات المطعم غير موجودة.');
 
-                let serverData = freshSnap.data() || {};
-                const serverHadPlan = Object.prototype.hasOwnProperty.call(serverData, 'plan');
+                const serverData = freshSnap.data() || {};
                 if (serverData.ownerUid && serverData.ownerUid !== currentOwnerUser.uid) {
                     throw new Error('لا تملك صلاحية تعديل هذا المطعم.');
                 }
-                // Backward compatibility for old restaurants: resolve the linked license
-                // before checking the subscription.
-                if (!serverData.plan && serverData.licenseCode) {
-                    try {
-                        const licenseSnap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'licenses', serverData.licenseCode));
-                        if (licenseSnap.exists()) {
-                            const lic = licenseSnap.data() || {};
-                            serverData = {
-                                ...serverData,
-                                plan: lic.plan || serverData.plan,
-                                licenseExpiresAt: serverData.licenseExpiresAt ?? (lic.plan === 'lifetime' ? null : lic.expiresAt)
-                            };
-                        }
-                    } catch (licenseErr) {
-                        console.warn('License compatibility save lookup failed:', licenseErr);
-                    }
-                }
-                if (!licenseIsActive(serverData)) {
-                    // Legacy compatibility: if the restaurant document does not
-                    // contain plan/expiry yet, trust the linked license record.
-                    let linkedActive = false;
-                    if (serverData.licenseCode) {
-                        try {
-                            const licSnap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'licenses', serverData.licenseCode));
-                            if (licSnap.exists()) {
-                                const lic = licSnap.data() || {};
-                                linkedActive = lic.plan === 'lifetime' || (parseLicenseDate(lic.expiresAt)?.getTime() > Date.now());
-                            }
-                        } catch (_) {}
-                    }
-                    if (!linkedActive) throw new Error('اشتراك المطعم غير نشط أو منتهي.');
-                }
 
-                // Never overwrite protected account/license fields from a stale
-                // browser object. Merge only the editable restaurant data.
+                // Branding/menu edits belong to the restaurant owner. They must
+                // not be blocked by legacy or malformed license fields. License
+                // status remains enforced for public ordering and order access.
                 const editable = {
-                    // Keep license/account fields out of normal owner edits.
-                    // The Firestore rules protect them, while the current plan is preserved for compatibility.
-                    ...(serverData.plan ? { plan: serverData.plan } : {}),
-                    ...(serverData.licenseExpiresAt ? { licenseExpiresAt: serverData.licenseExpiresAt } : {}),
                     primaryColor: restaurantDataCache.primaryColor || '#FF4757',
                     secondaryColor: restaurantDataCache.secondaryColor || '#2ED573',
                     accentColor: restaurantDataCache.accentColor || '#FFA502',
@@ -1313,32 +1270,28 @@
                     textColor: restaurantDataCache.textColor || '#ffffff',
                     logo: restaurantDataCache.logo || '',
                     menuImageUrl: restaurantDataCache.menuImageUrl || '',
-                    categories: Array.isArray(restaurantDataCache.categories) ? restaurantDataCache.categories : [...defaultCategories],
-                    items: Array.isArray(restaurantDataCache.items) ? restaurantDataCache.items : []
+                    categories: Array.isArray(restaurantDataCache.categories) ? [...restaurantDataCache.categories] : [...defaultCategories],
+                    items: Array.isArray(restaurantDataCache.items) ? [...restaurantDataCache.items] : []
                 };
 
-                await window.FB.setDoc(restRef, editable, { merge: true });
-                restaurantSnapshotRevision = Math.max(restaurantSnapshotRevision, revisionAtStart);
-            } catch (e) {
+                try {
+                    await window.FB.setDoc(restRef, editable, { merge: true });
+                    restaurantSnapshotRevision = Math.max(restaurantSnapshotRevision, requestedRevision);
+                } finally {
+                    restaurantSaveInFlight = false;
+                }
+            };
+
+            // Serialize all writes so a second edit cannot overwrite a first
+            // edit while its Firestore request is still in flight.
+            restaurantSavePromise = restaurantSavePromise.then(runSave, runSave);
+            return restaurantSavePromise.catch(e => {
                 console.error('Restaurant save error:', e);
                 if (e?.code === 'permission-denied') {
-                    throw new Error('Firestore Rules رفضت حفظ بيانات المطعم. استخدم ملف firestore.rules المرفق في النسخة الجديدة.');
+                    throw new Error('لا توجد صلاحية لحفظ بيانات المطعم. تأكد أن حسابك هو صاحب المطعم وأن Firestore Rules المنشورة تسمح للـ owner بالتعديل.');
                 }
                 throw e;
-            } finally {
-                restaurantSaveInFlight = false;
-                if (restaurantSaveQueued) {
-                    restaurantSaveQueued = false;
-                    // A later edit happened while the first save was running.
-                    // Persist the latest cache once, without recursive bursts.
-                    if (restaurantLocalRevision > revisionAtStart) {
-                        setTimeout(() => saveRestaurantDataToCloud().catch(err => {
-                            console.error('Queued restaurant save error:', err);
-                            showCustomAlert('تعذر حفظ آخر تعديل: ' + (err.message || 'خطأ غير معروف'));
-                        }), 0);
-                    }
-                }
-            }
+            });
         }
 
         async function uploadFileToStorage(file, folder) {
@@ -1477,7 +1430,7 @@
 
                 if(uploadedLogoFile) {
                     const prepared=await prepareLogoImage(uploadedLogoFile);
-                    const logoUrl = await uploadFileToStorage(uploadedLogoFile, "logo");
+                    const logoUrl = await window.fileToDataURL(uploadedLogoFile, { maxSize: 320, quality: 0.38 });
                     if (logoUrl) restaurantDataCache.logo = logoUrl;
                     const extracted=extractBrandColors(prepared.canvas);
                     if(extracted) { setBrandColorInputs(extracted); Object.assign(restaurantDataCache,extracted); }
@@ -1577,6 +1530,7 @@
             if (!name || !price) return showCustomAlert('الرجاء إدخال الاسم والسعر');
             let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
             
+            const previousItems = restaurantDataCache.items.map(i => ({...i}));
             if (editId) {
                 let item = restaurantDataCache.items.find(i => i.id == editId);
                 if (item) { item.name=name; item.category=category; item.price=price; item.discount=discount; if(uploadedImageFile && img) item.img=img; }
@@ -1587,7 +1541,9 @@
             try {
                 await saveRestaurantDataToCloud();
                 resetItemForm();
+                showCustomAlert(editId ? 'تم تعديل الصنف وحفظه بنجاح' : 'تم إضافة الصنف وحفظه بنجاح');
             } catch (e) {
+                restaurantDataCache.items = previousItems;
                 renderItems();
                 showCustomAlert('تعذر حفظ الصنف: ' + (e.message || 'خطأ غير معروف'));
             }

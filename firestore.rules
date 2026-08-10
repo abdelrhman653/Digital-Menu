@@ -168,7 +168,7 @@ service cloud.firestore {
       // with the exact values stored in the linked license.
       allow update: if isOwner()
         || (
-          activeOwnerOfRestaurant(restaurantId)
+          ownerOfRestaurant(restaurantId)
           && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.licenseCode == resource.data.licenseCode
           && request.resource.data.licenseStatus == resource.data.licenseStatus
