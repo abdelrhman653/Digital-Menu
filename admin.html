@@ -357,7 +357,8 @@ import {
   getDocs,
   query,
   orderBy,
-  limit
+  limit,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 
@@ -1274,8 +1275,10 @@ $("createBtn").addEventListener(
       randomCode();
 
 
-    const expiresAt =
+    const expiresAtDate =
       calculateExpiry(plan);
+    const expiresAt =
+      expiresAtDate ? Timestamp.fromDate(expiresAtDate) : null;
 
 
     const button =
@@ -1465,7 +1468,7 @@ async function renewRestaurant(
       ),
       {
         licenseStatus:"active",
-        licenseExpiresAt:newExpiry
+        licenseExpiresAt:(newExpiry ? Timestamp.fromDate(newExpiry) : null)
       }
     );
 
@@ -1480,7 +1483,7 @@ async function renewRestaurant(
         ),
         {
           plan:selected,
-          expiresAt:newExpiry,
+          expiresAt:(newExpiry ? Timestamp.fromDate(newExpiry) : null),
           status:"used",
           used:true
         }
@@ -1836,6 +1839,43 @@ async function loadLicenses(){
 
       return;
 
+    }
+
+    // One-time compatibility repair for older licenses that stored expiry
+    // as an ISO string. Firestore Rules compare expiry against request.time,
+    // so active subscriptions must use a Firestore Timestamp.
+    for (const item of snapshot.docs) {
+      const data = item.data();
+      const rawExpiry = data.expiresAt;
+      let expiryDate = null;
+      try {
+        if (rawExpiry && typeof rawExpiry.toDate === 'function') {
+          expiryDate = rawExpiry.toDate();
+        } else if (rawExpiry) {
+          expiryDate = new Date(rawExpiry);
+        }
+      } catch (_) {}
+
+      if (expiryDate && !Number.isNaN(expiryDate.getTime())) {
+        const normalized = Timestamp.fromDate(expiryDate);
+        const needsLicenseRepair = !(rawExpiry && typeof rawExpiry.toDate === 'function');
+        if (needsLicenseRepair) {
+          await updateDoc(doc(db, 'licenses', item.id), { expiresAt: normalized });
+        }
+        if (data.used === true && data.status === 'used' && typeof data.restaurantId === 'string' && data.restaurantId) {
+          await updateDoc(doc(db, 'restaurants', data.restaurantId), {
+            plan: data.plan || 'month',
+            licenseExpiresAt: normalized,
+            licenseStatus: 'active'
+          });
+        }
+      } else if (data.plan === 'lifetime' && data.used === true && data.status === 'used' && typeof data.restaurantId === 'string' && data.restaurantId) {
+        await updateDoc(doc(db, 'restaurants', data.restaurantId), {
+          plan: 'lifetime',
+          licenseExpiresAt: null,
+          licenseStatus: 'active'
+        });
+      }
     }
 
 
