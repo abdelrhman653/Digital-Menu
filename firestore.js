@@ -1,6 +1,7 @@
 // Shared Firebase bootstrap for the restaurant website
 // Firebase Web SDK 12.17.0
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
   getDocs, query, where, orderBy, writeBatch, addDoc
@@ -22,9 +23,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 window.FB = {
-  db, auth, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
+  db, auth, storage, ref, uploadBytes, getDownloadURL, deleteObject, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
   getDocs, query, where, orderBy, writeBatch, addDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously
 };
@@ -32,7 +34,7 @@ window.FB = {
 window.db = db;
 window.ownerAuth = auth;
 window.firestoreModules = {
-  db, auth, storage, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
+  db, auth, storage, ref, uploadBytes, getDownloadURL, deleteObject, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
   getDocs, query, where, orderBy, writeBatch, addDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously
 };

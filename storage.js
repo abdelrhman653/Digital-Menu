@@ -1,8 +1,7 @@
 /*
- * No Firebase Storage version.
- * Firebase Storage is optional in this project, so uploaded images are
- * resized in the browser and saved as compact data URLs inside Firestore.
- * This works on Firebase's no-billing setup and keeps the existing UI/API.
+ * Image preparation helper.
+ * Images are resized in the browser before the admin page uploads them
+ * to Firebase Storage. The helper keeps the existing file-picker API intact.
  */
 (function () {
   function fileToDataURL(file, options) {

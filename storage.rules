@@ -2,9 +2,27 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function restaurantOwner(restaurantId) {
+      return signedIn()
+        && firestore.get(
+          /databases/(default)/documents/restaurants/$(restaurantId)
+        ).data.ownerUid == request.auth.uid;
+    }
+
+    match /restaurants/{restaurantId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if restaurantOwner(restaurantId)
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
     match /{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;
     }
   }
 }

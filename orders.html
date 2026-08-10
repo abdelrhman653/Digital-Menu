@@ -149,7 +149,7 @@
         }
 
         .live-order-banner{position:sticky;top:77px;z-index:90;max-width:800px;margin:10px auto 0;padding:14px 16px;background:var(--surface-color);border:1px solid var(--primary);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(14px);}
-        .live-order-banner.hidden{display:none!important}.live-order-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.live-order-status{font-size:15px;font-weight:900;color:var(--accent)}.live-order-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}.live-order-step{height:6px;border-radius:99px;background:var(--border-color);transition:.3s}.live-order-step.active{background:var(--primary)}.account-actions{display:flex;align-items:center;gap:8px}.header-action-btn{background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);border-radius:12px;padding:8px 11px;cursor:pointer;font-weight:800;font-size:12px}.header-action-btn:hover{border-color:var(--primary);color:var(--primary)}.history-list{display:flex;flex-direction:column;gap:12px}.history-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:16px;padding:14px}.history-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.history-status{font-weight:800;color:var(--secondary)}.saved-customer-box{background:var(--input-bg);border:1px dashed var(--border-color);border-radius:12px;padding:12px;margin-bottom:15px;color:var(--text-muted);font-size:12px}.empty-cart { text-align: center; padding: 40px 0; color: var(--text-muted); }
+        .live-order-banner.hidden{display:none!important}.live-order-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.live-order-status{font-size:15px;font-weight:900;color:var(--accent)}.live-order-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}.live-order-step{height:6px;border-radius:99px;background:var(--border-color);transition:.3s}.live-order-step.active{background:var(--primary)}.account-actions{display:flex;align-items:center;gap:8px}.header-action-btn{background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);border-radius:12px;padding:8px 11px;cursor:pointer;font-weight:800;font-size:12px}.header-action-btn:hover{border-color:var(--primary);color:var(--primary)}.history-list{display:flex;flex-direction:column;gap:12px}.history-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:16px;padding:14px}.history-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.history-status{font-weight:800;color:var(--secondary)}.saved-customer-box{background:var(--input-bg);border:1px dashed var(--border-color);border-radius:12px;padding:12px;margin-bottom:15px;color:var(--text-muted);font-size:12px}.account-modal-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.account-modal-title button{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer}.account-note{font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:14px}.account-submit{background:var(--primary);color:#fff;border:none;width:100%;padding:13px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;margin-top:6px}.empty-cart { text-align: center; padding: 40px 0; color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -163,9 +163,11 @@
                 <div id="tableDisplay" class="table-badge">طلب عام</div>
             </div>
         </div>
-        <div class="account-actions">
-            <button class="header-action-btn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
-            <button class="header-action-btn" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        <div class="account-actions" id="accountActions">
+            <button class="header-action-btn" id="customerLoginBtn" onclick="openCustomerLogin()"><i class="fa-solid fa-right-to-bracket"></i> تسجيل دخول</button>
+            <button class="header-action-btn hidden" id="historyBtn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
+            <button class="header-action-btn hidden" id="customerInfoBtn" onclick="openCustomerInfo()"><i class="fa-solid fa-user-pen"></i> معلوماتي</button>
+            <button class="header-action-btn hidden" id="customerLogoutBtn" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
             <button class="theme-toggle-btn" onclick="toggleUserTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
         </div>
     </header>
@@ -253,6 +255,27 @@
 
                 <button class="btn-submit" id="submitOrderBtn" onclick="submitOrder()"><i class="fa-solid fa-paper-plane"></i> إرسال الطلب الآن</button>
             </div>
+        </div>
+    </div>
+
+    <div id="customerLoginModal" class="modal-overlay">
+        <div class="cart-modal" style="border-radius:24px;max-width:520px;text-align:right;padding:25px 20px;">
+            <div class="account-modal-title"><h3><i class="fa-solid fa-right-to-bracket" style="color:var(--primary);"></i> تسجيل دخول العميل</h3><button onclick="closeCustomerLogin()"><i class="fa-solid fa-xmark"></i></button></div>
+            <p class="account-note">سجّل الاسم ورقم الهاتف والعنوان لهذا المطعم. بعد الدخول سيظهر لك السجل ومعلوماتي.</p>
+            <div class="input-group"><label>الاسم</label><input id="customerLoginName" type="text" placeholder="اكتب اسمك"></div>
+            <div class="input-group"><label>رقم الهاتف</label><input id="customerLoginPhone" type="tel" placeholder="01xxxxxxxxx"></div>
+            <div class="input-group"><label>العنوان</label><textarea id="customerLoginAddress" rows="3" placeholder="عنوان التوصيل"></textarea></div>
+            <button class="account-submit" onclick="saveCustomerLogin()">دخول وحفظ البيانات</button>
+        </div>
+    </div>
+
+    <div id="customerInfoModal" class="modal-overlay">
+        <div class="cart-modal" style="border-radius:24px;max-width:520px;text-align:right;padding:25px 20px;">
+            <div class="account-modal-title"><h3><i class="fa-solid fa-user-pen" style="color:var(--primary);"></i> معلوماتي</h3><button onclick="closeCustomerInfo()"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="input-group"><label>الاسم</label><input id="customerInfoName" type="text"></div>
+            <div class="input-group"><label>رقم الهاتف</label><input id="customerInfoPhone" type="tel"></div>
+            <div class="input-group"><label>العنوان</label><textarea id="customerInfoAddress" rows="3"></textarea></div>
+            <button class="account-submit" onclick="saveCustomerInfo()">حفظ التعديلات</button>
         </div>
     </div>
 
@@ -484,53 +507,121 @@
             updateCartUI();
         }
 
+        function renderCustomerAccountActions(){
+            const loginBtn=document.getElementById('customerLoginBtn'), historyBtn=document.getElementById('historyBtn'),
+                  infoBtn=document.getElementById('customerInfoBtn'), logoutBtn=document.getElementById('customerLogoutBtn');
+            if(!loginBtn||!historyBtn||!infoBtn||!logoutBtn) return;
+            if(tableNum){
+                [loginBtn,historyBtn,infoBtn,logoutBtn].forEach(b=>b.classList.add('hidden'));
+                return;
+            }
+            if(customerSession){
+                loginBtn.classList.add('hidden');
+                historyBtn.classList.remove('hidden');
+                infoBtn.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+            }else{
+                loginBtn.classList.remove('hidden');
+                historyBtn.classList.add('hidden');
+                infoBtn.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+            }
+        }
+
         function configureOrderMode(){
             const typeEl=document.getElementById('orderTypeSelect'), tableDisplay=document.getElementById('tableDisplay'), addressGroup=document.getElementById('addressGroup');
             if(tableNum){
                 typeEl.value='dine_in';
                 tableDisplay.innerText=`طاولة رقم ${tableNum}`;
                 addressGroup.classList.add('hidden');
-                document.querySelector('button[onclick="openHistoryModal()"]').style.display='none';
-                document.querySelector('button[onclick="customerLogout()"]').style.display='none';
-            } else {
+            }else{
                 typeEl.value='delivery';
                 tableDisplay.innerText='طلب أونلاين';
                 addressGroup.classList.remove('hidden');
-                document.querySelector('button[onclick="openHistoryModal()"]').style.display='';
-                document.querySelector('button[onclick="customerLogout()"]').style.display='';
             }
+            renderCustomerAccountActions();
         }
+
         function toggleAddressField(){
-            const type=tableNum?'dine_in':'delivery';document.getElementById('orderTypeSelect').value=type;
+            const type=tableNum?'dine_in':'delivery';
+            document.getElementById('orderTypeSelect').value=type;
             document.getElementById('addressGroup').classList.toggle('hidden',type!=='delivery');
         }
+
         function loadCustomerSession(){
             try{customerSession=JSON.parse(sessionStore().getItem(customerSessionKey)||'null');}catch(e){customerSession=null;}
             const name=document.getElementById('custName'),phone=document.getElementById('custPhone'),address=document.getElementById('custAddress');
             if(customerSession){
                 name.value=customerSession.name||'';phone.value=customerSession.phone||'';address.value=customerSession.address||'';
-                document.getElementById('custNameGroup').classList.add('hidden');document.getElementById('custPhoneGroup').classList.add('hidden');
-                const box=document.getElementById('savedCustomerBox');box.classList.remove('hidden');
+                document.getElementById('custNameGroup').classList.add('hidden');
+                document.getElementById('custPhoneGroup').classList.add('hidden');
+                const box=document.getElementById('savedCustomerBox');
+                box.classList.remove('hidden');
                 box.innerHTML=`<i class="fa-solid fa-user-check" style="color:var(--secondary);"></i> بياناتك محفوظة: <strong>${escapeHtml(customerSession.name)}</strong> — ${escapeHtml(customerSession.phone)}.`;
             }else{
-                document.getElementById('custNameGroup').classList.remove('hidden');document.getElementById('custPhoneGroup').classList.remove('hidden');document.getElementById('savedCustomerBox').classList.add('hidden');
+                document.getElementById('custNameGroup').classList.remove('hidden');
+                document.getElementById('custPhoneGroup').classList.remove('hidden');
+                document.getElementById('savedCustomerBox').classList.add('hidden');
             }
             if(!tableNum) document.getElementById('addressGroup').classList.toggle('hidden',!!(customerSession&&customerSession.address));
+            renderCustomerAccountActions();
         }
+
         function saveCustomerSession(name,phone,address){
             customerSession={name,phone,address:address||''};
             sessionStore().setItem(customerSessionKey,JSON.stringify(customerSession));
             loadCustomerSession();
         }
-        function customerLogout(){
-            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});activeOrderUnsubscribers={};
+
+        function openCustomerLogin(){
+            if(tableNum) return;
+            document.getElementById('customerLoginName').value=customerSession?.name||'';
+            document.getElementById('customerLoginPhone').value=customerSession?.phone||'';
+            document.getElementById('customerLoginAddress').value=customerSession?.address||'';
+            document.getElementById('customerLoginModal').classList.add('active');
+        }
+        function closeCustomerLogin(){document.getElementById('customerLoginModal').classList.remove('active');}
+        function saveCustomerLogin(){
+            const name=document.getElementById('customerLoginName').value.trim();
+            const phone=document.getElementById('customerLoginPhone').value.trim();
+            const address=document.getElementById('customerLoginAddress').value.trim();
+            if(!name||!phone||!address) return alert('الرجاء إدخال الاسم ورقم الهاتف والعنوان.');
+            saveCustomerSession(name,phone,address);
+            closeCustomerLogin();
+            loadOrderHistory();
+        }
+
+        function openCustomerInfo(){
+            if(tableNum||!customerSession) return;
+            document.getElementById('customerInfoName').value=customerSession.name||'';
+            document.getElementById('customerInfoPhone').value=customerSession.phone||'';
+            document.getElementById('customerInfoAddress').value=customerSession.address||'';
+            document.getElementById('customerInfoModal').classList.add('active');
+        }
+        function closeCustomerInfo(){document.getElementById('customerInfoModal').classList.remove('active');}
+        function saveCustomerInfo(){
+            const name=document.getElementById('customerInfoName').value.trim();
+            const phone=document.getElementById('customerInfoPhone').value.trim();
+            const address=document.getElementById('customerInfoAddress').value.trim();
+            if(!name||!phone||!address) return alert('الرجاء إدخال الاسم ورقم الهاتف والعنوان.');
+            saveCustomerSession(name,phone,address);
+            closeCustomerInfo();
+            loadOrderHistory();
+        }
+
+        function customerLogout(silent=false){
+            Object.values(activeOrderUnsubscribers).forEach(u=>{try{u();}catch(e){}});
+            activeOrderUnsubscribers={};
             sessionStore().removeItem(customerSessionKey);
             sessionStore().removeItem(activeOrdersKey);
             customerSession=null;historyOrders=[];
-            document.getElementById('custName').value='';document.getElementById('custPhone').value='';document.getElementById('custAddress').value='';
+            document.getElementById('custName').value='';
+            document.getElementById('custPhone').value='';
+            document.getElementById('custAddress').value='';
             loadCustomerSession();hideLiveOrderBanner();renderHistory();
-            if(!silent) alert('تم تسجيل الخروج. يمكنك الآن إدخال بيانات عميل جديد.');
+            if(!silent) alert('تم تسجيل الخروج. يمكنك الآن تسجيل الدخول ببيانات عميل جديد.');
         }
+
         function openCartModal(){document.getElementById('cartModal').classList.add('active');}
         function closeCartModal(){document.getElementById('cartModal').classList.remove('active');}
 
@@ -539,9 +630,13 @@
                 document.getElementById('subscriptionGate').style.display='flex';
                 return;
             }
+            const orderType=tableNum?'dine_in':'delivery';
+            if(!tableNum && !customerSession){
+                closeCartModal();
+                return openCustomerLogin();
+            }
             const name=document.getElementById('custName').value.trim()||(customerSession&&customerSession.name)||'';
             const phone=document.getElementById('custPhone').value.trim()||(customerSession&&customerSession.phone)||'';
-            const orderType=tableNum?'dine_in':'delivery';
             const address=document.getElementById('custAddress').value.trim()||(customerSession&&customerSession.address)||'';
             const notes=document.getElementById('orderNotes').value.trim();
             const total=cart.reduce((acc,item)=>acc+(item.price*item.quantity),0);

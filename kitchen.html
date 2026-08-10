@@ -11,7 +11,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
       import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-      import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+      import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -27,7 +27,7 @@
       const auth = getAuth(app);
       window.db = db;
       window.ownerAuth = auth;
-      window.firestoreModules = { collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy, onAuthStateChanged, signOut };
+      window.firestoreModules = { collection, onSnapshot, doc, updateDoc, getDoc, query, where, orderBy, onAuthStateChanged, signOut, signInWithEmailAndPassword };
       window.getOwnerProfile = async (uid) => { const snap = await getDoc(doc(db,'ownerProfiles',uid)); return snap.exists() ? snap.data() : null; };
 
       window.dispatchEvent(new Event('firebase-loaded-kitchen'));
@@ -316,10 +316,16 @@
 </head>
 <body>
     <div id="accessGate" style="position:fixed;inset:0;z-index:99999;background:#0D1117;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;">
-      <div style="max-width:420px;background:#151B22;border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:30px;box-shadow:0 20px 60px rgba(0,0,0,.45);">
-        <div style="font-size:50px;color:#FFA502;margin-bottom:15px;"><i class="fa-solid fa-lock"></i></div>
-        <h2 id="accessGateTitle" style="margin-bottom:10px;">جارٍ التحقق من صلاحية المطعم...</h2>
-        <p id="accessGateText" style="color:#8B949E;line-height:1.8;">لا تغلق الصفحة.</p>
+      <div style="max-width:440px;width:100%;background:#151B22;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:28px 22px;box-shadow:0 20px 60px rgba(0,0,0,.35);">
+        <div style="font-size:50px;color:#FFA502;margin-bottom:15px;"><i class="fa-solid fa-kitchen-set"></i></div>
+        <h2 id="accessGateTitle" style="margin-bottom:10px;">تسجيل دخول شاشة المطبخ</h2>
+        <p id="accessGateText" style="color:#8B949E;line-height:1.8;margin-bottom:18px;">استخدم اسم المطعم وكلمة مرور المطعم للدخول من أي هاتف.</p>
+        <div id="kitchenLoginForm">
+          <div style="margin-bottom:12px;text-align:right;"><label style="display:block;color:#8B949E;font-size:13px;margin-bottom:6px;">اسم المطعم</label><input id="kitchenRestaurantName" type="text" placeholder="اسم/كود المطعم" autocomplete="username" style="width:100%;background:#0D1117;border:1px solid rgba(255,255,255,.1);color:#fff;padding:12px 14px;border-radius:12px;"></div>
+          <div style="margin-bottom:14px;text-align:right;"><label style="display:block;color:#8B949E;font-size:13px;margin-bottom:6px;">كلمة المرور</label><input id="kitchenPassword" type="password" placeholder="كلمة مرور المطعم" autocomplete="current-password" style="width:100%;background:#0D1117;border:1px solid rgba(255,255,255,.1);color:#fff;padding:12px 14px;border-radius:12px;"></div>
+          <button id="kitchenLoginBtn" onclick="loginKitchen()" style="width:100%;background:linear-gradient(135deg,#FF6B6B,#FF4757);border:0;color:#fff;padding:13px;border-radius:12px;font-weight:800;cursor:pointer;">تسجيل الدخول</button>
+          <div id="kitchenLoginError" style="color:#FF6B6B;font-size:12px;margin-top:12px;min-height:18px;"></div>
+        </div>
       </div>
     </div>
 
@@ -330,6 +336,7 @@
             <h1><i class="fa-solid fa-fire-burner" style="color: var(--primary);"></i> شاشة المطبخ الذكية</h1>
         </div>
         <div id="headerRestaurantTitle">جاري التحميل...</div>
+        <button id="kitchenLogoutBtn" onclick="logoutKitchen()" style="background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.3);color:#FF6B6B;padding:9px 12px;border-radius:10px;font-weight:800;cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
     </header>
 
     <div id="kitchenReceiptArea"></div>
@@ -376,7 +383,7 @@
     <!-- Script Logic -->
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const restaurantId = urlParams.get('restaurant') || 'default';
+        let restaurantId = urlParams.get('restaurant') || '';
 
         let currentTab = 'active';
         let allKitchenOrders = [];
@@ -406,11 +413,63 @@
             } catch(e){}
         }
 
+        async function logoutKitchen(){
+            kitchenAccessAllowed=false;
+            if(kitchenOrderUnsubscribe){try{kitchenOrderUnsubscribe();}catch(e){} kitchenOrderUnsubscribe=null;}
+            try{ await window.firestoreModules.signOut(window.ownerAuth); }catch(e){ console.error(e); }
+            document.getElementById('accessGate').style.display='flex';
+            document.getElementById('kitchenLoginForm').style.display='block';
+            document.getElementById('kitchenPassword').value='';
+            document.getElementById('accessGateTitle').innerText='تسجيل دخول شاشة المطبخ';
+            document.getElementById('accessGateText').innerText='استخدم اسم المطعم وكلمة مرور المطعم للدخول من أي هاتف.';
+        }
+
+        function normalizeKitchenRestaurantName(value){ return String(value||'').trim().toLowerCase(); }
+        function makeOwnerEmailForKitchen(storeName, phone){
+            const raw = `${normalizeKitchenRestaurantName(storeName)}|${String(phone||'').replace(/\D/g,'')}`;
+            let hash=2166136261;
+            for(let i=0;i<raw.length;i++){ hash^=raw.charCodeAt(i); hash=Math.imul(hash,16777619); }
+            return `owner_${(hash>>>0).toString(16)}@owners.digitalmenu.local`;
+        }
+        async function loginKitchen(){
+            const name=normalizeKitchenRestaurantName(document.getElementById('kitchenRestaurantName').value);
+            const password=document.getElementById('kitchenPassword').value;
+            const btn=document.getElementById('kitchenLoginBtn');
+            const errorEl=document.getElementById('kitchenLoginError');
+            errorEl.textContent='';
+            if(!name||!password){errorEl.textContent='اكتب اسم المطعم وكلمة المرور.';return;}
+            btn.disabled=true;btn.textContent='جارٍ تسجيل الدخول...';
+            try{
+                const {doc,getDoc,signInWithEmailAndPassword}=window.firestoreModules;
+                const restSnap=await getDoc(doc(window.db,'restaurants',name));
+                if(!restSnap.exists()) throw new Error('restaurant-not-found');
+                const restData=restSnap.data();
+                if(!restData.phone) throw new Error('restaurant-phone-missing');
+                const email=makeOwnerEmailForKitchen(name,restData.phone);
+                restaurantId=name;
+                await signInWithEmailAndPassword(window.ownerAuth,email,password);
+                const u=new URL(window.location.href);
+                u.searchParams.set('restaurant',name);
+                window.history.replaceState({},'',u.toString());
+            }catch(e){
+                console.error('Kitchen login error:',e);
+                errorEl.textContent='بيانات المطعم أو كلمة المرور غير صحيحة.';
+            }finally{btn.disabled=false;btn.textContent='تسجيل الدخول';}
+        }
+
         window.addEventListener('firebase-loaded-kitchen', () => {
-            document.getElementById('headerRestaurantTitle').innerText = restaurantId.toUpperCase();
+            document.getElementById('headerRestaurantTitle').innerText = restaurantId ? restaurantId.toUpperCase() : 'المطبخ';
+            if(restaurantId) document.getElementById('kitchenRestaurantName').value=restaurantId;
             const { doc, onSnapshot, collection, query, where, updateDoc, onAuthStateChanged } = window.firestoreModules;
             onAuthStateChanged(window.ownerAuth, async (user) => {
-                if(!user){ return denyKitchen('تسجيل الدخول مطلوب للوصول إلى شاشة المطبخ.'); }
+                if(!user){
+                    document.getElementById('accessGate').style.display='flex';
+                    document.getElementById('accessGateTitle').innerText='تسجيل دخول شاشة المطبخ';
+                    document.getElementById('accessGateText').innerText='استخدم اسم المطعم وكلمة مرور المطعم للدخول من أي هاتف.';
+                    document.getElementById('kitchenLoginForm').style.display='block';
+                    return;
+                }
+                if(!restaurantId) return denyKitchen('اكتب اسم المطعم ثم سجّل الدخول.');
                 try{
                     const profileSnap=await window.getOwnerProfile(user.uid);
                     if(!profileSnap || profileSnap.restaurantId !== restaurantId) return denyKitchen('هذا الحساب غير مصرح له بهذا المطعم.');
@@ -418,9 +477,10 @@
                     if(!restSnap.exists()) return denyKitchen('المطعم غير موجود.');
                     kitchenRestaurantData=restSnap.data();
                     const expiry=kitchenRestaurantData.licenseExpiresAt?new Date(kitchenRestaurantData.licenseExpiresAt):null;
-                    if(kitchenRestaurantData.ownerUid!==user.uid || kitchenRestaurantData.licenseStatus!=='active' || !expiry || expiry.getTime()<=Date.now()) return denyKitchen('انتهى ترخيص المطعم أو تم إيقافه.');
+                    if(kitchenRestaurantData.ownerUid!==user.uid || kitchenRestaurantData.licenseStatus!=='active' || (kitchenRestaurantData.plan!=='lifetime' && (!expiry || expiry.getTime()<=Date.now()))) return denyKitchen('انتهى ترخيص المطعم أو تم إيقافه.');
                     kitchenAccessAllowed=true;
                     document.getElementById('accessGate').style.display='none';
+                    document.getElementById('kitchenLoginForm').style.display='none';
                     document.getElementById('headerRestaurantTitle').innerText=kitchenRestaurantData.name||restaurantId.toUpperCase();
                     startKitchenDataListeners();
                 }catch(e){ console.error(e); denyKitchen('تعذر التحقق من صلاحية الحساب.'); }
@@ -432,6 +492,7 @@
             document.getElementById('accessGate').style.display='flex';
             document.getElementById('accessGateTitle').innerText='الوصول غير مصرح';
             document.getElementById('accessGateText').innerText=message;
+            document.getElementById('kitchenLoginForm').style.display='block';
             if(kitchenOrderUnsubscribe){try{kitchenOrderUnsubscribe();}catch(e){} kitchenOrderUnsubscribe=null;}
         }
 
