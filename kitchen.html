@@ -682,6 +682,12 @@
                             `).join('')}
                         </div>
 
+                        <div style="background:rgba(255,255,255,.03);padding:10px 12px;border-radius:10px;margin-bottom:12px;font-size:12px;line-height:1.9;">
+                            <div style="display:flex;justify-content:space-between;"><span>قيمة الأصناف</span><strong>${escapeHtml(o.subtotal ?? o.total)} ج.م</strong></div>
+                            ${Number(o.deliveryFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الشحن</span><strong>${escapeHtml(o.deliveryFee)} ج.م</strong></div>` : ''}
+                            ${Number(o.dineInServiceFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>خدمة الصالة (${escapeHtml(o.dineInServicePercent||0)}%)</span><strong>${escapeHtml(o.dineInServiceFee)} ج.م</strong></div>` : ''}
+                            ${Number(o.onlineCashFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الدفع كاش</span><strong>${escapeHtml(o.onlineCashFee)} ج.م</strong></div>` : ''}
+                        </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                             <span style="font-size:12px; font-weight:700; color:var(--secondary);">الدفع: كاش (Cash)</span>
                             <span style="font-size:15px; font-weight:900; color:var(--white);">${escapeHtml(o.total)} ج.م</span>
@@ -769,7 +775,13 @@
                 <h3>الأصناف:</h3>
                 ${(order.items || []).map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.quantity}x ${escapeHtml(i.name)}</span> <span>${i.price * i.quantity} ج.م</span></div>`).join('')}
                 <hr style="border-top:1px dashed #000;">
-                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;">
+                <div style="line-height:1.9;">
+                    <div style="display:flex;justify-content:space-between;"><span>قيمة الأصناف:</span><span>${escapeHtml(order.subtotal ?? order.total)} ج.م</span></div>
+                    ${Number(order.deliveryFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الشحن:</span><span>${escapeHtml(order.deliveryFee)} ج.م</span></div>` : ''}
+                    ${Number(order.dineInServiceFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>خدمة الصالة (${escapeHtml(order.dineInServicePercent||0)}%):</span><span>${escapeHtml(order.dineInServiceFee)} ج.م</span></div>` : ''}
+                    ${Number(order.onlineCashFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الدفع كاش:</span><span>${escapeHtml(order.onlineCashFee)} ج.م</span></div>` : ''}
+                </div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; margin-top:6px;">
                     <span>الإجمالي (كاش):</span>
                     <span>${escapeHtml(order.total)} ج.م</span>
                 </div>

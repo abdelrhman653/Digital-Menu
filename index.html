@@ -639,6 +639,29 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="card glass" style="margin-top:24px; border:1px dashed var(--secondary);">
+                        <h3><i class="fa-solid fa-receipt" style="color:var(--secondary);"></i> رسوم الطلبات والفواتير</h3>
+                        <p style="color:var(--text-muted);font-size:13px;margin-bottom:18px;line-height:1.8;">حدد الرسوم التي تريد إضافتها تلقائياً لكل فاتورة. اترك أي قيمة <strong>0</strong> لتعطيلها.</p>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                            <div class="input-group">
+                                <label>رسوم الشحن للأونلاين (ج.م)</label>
+                                <small style="display:block;color:var(--text-muted);margin-bottom:6px;">تضاف لكل طلب أونلاين/دليفري فقط، ولا تضاف لطلبات الصالة.</small>
+                                <input type="number" id="deliveryFeeInput" min="0" step="0.01" value="0" placeholder="مثال: 40">
+                            </div>
+                            <div class="input-group">
+                                <label>خدمة الصالة (%)</label>
+                                <small style="display:block;color:var(--text-muted);margin-bottom:6px;">نسبة مئوية لطلبات الصالة فقط، وتحسب على قيمة الأصناف بعد الخصم.</small>
+                                <input type="number" id="dineInServicePercentInput" min="0" max="100" step="0.01" value="0" placeholder="مثال: 10">
+                            </div>
+                            <div class="input-group">
+                                <label>رسوم الدفع كاش للأونلاين (ج.م)</label>
+                                <small style="display:block;color:var(--text-muted);margin-bottom:6px;">تضاف لطلبات الأونلاين فقط، ولا تضاف لطلبات الصالة.</small>
+                                <input type="number" id="onlineCashFeeInput" min="0" step="0.01" value="0" placeholder="مثال: 5">
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" style="margin-top:8px;" onclick="saveOrderFeesSettings()"><i class="fa-solid fa-floppy-disk"></i> حفظ رسوم الطلبات</button>
+                    </div>
                 </section>
 
                 <!-- QR & Tables Section -->
@@ -759,7 +782,7 @@
         let defaultCategories = ["مشروبات / Drinks", "أكلات / Foods", "حلويات / Desserts"];
         let restaurantDataCache = { 
             primaryColor: '#FF4757', secondaryColor: '#2ED573', accentColor: '#FFA502', bgColor: '#0c090a', surfaceColor: '#191414', textColor: '#ffffff',
-            logo: '', categories: [...defaultCategories], items: [] 
+            logo: '', categories: [...defaultCategories], items: [], deliveryFee: 0, dineInServicePercent: 0, onlineCashFee: 0 
         };
         let appOrders = [];
         
@@ -1076,6 +1099,15 @@
 
                     if (!restaurantDataCache.categories) restaurantDataCache.categories = [...defaultCategories];
                     if (!restaurantDataCache.items) restaurantDataCache.items = [];
+                    if (!Number.isFinite(Number(restaurantDataCache.deliveryFee))) restaurantDataCache.deliveryFee = 0;
+                    if (!Number.isFinite(Number(restaurantDataCache.dineInServicePercent))) restaurantDataCache.dineInServicePercent = 0;
+                    if (!Number.isFinite(Number(restaurantDataCache.onlineCashFee))) restaurantDataCache.onlineCashFee = 0;
+                    const deliveryFeeInput = document.getElementById('deliveryFeeInput');
+                    const dineInServiceInput = document.getElementById('dineInServicePercentInput');
+                    const onlineCashFeeInput = document.getElementById('onlineCashFeeInput');
+                    if (deliveryFeeInput) deliveryFeeInput.value = restaurantDataCache.deliveryFee || 0;
+                    if (dineInServiceInput) dineInServiceInput.value = restaurantDataCache.dineInServicePercent || 0;
+                    if (onlineCashFeeInput) onlineCashFeeInput.value = restaurantDataCache.onlineCashFee || 0;
                     
                     // Brand Colors
                     document.getElementById('brandPrimaryColor').value = restaurantDataCache.primaryColor || '#FF4757';
@@ -1232,6 +1264,12 @@
                     <ul style="list-style:none; padding:0; background:var(--input-bg); border-radius:10px; padding:15px;">
                         ${(o.items||[]).map(i => `<li style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--panel-border); padding-bottom:5px;"><span>${escapeHtml(i.quantity)}x ${escapeHtml(i.name)}</span> <span>${escapeHtml(i.price * i.quantity)} ج.م</span></li>`).join('')}
                     </ul>
+                    <div style="background:var(--input-bg);border-radius:10px;padding:12px 15px;line-height:2;">
+                        <div style="display:flex;justify-content:space-between;"><span>قيمة الأصناف:</span><strong>${escapeHtml(o.subtotal ?? o.total)} ج.م</strong></div>
+                        ${Number(o.deliveryFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الشحن:</span><strong>${escapeHtml(o.deliveryFee)} ج.م</strong></div>` : ''}
+                        ${Number(o.dineInServiceFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>خدمة الصالة (${escapeHtml(o.dineInServicePercent||0)}%):</span><strong>${escapeHtml(o.dineInServiceFee)} ج.م</strong></div>` : ''}
+                        ${Number(o.onlineCashFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الدفع كاش:</span><strong>${escapeHtml(o.onlineCashFee)} ج.م</strong></div>` : ''}
+                    </div>
                     <h3 style="text-align:left; color:var(--primary); margin-top:10px;">الإجمالي: ${escapeHtml(o.total)} ج.م</h3>
                 </div>
             `;
@@ -1271,7 +1309,10 @@
                     logo: restaurantDataCache.logo || '',
                     menuImageUrl: restaurantDataCache.menuImageUrl || '',
                     categories: Array.isArray(restaurantDataCache.categories) ? [...restaurantDataCache.categories] : [...defaultCategories],
-                    items: Array.isArray(restaurantDataCache.items) ? [...restaurantDataCache.items] : []
+                    items: Array.isArray(restaurantDataCache.items) ? [...restaurantDataCache.items] : [],
+                    deliveryFee: Math.max(0, Number(restaurantDataCache.deliveryFee) || 0),
+                    dineInServicePercent: Math.min(100, Math.max(0, Number(restaurantDataCache.dineInServicePercent) || 0)),
+                    onlineCashFee: Math.max(0, Number(restaurantDataCache.onlineCashFee) || 0)
                 };
 
                 try {
@@ -1464,6 +1505,30 @@
             } catch(e) {
                 console.error(e);
                 showCustomAlert('حدث خطأ أثناء حفظ الإعدادات: '+(e.message||'خطأ غير معروف'));
+            }
+        }
+
+        async function saveOrderFeesSettings() {
+            const deliveryFee = Math.max(0, Number(document.getElementById('deliveryFeeInput').value) || 0);
+            const dineInServicePercent = Math.min(100, Math.max(0, Number(document.getElementById('dineInServicePercentInput').value) || 0));
+            const onlineCashFee = Math.max(0, Number(document.getElementById('onlineCashFeeInput').value) || 0);
+            const previous = {
+                deliveryFee: restaurantDataCache.deliveryFee || 0,
+                dineInServicePercent: restaurantDataCache.dineInServicePercent || 0,
+                onlineCashFee: restaurantDataCache.onlineCashFee || 0
+            };
+            restaurantDataCache.deliveryFee = deliveryFee;
+            restaurantDataCache.dineInServicePercent = dineInServicePercent;
+            restaurantDataCache.onlineCashFee = onlineCashFee;
+            try {
+                await saveRestaurantDataToCloud();
+                showCustomAlert('تم حفظ رسوم الطلبات بنجاح.');
+            } catch (e) {
+                Object.assign(restaurantDataCache, previous);
+                document.getElementById('deliveryFeeInput').value = previous.deliveryFee;
+                document.getElementById('dineInServicePercentInput').value = previous.dineInServicePercent;
+                document.getElementById('onlineCashFeeInput').value = previous.onlineCashFee;
+                showCustomAlert('تعذر حفظ رسوم الطلبات: ' + (e.message || 'خطأ غير معروف'));
             }
         }
 
