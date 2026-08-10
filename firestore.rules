@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /* ================================
-       AUTH / OWNER
+       HELPERS
        ================================ */
 
     function signedIn() {
@@ -15,11 +15,6 @@ service cloud.firestore {
       return signedIn()
         && request.auth.uid == "9XrMCexywXh72WPvo756PcuVuhD3";
     }
-
-
-    /* ================================
-       RESTAURANT HELPERS
-       ================================ */
 
     function restaurantExists(restaurantId) {
       return exists(
@@ -69,13 +64,13 @@ service cloud.firestore {
 
     match /licenses/{code} {
 
-      /* أي مستخدم مسجل يستطيع قراءة كود محدد */
+      // قراءة كود محدد
       allow get: if true;
 
-      /* المالك يستطيع عرض قائمة الأكواد */
+      // المالك فقط يستطيع عرض قائمة الأكواد
       allow list: if isOwner();
 
-      /* إنشاء كود اشتراك */
+      // إنشاء كود
       allow create: if isOwner()
         && request.resource.data.code is string
         && request.resource.data.restaurantId is string
@@ -84,10 +79,10 @@ service cloud.firestore {
         && request.resource.data.used == false
         && request.resource.data.createdBy == request.auth.uid;
 
-      /* استخدام الكود مرة واحدة أو تعديل المالك */
+      // استخدام الكود مرة واحدة
+      // أو تعديل المالك
       allow update: if isOwner()
-        ||
-        (
+        || (
           signedIn()
           && resource.data.status == 'available'
           && resource.data.used == false
@@ -97,7 +92,7 @@ service cloud.firestore {
           && request.resource.data.restaurantId is string
         );
 
-      /* المالك فقط يحذف كود */
+      // حذف كود
       allow delete: if isOwner();
     }
 
@@ -129,12 +124,10 @@ service cloud.firestore {
 
     match /restaurants/{restaurantId} {
 
-      /* بيانات المطعم متاحة للقراءة */
+      // بيانات المطعم قابلة للقراءة
       allow read: if true;
 
-      /*
-       * إنشاء مطعم باستخدام كود صالح
-       */
+      // إنشاء مطعم بكود مستخدم
       allow create: if signedIn()
         && request.auth.uid == request.resource.data.ownerUid
         && request.resource.data.licenseStatus == 'active'
@@ -152,20 +145,10 @@ service cloud.firestore {
           /databases/$(database)/documents/licenses/$(request.resource.data.licenseCode)
         ).data.restaurantId == restaurantId;
 
-
-      /*
-       * تحديث المطعم
-       *
-       * OWNER:
-       * يستطيع تعديل إعدادات المطاعم وإعدادات النظام.
-       *
-       * RESTAURANT OWNER:
-       * يستطيع تعديل البيانات العادية فقط،
-       * ولا يستطيع تغيير الترخيص.
-       */
+      // المالك يستطيع تعديل مطعمه
+      // والمالك الرئيسي يستطيع التعديل أيضًا
       allow update: if isOwner()
-        ||
-        (
+        || (
           activeOwnerOfRestaurant(restaurantId)
 
           && request.resource.data.ownerUid
@@ -194,19 +177,19 @@ service cloud.firestore {
 
     match /orders/{orderId} {
 
-      /* إنشاء طلب */
+      // إنشاء طلب
       allow create: if request.resource.data.restaurant is string
         && activeRestaurant(
           request.resource.data.restaurant
         );
 
-      /* قراءة الطلبات */
+      // قراءة الطلبات
       allow read: if resource.data.restaurant is string
         && activeRestaurant(
           resource.data.restaurant
         );
 
-      /* تعديل الطلبات */
+      // تعديل الطلب
       allow update: if resource.data.restaurant is string
         && activeOwnerOfRestaurant(
           resource.data.restaurant
