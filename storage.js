@@ -1,7 +1,8 @@
 /*
- * Image preparation helper.
- * Images are resized in the browser before the admin page uploads them
- * to Firebase Storage. The helper keeps the existing file-picker API intact.
+ * Firestore-only image helper.
+ * Firebase Storage is intentionally not used anywhere in this project.
+ * Images are resized/compressed in the browser and saved as Data URLs
+ * inside the restaurant document in Firestore.
  */
 (function () {
   function fileToDataURL(file, options) {

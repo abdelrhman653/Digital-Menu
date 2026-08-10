@@ -4,9 +4,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /* ================================
-       OWNER / ADMIN
+       AUTH / PLATFORM OWNER
        ================================ */
-
     function signedIn() {
       return request.auth != null;
     }
@@ -16,15 +15,52 @@ service cloud.firestore {
         && request.auth.uid == "9XrMCexywXh72WPvo756PcuVuhD3";
     }
 
-
     /* ================================
-       RESTAURANT HELPERS
+       RESTAURANT / LICENSE HELPERS
        ================================ */
-
     function restaurantExists(restaurantId) {
       return exists(
         /databases/$(database)/documents/restaurants/$(restaurantId)
       );
+    }
+
+    // New documents keep plan/expiry on the restaurant itself.
+    // Older documents may not have plan or may have an old expiry format,
+    // so the linked license is also accepted as the source of truth.
+    function restaurantLicenseCode(restaurantId) {
+      return get(
+        /databases/$(database)/documents/restaurants/$(restaurantId)
+      ).data.licenseCode;
+    }
+
+    function linkedLicenseExists(restaurantId) {
+      return restaurantLicenseCode(restaurantId) is string
+        && exists(
+          /databases/$(database)/documents/licenses/$(restaurantLicenseCode(restaurantId))
+        );
+    }
+
+    function linkedLicenseActive(restaurantId) {
+      return linkedLicenseExists(restaurantId)
+        && get(
+          /databases/$(database)/documents/licenses/$(restaurantLicenseCode(restaurantId))
+        ).data.status == 'used'
+        && get(
+          /databases/$(database)/documents/licenses/$(restaurantLicenseCode(restaurantId))
+        ).data.used == true
+        && (
+          get(
+            /databases/$(database)/documents/licenses/$(restaurantLicenseCode(restaurantId))
+          ).data.plan == 'lifetime'
+          || (
+            get(
+              /databases/$(database)/documents/licenses/$(restaurantLicenseCode(restaurantId))
+            ).data.expiresAt is timestamp
+            && get(
+              /databases/$(database)/documents/licenses/$(restaurantLicenseCode(restaurantId))
+            ).data.expiresAt > request.time
+          )
+        );
     }
 
     function activeRestaurant(restaurantId) {
@@ -36,18 +72,15 @@ service cloud.firestore {
           get(
             /databases/$(database)/documents/restaurants/$(restaurantId)
           ).data.plan == 'lifetime'
-
-          ||
-
-          (
+          || (
             get(
               /databases/$(database)/documents/restaurants/$(restaurantId)
             ).data.licenseExpiresAt is timestamp
-            &&
-            get(
+            && get(
               /databases/$(database)/documents/restaurants/$(restaurantId)
             ).data.licenseExpiresAt > request.time
           )
+          || linkedLicenseActive(restaurantId)
         );
     }
 
@@ -64,18 +97,10 @@ service cloud.firestore {
         && activeRestaurant(restaurantId);
     }
 
-
     /* ================================
        LICENSES / SUBSCRIPTIONS
        ================================ */
-
     match /licenses/{code} {
-
-      /*
-       * OWNER:
-       * يقدر يشوف الأكواد ويصدر أكواد جديدة
-       */
-
       allow read: if isOwner();
 
       allow create: if isOwner()
@@ -86,160 +111,101 @@ service cloud.firestore {
         && request.resource.data.used == false
         && request.resource.data.createdBy == request.auth.uid;
 
-      /*
-       * RESTAURANT:
-       * يقدر يقرأ كود الاشتراك لمعرفة بياناته
-       */
-
+      // Registration needs to validate a code before using it.
       allow get: if true;
 
-
-      /*
-       * RESTAURANT:
-       * استخدام الكود مرة واحدة فقط
-       */
-
-      allow update: if signedIn()
+      // A restaurant account can consume an unused license exactly once.
+      allow update: if isOwner()
+        || (signedIn()
         && resource.data.status == 'available'
         && resource.data.used == false
         && request.resource.data.status == 'used'
         && request.resource.data.used == true
         && request.resource.data.usedBy == request.auth.uid
-        && request.resource.data.restaurantId is string;
-
-
-      /*
-       * OWNER:
-       * يقدر حذف كود
-       */
+        && request.resource.data.restaurantId is string);
 
       allow delete: if isOwner();
     }
 
-
     /* ================================
        OWNER PROFILES
        ================================ */
-
     match /ownerProfiles/{uid} {
-
-      allow read: if signedIn()
-        && request.auth.uid == uid;
+      allow read: if signedIn() && request.auth.uid == uid;
 
       allow create: if signedIn()
         && request.auth.uid == uid;
 
       allow update: if signedIn()
         && request.auth.uid == uid
-        && request.resource.data.restaurantId
-           == resource.data.restaurantId;
+        && request.resource.data.restaurantId == resource.data.restaurantId;
 
       allow delete: if false;
     }
 
-
     /* ================================
        RESTAURANTS
        ================================ */
-
     match /restaurants/{restaurantId} {
-
-      /*
-       * بيانات المطعم يمكن قراءتها
-       */
-
       allow read: if true;
-
-
-      /*
-       * إنشاء مطعم باستخدام كود صالح
-       */
 
       allow create: if signedIn()
         && request.auth.uid == request.resource.data.ownerUid
         && request.resource.data.licenseStatus == 'active'
         && request.resource.data.licenseCode is string
-
         && exists(
           /databases/$(database)/documents/licenses/$(request.resource.data.licenseCode)
         )
-
         && getAfter(
           /databases/$(database)/documents/licenses/$(request.resource.data.licenseCode)
         ).data.usedBy == request.auth.uid
-
         && getAfter(
           /databases/$(database)/documents/licenses/$(request.resource.data.licenseCode)
         ).data.restaurantId == restaurantId;
 
-
-      /*
-       * صاحب المطعم فقط يستطيع تعديل بيانات مطعمه
-       */
-
-      allow update: if activeOwnerOfRestaurant(restaurantId)
-
-        && request.resource.data.ownerUid
-           == resource.data.ownerUid
-
-        && request.resource.data.licenseCode
-           == resource.data.licenseCode
-
-        && request.resource.data.licenseExpiresAt
-           == resource.data.licenseExpiresAt
-
-        && request.resource.data.licenseStatus
-           == resource.data.licenseStatus
-
-        && request.resource.data.plan
-           == resource.data.plan;
-
+      // Platform owner may manage subscriptions.
+      // Restaurant owner may only edit menu/branding fields and cannot
+      // change account/license ownership fields.
+      allow update: if isOwner()
+        || (
+          activeOwnerOfRestaurant(restaurantId)
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.licenseCode == resource.data.licenseCode
+          && request.resource.data.licenseExpiresAt == resource.data.licenseExpiresAt
+          && request.resource.data.licenseStatus == resource.data.licenseStatus
+          && (
+            (resource.data.keys().hasAll(['plan'])
+              && request.resource.data.keys().hasAll(['plan'])
+              && request.resource.data.plan == resource.data.plan)
+            || (!resource.data.keys().hasAll(['plan'])
+              && !request.resource.data.keys().hasAll(['plan']))
+          )
+        );
 
       allow delete: if false;
     }
-
 
     /* ================================
        ORDERS
        ================================ */
-
     match /orders/{orderId} {
-
-      /*
-       * إنشاء طلب للمطعم النشط
-       */
-
       allow create: if request.resource.data.restaurant is string
         && activeRestaurant(request.resource.data.restaurant);
-
-
-      /*
-       * قراءة طلبات المطعم النشط
-       */
 
       allow read: if resource.data.restaurant is string
         && activeRestaurant(resource.data.restaurant);
 
-
-      /*
-       * صاحب المطعم فقط يستطيع تعديل الطلب
-       */
-
       allow update: if resource.data.restaurant is string
         && activeOwnerOfRestaurant(resource.data.restaurant);
-
 
       allow delete: if false;
     }
 
-
     /* ================================
        DEFAULT DENY
        ================================ */
-
     match /{document=**} {
       allow read, write: if false;
     }
-
   }
 }

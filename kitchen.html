@@ -475,7 +475,17 @@
                     if(!profileSnap || profileSnap.restaurantId !== restaurantId) return denyKitchen('هذا الحساب غير مصرح له بهذا المطعم.');
                     const restSnap=await window.firestoreModules.getDoc(doc(window.db,'restaurants',restaurantId));
                     if(!restSnap.exists()) return denyKitchen('المطعم غير موجود.');
-                    kitchenRestaurantData=restSnap.data();
+                    kitchenRestaurantData=restSnap.data() || {};
+                    // Backward compatibility for older restaurants without `plan`.
+                    if(!kitchenRestaurantData.plan && kitchenRestaurantData.licenseCode){
+                        try{
+                            const licSnap=await getDoc(doc(window.db,'licenses',kitchenRestaurantData.licenseCode));
+                            if(licSnap.exists()){
+                                const lic=licSnap.data()||{};
+                                kitchenRestaurantData={...kitchenRestaurantData,plan:lic.plan||kitchenRestaurantData.plan,licenseExpiresAt:kitchenRestaurantData.licenseExpiresAt ?? (lic.plan==='lifetime'?null:lic.expiresAt)};
+                            }
+                        }catch(licenseErr){ console.warn('Kitchen license compatibility lookup failed:',licenseErr); }
+                    }
                     const expiry=kitchenRestaurantData.licenseExpiresAt?new Date(kitchenRestaurantData.licenseExpiresAt):null;
                     if(kitchenRestaurantData.ownerUid!==user.uid || kitchenRestaurantData.licenseStatus!=='active' || (kitchenRestaurantData.plan!=='lifetime' && (!expiry || expiry.getTime()<=Date.now()))) return denyKitchen('انتهى ترخيص المطعم أو تم إيقافه.');
                     kitchenAccessAllowed=true;
@@ -501,13 +511,21 @@
             const { doc, onSnapshot, collection, query, where } = window.firestoreModules;
             onSnapshot(doc(window.db, "restaurants", restaurantId), (docSnap) => {
                 if (docSnap.exists()) {
-                    let data = docSnap.data();
+                    let data = docSnap.data() || {};
+                    if(!data.plan && data.licenseCode){
+                        try{
+                            const licSnap=await window.firestoreModules.getDoc(window.firestoreModules.doc(window.db,'licenses',data.licenseCode));
+                            if(licSnap.exists()){
+                                const lic=licSnap.data()||{};
+                                data={...data,plan:lic.plan||data.plan,licenseExpiresAt:data.licenseExpiresAt ?? (lic.plan==='lifetime'?null:lic.expiresAt)};
+                            }
+                        }catch(licenseErr){ console.warn('Kitchen live license lookup failed:',licenseErr); }
+                    }
                     const expiry = data.licenseExpiresAt ? new Date(data.licenseExpiresAt) : null;
                     const stillActive =
                         data.ownerUid === window.ownerAuth.currentUser?.uid &&
                         data.licenseStatus === 'active' &&
-                        !!expiry &&
-                        expiry.getTime() > Date.now();
+                        (data.plan === 'lifetime' || (!!expiry && expiry.getTime() > Date.now()));
 
                     if(!stillActive){
                         denyKitchen('انتهى اشتراك هذا المطعم أو تم إيقافه. يرجى التجديد للمتابعة.');

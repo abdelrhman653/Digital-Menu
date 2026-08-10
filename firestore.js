@@ -1,7 +1,6 @@
-// Shared Firebase bootstrap for the restaurant website
-// Firebase Web SDK 12.17.0
+// Shared Firebase bootstrap for the digital menu project.
+// Firestore + Auth only. Firebase Storage is intentionally NOT used.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
   getDocs, query, where, orderBy, writeBatch, addDoc
@@ -23,19 +22,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const storage = getStorage(app);
 
 window.FB = {
-  db, auth, storage, ref, uploadBytes, getDownloadURL, deleteObject, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
-  getDocs, query, where, orderBy, writeBatch, addDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  db, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
+  getDocs, query, where, orderBy, writeBatch, addDoc,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously
 };
 
 window.db = db;
 window.ownerAuth = auth;
 window.firestoreModules = {
-  db, auth, storage, ref, uploadBytes, getDownloadURL, deleteObject, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
-  getDocs, query, where, orderBy, writeBatch, addDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  db, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
+  getDocs, query, where, orderBy, writeBatch, addDoc,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously
 };
 
@@ -51,8 +51,6 @@ window.isActiveRestaurantLicense = (data) => {
   return !!expiry && expiry.getTime() > Date.now();
 };
 
-// The customer menu uses Firebase Anonymous Auth. The restaurant owner/admin
-// continues to use normal Email/Password authentication.
 const isOrdersPage = /(?:^|\/)orders(?:_fixed|_final)?\.html$/i.test(location.pathname);
 
 window.dispatchEvent(new Event('firebase-ready'));

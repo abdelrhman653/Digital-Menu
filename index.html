@@ -716,8 +716,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+                import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -731,10 +730,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const storage = getStorage(app);
 
         window.FB = { 
-            db, auth, storage, storageRef, uploadBytes, getDownloadURL, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, Timestamp, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+            db, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, Timestamp, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
         };
 
         window.dispatchEvent(new Event('firebase-ready'));
@@ -977,7 +975,7 @@
                 const restSnap=await window.FB.getDoc(restRef);
                 if(restSnap.exists() && restSnap.data().ownerUid) { await window.FB.signOut(window.FB.auth); return showCustomAlert('اسم/كود المطعم مستخدم بالفعل.'); }
                 const baseData=restSnap.exists()?restSnap.data():{};
-                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? window.FB.Timestamp.fromDate(new Date(license.expiresAt)) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? window.FB.Timestamp.fromDate(new Date(license.expiresAt)) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
                 const batch=window.FB.writeBatch(window.FB.db);
                 batch.set(restRef,restaurantData,{merge:true});
                 batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString()});
@@ -1036,7 +1034,24 @@
                     if (restaurantSaveInFlight && restaurantLocalRevision > restaurantSnapshotRevision) {
                         return;
                     }
-                    restaurantDataCache = docSnap.data();
+                    let snapshotData = docSnap.data() || {};
+                    // Backward compatibility: older restaurant documents did not persist `plan`.
+                    // Read the linked license as the source of truth so existing restaurants keep working.
+                    if (!snapshotData.plan && snapshotData.licenseCode) {
+                        try {
+                            const licenseSnap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'licenses', snapshotData.licenseCode));
+                            if (licenseSnap.exists()) {
+                                const lic = licenseSnap.data() || {};
+                                snapshotData.plan = lic.plan || snapshotData.plan;
+                                if (snapshotData.licenseExpiresAt == null && lic.plan !== 'lifetime' && lic.expiresAt) {
+                                    snapshotData.licenseExpiresAt = lic.expiresAt;
+                                }
+                            }
+                        } catch (licenseErr) {
+                            console.warn('License compatibility lookup failed:', licenseErr);
+                        }
+                    }
+                    restaurantDataCache = snapshotData;
                     restaurantSnapshotRevision = restaurantLocalRevision;
 
                     // Live subscription check: if the owner expires or is suspended while
@@ -1241,9 +1256,27 @@
                 const freshSnap = await window.FB.getDoc(restRef);
                 if (!freshSnap.exists()) throw new Error('بيانات المطعم غير موجودة.');
 
-                const serverData = freshSnap.data() || {};
+                let serverData = freshSnap.data() || {};
+                const serverHadPlan = Object.prototype.hasOwnProperty.call(serverData, 'plan');
                 if (serverData.ownerUid && serverData.ownerUid !== currentOwnerUser.uid) {
                     throw new Error('لا تملك صلاحية تعديل هذا المطعم.');
+                }
+                // Backward compatibility for old restaurants: resolve the linked license
+                // before checking the subscription.
+                if (!serverData.plan && serverData.licenseCode) {
+                    try {
+                        const licenseSnap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'licenses', serverData.licenseCode));
+                        if (licenseSnap.exists()) {
+                            const lic = licenseSnap.data() || {};
+                            serverData = {
+                                ...serverData,
+                                plan: lic.plan || serverData.plan,
+                                licenseExpiresAt: serverData.licenseExpiresAt ?? (lic.plan === 'lifetime' ? null : lic.expiresAt)
+                            };
+                        }
+                    } catch (licenseErr) {
+                        console.warn('License compatibility save lookup failed:', licenseErr);
+                    }
                 }
                 if (!licenseIsActive(serverData)) {
                     throw new Error('اشتراك المطعم غير نشط أو منتهي.');
@@ -1252,6 +1285,9 @@
                 // Never overwrite protected account/license fields from a stale
                 // browser object. Merge only the editable restaurant data.
                 const editable = {
+                    // Keep license/account fields out of normal owner edits.
+                    // The Firestore rules protect them, while the current plan is preserved for compatibility.
+                    ...(serverHadPlan && serverData.plan ? { plan: serverData.plan } : {}),
                     primaryColor: restaurantDataCache.primaryColor || '#FF4757',
                     secondaryColor: restaurantDataCache.secondaryColor || '#2ED573',
                     accentColor: restaurantDataCache.accentColor || '#FFA502',
@@ -1268,6 +1304,9 @@
                 restaurantSnapshotRevision = Math.max(restaurantSnapshotRevision, revisionAtStart);
             } catch (e) {
                 console.error('Restaurant save error:', e);
+                if (e?.code === 'permission-denied') {
+                    throw new Error('Firestore Rules رفضت حفظ بيانات المطعم. استخدم ملف firestore.rules المرفق في النسخة الجديدة.');
+                }
                 throw e;
             } finally {
                 restaurantSaveInFlight = false;
@@ -1286,29 +1325,15 @@
         }
 
         async function uploadFileToStorage(file, folder) {
-            if (!file) return "";
-            const maxSize = folder === "logo" ? 700 : 900;
-            const dataUrl = await window.fileToDataURL(file, { maxSize, quality: 0.78 });
+            if (!file) return '';
+            const maxSize = folder === 'logo' ? 500 : (folder === 'menu-source' ? 700 : 500);
             try {
-                if (!window.FB?.storage || !currentRestaurant || !currentOwnerUser) {
-                    throw new Error('خدمة التخزين غير جاهزة أو لم يتم تسجيل الدخول.');
-                }
-                const blob = await (await fetch(dataUrl)).blob();
-                const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g, '_');
-                const path = `restaurants/${currentRestaurant}/${folder}/${Date.now()}_${safeName}.jpg`;
-                const fileRef = window.FB.storageRef(window.FB.storage, path);
-                await window.FB.uploadBytes(fileRef, blob, {
-                    contentType: 'image/jpeg',
-                    cacheControl: 'public,max-age=31536000'
-                });
-                return await window.FB.getDownloadURL(fileRef);
+                // Firebase Storage is intentionally NOT used.
+                // Images are resized/compressed in the browser and stored as Data URLs in Firestore.
+                return await window.fileToDataURL(file, { maxSize, quality: 0.55 });
             } catch (e) {
-                console.error("Storage upload error:", e);
-                // Graceful fallback: if Storage rules are not deployed yet,
-                // keep the resized image in the restaurant document so the
-                // menu can still be saved. The image is already compressed and
-                // resized by fileToDataURL().
-                return dataUrl;
+                console.error('Image preparation error:', e);
+                throw new Error('تعذر تجهيز الصورة. جرّب صورة أخرى.');
             }
         }
 
