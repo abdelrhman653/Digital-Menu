@@ -1283,7 +1283,19 @@
                     }
                 }
                 if (!licenseIsActive(serverData)) {
-                    throw new Error('اشتراك المطعم غير نشط أو منتهي.');
+                    // Legacy compatibility: if the restaurant document does not
+                    // contain plan/expiry yet, trust the linked license record.
+                    let linkedActive = false;
+                    if (serverData.licenseCode) {
+                        try {
+                            const licSnap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'licenses', serverData.licenseCode));
+                            if (licSnap.exists()) {
+                                const lic = licSnap.data() || {};
+                                linkedActive = lic.plan === 'lifetime' || (parseLicenseDate(lic.expiresAt)?.getTime() > Date.now());
+                            }
+                        } catch (_) {}
+                    }
+                    if (!linkedActive) throw new Error('اشتراك المطعم غير نشط أو منتهي.');
                 }
 
                 // Never overwrite protected account/license fields from a stale
@@ -1291,7 +1303,8 @@
                 const editable = {
                     // Keep license/account fields out of normal owner edits.
                     // The Firestore rules protect them, while the current plan is preserved for compatibility.
-                    ...(serverHadPlan && serverData.plan ? { plan: serverData.plan } : {}),
+                    ...(serverData.plan ? { plan: serverData.plan } : {}),
+                    ...(serverData.licenseExpiresAt ? { licenseExpiresAt: serverData.licenseExpiresAt } : {}),
                     primaryColor: restaurantDataCache.primaryColor || '#FF4757',
                     secondaryColor: restaurantDataCache.secondaryColor || '#2ED573',
                     accentColor: restaurantDataCache.accentColor || '#FFA502',
@@ -1330,11 +1343,11 @@
 
         async function uploadFileToStorage(file, folder) {
             if (!file) return '';
-            const maxSize = folder === 'logo' ? 500 : (folder === 'menu-source' ? 700 : 500);
+            const maxSize = folder === 'logo' ? 320 : (folder === 'menu-source' ? 360 : 320);
             try {
                 // Firebase Storage is intentionally NOT used.
                 // Images are resized/compressed in the browser and stored as Data URLs in Firestore.
-                return await window.fileToDataURL(file, { maxSize, quality: 0.48 });
+                return await window.fileToDataURL(file, { maxSize, quality: 0.38 });
             } catch (e) {
                 console.error('Image preparation error:', e);
                 throw new Error('تعذر تجهيز الصورة. جرّب صورة أخرى.');

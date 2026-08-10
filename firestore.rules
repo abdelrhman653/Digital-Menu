@@ -171,35 +171,15 @@ service cloud.firestore {
           activeOwnerOfRestaurant(restaurantId)
           && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.licenseCode == resource.data.licenseCode
-          && (
-            (
-              resource.data.keys().hasAll(['licenseExpiresAt'])
-              && request.resource.data.licenseExpiresAt == resource.data.licenseExpiresAt
-            )
-            || (
-              !resource.data.keys().hasAll(['licenseExpiresAt'])
-              && linkedLicenseExists(restaurantId)
-              && request.resource.data.licenseExpiresAt
-                == get(
-                  /databases/$(database)/documents/licenses/$(resource.data.licenseCode)
-                ).data.expiresAt
-            )
-          )
-          && (
-            (
-              resource.data.keys().hasAll(['plan'])
-              && request.resource.data.plan == resource.data.plan
-            )
-            || (
-              !resource.data.keys().hasAll(['plan'])
-              && linkedLicenseExists(restaurantId)
-              && request.resource.data.plan
-                == get(
-                  /databases/$(database)/documents/licenses/$(resource.data.licenseCode)
-                ).data.plan
-            )
-          )
           && request.resource.data.licenseStatus == resource.data.licenseStatus
+          && (
+            !resource.data.keys().hasAll(['plan'])
+            || request.resource.data.plan == resource.data.plan
+          )
+          && (
+            !resource.data.keys().hasAll(['licenseExpiresAt'])
+            || request.resource.data.licenseExpiresAt == resource.data.licenseExpiresAt
+          )
         );
 
       allow delete: if false;
