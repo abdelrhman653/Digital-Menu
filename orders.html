@@ -150,6 +150,7 @@
 
         .live-order-banner{position:sticky;top:77px;z-index:90;max-width:800px;margin:10px auto 0;padding:14px 16px;background:var(--surface-color);border:1px solid var(--primary);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(14px);}
         .live-order-banner.hidden{display:none!important}.live-order-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.live-order-status{font-size:15px;font-weight:900;color:var(--accent)}.live-order-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}.live-order-step{height:6px;border-radius:99px;background:var(--border-color);transition:.3s}.live-order-step.active{background:var(--primary)}.account-actions{display:flex;align-items:center;gap:8px}.header-action-btn{background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);border-radius:12px;padding:8px 11px;cursor:pointer;font-weight:800;font-size:12px}.header-action-btn:hover{border-color:var(--primary);color:var(--primary)}.history-list{display:flex;flex-direction:column;gap:12px}.history-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:16px;padding:14px}.history-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.history-status{font-weight:800;color:var(--secondary)}.saved-customer-box{background:var(--input-bg);border:1px dashed var(--border-color);border-radius:12px;padding:12px;margin-bottom:15px;color:var(--text-muted);font-size:12px}.account-modal-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.account-modal-title button{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer}.account-note{font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:14px}.account-submit{background:var(--primary);color:#fff;border:none;width:100%;padding:13px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;margin-top:6px}.empty-cart { text-align: center; padding: 40px 0; color: var(--text-muted); }
+        .hidden{display:none!important}
     </style>
 </head>
 <body>
@@ -167,7 +168,6 @@
             <button class="header-action-btn" id="customerLoginBtn" onclick="openCustomerLogin()"><i class="fa-solid fa-right-to-bracket"></i> تسجيل دخول</button>
             <button class="header-action-btn hidden" id="historyBtn" onclick="openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
             <button class="header-action-btn hidden" id="customerInfoBtn" onclick="openCustomerInfo()"><i class="fa-solid fa-user-pen"></i> معلوماتي</button>
-            <button class="header-action-btn hidden" id="customerLogoutBtn" onclick="customerLogout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
             <button class="theme-toggle-btn" onclick="toggleUserTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
         </div>
     </header>
@@ -276,6 +276,7 @@
             <div class="input-group"><label>رقم الهاتف</label><input id="customerInfoPhone" type="tel"></div>
             <div class="input-group"><label>العنوان</label><textarea id="customerInfoAddress" rows="3"></textarea></div>
             <button class="account-submit" onclick="saveCustomerInfo()">حفظ التعديلات</button>
+            <button class="account-submit account-logout-btn" onclick="customerLogout()" style="background:transparent;color:var(--primary);border:1px solid var(--primary);margin-top:10px;"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج</button>
         </div>
     </div>
 
@@ -508,23 +509,28 @@
         }
 
         function renderCustomerAccountActions(){
-            const loginBtn=document.getElementById('customerLoginBtn'), historyBtn=document.getElementById('historyBtn'),
-                  infoBtn=document.getElementById('customerInfoBtn'), logoutBtn=document.getElementById('customerLogoutBtn');
-            if(!loginBtn||!historyBtn||!infoBtn||!logoutBtn) return;
+            const loginBtn=document.getElementById('customerLoginBtn');
+            const historyBtn=document.getElementById('historyBtn');
+            const infoBtn=document.getElementById('customerInfoBtn');
+            if(!loginBtn||!historyBtn||!infoBtn) return;
+
+            // QR/table pages are guest-only: no login, history, profile, or logout.
             if(tableNum){
-                [loginBtn,historyBtn,infoBtn,logoutBtn].forEach(b=>b.classList.add('hidden'));
+                loginBtn.classList.add('hidden');
+                historyBtn.classList.add('hidden');
+                infoBtn.classList.add('hidden');
                 return;
             }
+
+            // Online ordering: before login show ONLY login. After login show history + profile.
             if(customerSession){
                 loginBtn.classList.add('hidden');
                 historyBtn.classList.remove('hidden');
                 infoBtn.classList.remove('hidden');
-                logoutBtn.classList.remove('hidden');
             }else{
                 loginBtn.classList.remove('hidden');
                 historyBtn.classList.add('hidden');
                 infoBtn.classList.add('hidden');
-                logoutBtn.classList.add('hidden');
             }
         }
 
@@ -618,6 +624,7 @@
             document.getElementById('custName').value='';
             document.getElementById('custPhone').value='';
             document.getElementById('custAddress').value='';
+            closeCustomerInfo();
             loadCustomerSession();hideLiveOrderBanner();renderHistory();
             if(!silent) alert('تم تسجيل الخروج. يمكنك الآن تسجيل الدخول ببيانات عميل جديد.');
         }

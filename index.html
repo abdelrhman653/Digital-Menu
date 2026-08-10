@@ -566,6 +566,10 @@
                             <i class="fa-solid fa-file-arrow-up"></i>
                             <div id="aiFileNameDisplay" data-i18n="choose_menu_img">اضغط لاختيار صورة المنيو من جهازك</div>
                         </div>
+                        <div id="aiMenuPreviewWrap" class="hidden" style="margin-top:14px;text-align:center;">
+                            <img id="aiMenuPreview" src="" alt="معاينة المنيو" style="max-width:100%;max-height:240px;border-radius:14px;border:1px solid var(--panel-border);object-fit:contain;background:#fff;">
+                            <div id="aiMenuSavedStatus" style="font-size:12px;color:var(--secondary);margin-top:7px;"></div>
+                        </div>
                         <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
                         <div style="display: flex; gap: 16px; margin-top: 16px;">
                             <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importBilingualMenuOCR(false)"><i class="fa-solid fa-brain"></i> <span data-i18n="btn_import_ocr">قراءة واستيراد المنيو ➕</span></button>
@@ -1227,12 +1231,12 @@
 
         async function uploadFileToStorage(file, folder) {
             if (!file) return "";
-            if (!window.FB?.storage || !currentRestaurant || !currentOwnerUser) {
-                throw new Error('خدمة التخزين غير جاهزة أو لم يتم تسجيل الدخول.');
-            }
+            const maxSize = folder === "logo" ? 700 : 900;
+            const dataUrl = await window.fileToDataURL(file, { maxSize, quality: 0.78 });
             try {
-                const maxSize = folder === "logo" ? 700 : 900;
-                const dataUrl = await window.fileToDataURL(file, { maxSize, quality: 0.78 });
+                if (!window.FB?.storage || !currentRestaurant || !currentOwnerUser) {
+                    throw new Error('خدمة التخزين غير جاهزة أو لم يتم تسجيل الدخول.');
+                }
                 const blob = await (await fetch(dataUrl)).blob();
                 const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g, '_');
                 const path = `restaurants/${currentRestaurant}/${folder}/${Date.now()}_${safeName}.jpg`;
@@ -1244,7 +1248,11 @@
                 return await window.FB.getDownloadURL(fileRef);
             } catch (e) {
                 console.error("Storage upload error:", e);
-                showCustomAlert('تعذر رفع الصورة إلى التخزين. تأكد من اتصال الإنترنت ثم حاول مرة أخرى.');
+                // Keep logo/menu-source saving functional even if Storage rules are not
+                // deployed yet. These resized images are small enough for Firestore.
+                if (folder === 'logo' || folder === 'menu-source') {
+                    return dataUrl;
+                }
                 throw e;
             }
         }
@@ -1424,7 +1432,7 @@
             `).join('');
         }
         async function addNewCategoryToList() {
-            let val = escapeHtml(document.getElementById('customCategoryInput').value.trim());
+            let val = document.getElementById('customCategoryInput').value.trim();
             if(!val) return;
             if(!restaurantDataCache.categories.includes(val)) {
                 restaurantDataCache.categories.push(val);
@@ -1444,8 +1452,8 @@
 
         async function saveItemAction() {
             let editId = document.getElementById('editItemId').value;
-            let name = escapeHtml(document.getElementById('newItemName').value.trim());
-            let category = escapeHtml(document.getElementById('newItemCategory').value);
+            let name = document.getElementById('newItemName').value.trim();
+            let category = document.getElementById('newItemCategory').value;
             let price = Number(document.getElementById('newItemPrice').value);
             let discount = Number(document.getElementById('newItemDiscount').value) || 0;
 
@@ -1504,7 +1512,22 @@
         }
 
         // Smart Menu AI
-        function handleAiMenuUpload(e) { aiMenuImageFile = e.target.files[0]; if(aiMenuImageFile) document.getElementById('aiFileNameDisplay').innerText = aiMenuImageFile.name; }
+        function handleAiMenuUpload(e) {
+            aiMenuImageFile = e.target.files[0];
+            const wrap=document.getElementById('aiMenuPreviewWrap');
+            const preview=document.getElementById('aiMenuPreview');
+            const status=document.getElementById('aiMenuSavedStatus');
+            if(aiMenuImageFile){
+                document.getElementById('aiFileNameDisplay').innerText = aiMenuImageFile.name;
+                preview.src=URL.createObjectURL(aiMenuImageFile);
+                wrap.classList.remove('hidden');
+                status.innerText='الصورة جاهزة للتحليل والحفظ.';
+            }else{
+                wrap.classList.add('hidden');
+                preview.src='';
+                status.innerText='';
+            }
+        }
         async function importBilingualMenuOCR(replace) {
             if(!aiMenuImageFile) return showCustomAlert('اختر صورة أولاً');
             let btn = document.getElementById('parseAiBtn'); let stat = document.getElementById('aiProgressStatus');
@@ -1516,11 +1539,11 @@
                 let curCat = "أكلات"; let added = 0;
                 lines.forEach((line, i) => {
                     let hasNum = /\d/.test(line);
-                    if(!hasNum && line.length>2 && line.length<30) { curCat = escapeHtml(line); if(!cats.includes(curCat)) cats.push(curCat); return; }
+                    if(!hasNum && line.length>2 && line.length<30) { curCat = line; if(!cats.includes(curCat)) cats.push(curCat); return; }
                     let pm = line.match(/(\d+)/g);
                     if(pm && pm.length>0) {
                         let price = parseInt(pm[pm.length-1]);
-                        let name = escapeHtml(line.replace(/(\d+)/g, '').replace(/ريال|ج.م|جنيه|usd|\$|egp|SAR/gi, '').replace(/[\~\-\.\,\*\+\/]/g, '').trim());
+                        let name = line.replace(/(\d+)/g, '').replace(/ريال|ج.م|جنيه|usd|\$|egp|SAR/gi, '').replace(/[\~\-\.\,\*\+\/]/g, '').trim();
                         if(name.length>=2 && price>0) {
                             items.push({ id: Date.now()+i+Math.random(), name, category: curCat, price, discount: 0, img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500' });
                             added++;
@@ -1532,8 +1555,12 @@
                 try {
                     const menuImageUrl = await uploadFileToStorage(aiMenuImageFile, "menu-source");
                     if (menuImageUrl) restaurantDataCache.menuImageUrl = menuImageUrl;
+                    const status=document.getElementById('aiMenuSavedStatus');
+                    if(status) status.innerText='تم حفظ صورة المنيو ونتيجة القراءة.';
                 } catch(uploadErr) {
                     console.warn('Menu source upload failed; OCR result will still be saved.', uploadErr);
+                    const status=document.getElementById('aiMenuSavedStatus');
+                    if(status) status.innerText='تم حفظ الأصناف والتصنيفات، وتعذر رفع الصورة الأصلية إلى التخزين.';
                 }
                 await saveRestaurantDataToCloud();
                 stat.innerText = '';
