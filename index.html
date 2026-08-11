@@ -306,7 +306,522 @@
             .content-scroll { padding: 16px; }
             .hide-mobile { display: none; }
         }
-    </style>
+    
+
+/* =========================================================
+   DIGITAL MENU — MODERN UI OVERRIDE
+   Visual-only layer. No application logic is changed.
+   ========================================================= */
+
+:root {
+    --modern-radius-xl: 28px;
+    --modern-radius-lg: 22px;
+    --modern-radius-md: 16px;
+    --modern-border: color-mix(in srgb, var(--text-main) 9%, transparent);
+    --modern-soft: color-mix(in srgb, var(--text-main) 4%, transparent);
+}
+
+html, body {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    background:
+        radial-gradient(900px 500px at 85% -10%, color-mix(in srgb, var(--primary) 11%, transparent), transparent 65%),
+        radial-gradient(700px 500px at 10% 100%, color-mix(in srgb, var(--secondary) 5%, transparent), transparent 70%),
+        var(--bg-color);
+}
+
+.glass {
+    background: color-mix(in srgb, var(--panel-bg) 88%, transparent);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--modern-radius-xl);
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.16),
+        inset 0 1px 0 rgba(255,255,255,.035);
+    backdrop-filter: blur(22px) saturate(125%);
+    -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+
+.card {
+    padding: 28px;
+    margin-bottom: 22px;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow:
+        0 24px 70px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+h1,h2,h3,h4 {
+    letter-spacing: -.7px;
+}
+
+h3 {
+    font-size: 19px;
+    margin-bottom: 24px;
+}
+
+h3 i {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
+}
+
+.sidebar {
+    width: 274px;
+    padding: 20px 14px;
+    background:
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--panel-bg) 96%, transparent),
+            color-mix(in srgb, var(--bg-color) 82%, transparent));
+    border-left: 1px solid var(--modern-border);
+    box-shadow: -10px 0 40px rgba(0,0,0,.08);
+}
+
+.sidebar-brand {
+    min-height: 72px;
+    padding: 10px 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--modern-border);
+    border-radius: 20px;
+    background: var(--modern-soft);
+}
+
+.sidebar-brand img {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+    box-shadow: 0 8px 25px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.sidebar-brand h2 {
+    font-size: 16px;
+}
+
+.nav-menu {
+    gap: 7px;
+}
+
+.nav-item {
+    min-height: 52px;
+    padding: 12px 15px;
+    border-radius: 15px;
+    gap: 13px;
+    border: 1px solid transparent;
+}
+
+.nav-item i {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--text-main) 4%, transparent);
+}
+
+.nav-item:hover {
+    background: color-mix(in srgb, var(--text-main) 6%, transparent);
+    border-color: var(--modern-border);
+}
+
+.nav-item.active {
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--primary) 22%, transparent),
+        color-mix(in srgb, var(--primary) 8%, transparent)
+    );
+    color: var(--text-main);
+    border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.nav-item.active i {
+    background: var(--primary);
+    color: #fff;
+}
+
+.top-header {
+    padding: 14px 28px;
+    background: color-mix(in srgb, var(--bg-color) 72%, transparent);
+    border-bottom: 1px solid var(--modern-border);
+    backdrop-filter: blur(22px);
+}
+
+.top-header > div:first-child {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.header-actions {
+    gap: 9px;
+}
+
+.header-actions > a,
+.header-actions > button {
+    min-height: 40px;
+    border-radius: 13px !important;
+}
+
+.content-scroll {
+    padding: 30px;
+}
+
+.stats-grid {
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.stat-card {
+    min-height: 132px;
+    padding: 22px;
+    border-radius: 22px;
+    border: 1px solid var(--modern-border);
+    background:
+        linear-gradient(145deg,
+            color-mix(in srgb, var(--panel-bg) 94%, transparent),
+            color-mix(in srgb, var(--text-main) 2%, transparent));
+    box-shadow: 0 15px 45px rgba(0,0,0,.12);
+}
+
+.stat-card::after {
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    left: -45px;
+    bottom: -65px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    filter: blur(8px);
+}
+
+.stat-info h4 {
+    font-size: 12px;
+    letter-spacing: .1px;
+}
+
+.stat-info h2 {
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+input, select, textarea {
+    min-height: 48px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--input-bg) 82%, transparent);
+    border-color: var(--modern-border);
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.btn {
+    min-height: 46px;
+    border-radius: 14px;
+    padding: 11px 19px;
+    box-shadow: 0 10px 25px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.table-container {
+    border-radius: 20px;
+    border-color: var(--modern-border);
+    box-shadow: 0 16px 45px rgba(0,0,0,.10);
+}
+
+th {
+    padding: 15px 16px;
+    background: color-mix(in srgb, var(--text-main) 3%, transparent);
+}
+
+td {
+    padding: 15px 16px;
+    border-color: var(--modern-border);
+}
+
+.item-row {
+    padding: 14px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--panel-bg) 55%, transparent);
+    border-color: var(--modern-border);
+}
+
+.item-info img {
+    width: 66px;
+    height: 66px;
+    border-radius: 16px;
+}
+
+.file-upload-box {
+    min-height: 128px;
+    border-radius: 20px;
+    border: 1.5px dashed color-mix(in srgb, var(--primary) 30%, var(--modern-border));
+    background:
+        linear-gradient(145deg,
+            color-mix(in srgb, var(--primary) 5%, transparent),
+            color-mix(in srgb, var(--text-main) 2%, transparent));
+}
+
+.file-upload-box:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    transform: translateY(-1px);
+}
+
+.file-upload-box i {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* Settings / Brand area */
+#tab-settings > .card {
+    max-width: 960px !important;
+    margin-inline: auto;
+    padding: 30px !important;
+}
+
+#tab-settings h3 {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--modern-border);
+}
+
+#tab-settings h4 {
+    font-size: 16px !important;
+    margin-top: 4px;
+}
+
+#settingsLogoPreview {
+    width: 86px !important;
+    height: 86px !important;
+    border-radius: 22px !important;
+    border: 2px solid color-mix(in srgb, var(--primary) 55%, transparent) !important;
+    box-shadow: 0 12px 35px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+#logoFileNameDisplay {
+    font-weight: 700;
+}
+
+.brand-colors-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.color-picker-item {
+    position: relative;
+    min-height: 150px;
+    padding: 18px;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--panel-bg) 62%, transparent);
+    border: 1px solid var(--modern-border);
+    overflow: hidden;
+}
+
+.color-picker-item::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--primary);
+    opacity: .8;
+}
+
+.color-picker-item:nth-child(2)::before { background: var(--secondary); }
+.color-picker-item:nth-child(3)::before { background: var(--accent); }
+.color-picker-item:nth-child(4)::before { background: var(--text-muted); }
+
+.color-picker-item label {
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.color-picker-item small {
+    min-height: 40px;
+    font-size: 11px;
+    line-height: 1.65;
+}
+
+.color-picker-item input[type="color"] {
+    height: 54px;
+    border-radius: 14px;
+    padding: 4px;
+    margin-top: 4px;
+    background: color-mix(in srgb, var(--text-main) 5%, transparent);
+    border: 1px solid var(--modern-border);
+}
+
+.color-picker-item input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker-item input[type="color"]::-webkit-color-swatch {
+    border: 0;
+    border-radius: 10px;
+}
+
+#tab-settings .input-group > label {
+    font-size: 13px;
+    color: var(--text-main);
+}
+
+#tab-settings hr {
+    border-color: var(--modern-border) !important;
+    margin: 28px 0 !important;
+}
+
+#tab-settings .btn[onclick*="updateRestaurantIdentity"] {
+    margin-top: 16px !important;
+    min-height: 52px;
+    font-size: 15px;
+}
+
+#tab-settings .color-picker-item + .color-picker-item {
+    /* keeps all four brand roles visually equal */
+}
+
+/* Auth screen */
+#authSection {
+    background:
+        radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 35%),
+        radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--secondary) 9%, transparent), transparent 30%),
+        url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=2000&auto=format&fit=crop') center/cover;
+}
+
+#authSection::before {
+    background:
+        linear-gradient(135deg, rgba(4,5,8,.88), rgba(4,5,8,.72)),
+        radial-gradient(circle at center, transparent 0%, rgba(0,0,0,.38) 100%);
+}
+
+.auth-card {
+    max-width: 450px;
+}
+
+.auth-card.glass {
+    padding: 34px !important;
+    border-radius: 28px;
+    box-shadow: 0 30px 90px rgba(0,0,0,.42);
+}
+
+.theme-selector {
+    padding: 7px;
+    gap: 7px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--panel-bg) 75%, transparent);
+}
+
+.theme-btn {
+    width: 24px;
+    height: 24px;
+    border-width: 2px;
+}
+
+.modal-content {
+    border-radius: 28px;
+    box-shadow: 0 30px 90px rgba(0,0,0,.45);
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        width: min(300px, 88vw);
+        background: color-mix(in srgb, var(--bg-color) 92%, transparent);
+        box-shadow: 0 25px 70px rgba(0,0,0,.45);
+    }
+
+    .content-scroll {
+        padding: 18px 14px 28px;
+    }
+
+    #tab-settings > .card {
+        padding: 20px !important;
+    }
+
+    .brand-colors-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .top-header {
+        padding: 10px 12px;
+    }
+
+    .content-scroll {
+        padding: 14px 10px 24px;
+    }
+
+    .card {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        min-height: 112px;
+        padding: 15px;
+        border-radius: 18px;
+    }
+
+    .stat-info h2 {
+        font-size: 21px;
+    }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        font-size: 17px;
+    }
+
+    #tab-settings > .card {
+        padding: 16px !important;
+    }
+
+    #settingsLogoPreview {
+        width: 72px !important;
+        height: 72px !important;
+    }
+}
+
+</style>
 </head>
 <body>
 
@@ -566,7 +1081,15 @@
                             <i class="fa-solid fa-file-arrow-up"></i>
                             <div id="aiFileNameDisplay" data-i18n="choose_menu_img">اضغط لاختيار صورة المنيو من جهازك</div>
                         </div>
+                        <div id="aiMenuPreviewWrap" class="hidden" style="margin-top:14px;text-align:center;">
+                            <img id="aiMenuPreview" src="" alt="معاينة المنيو" style="max-width:100%;max-height:240px;border-radius:14px;border:1px solid var(--panel-border);object-fit:contain;background:#fff;">
+                            <div id="aiMenuSavedStatus" style="font-size:12px;color:var(--secondary);margin-top:7px;"></div>
+                        </div>
                         <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
+                        <label style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border:1px solid var(--panel-border);border-radius:14px;background:var(--input-bg);cursor:pointer;font-weight:700;">
+                            <input id="autoFoodImages" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary);">
+                            <span>اختيار صورة أكل مناسبة تلقائيًا لكل صنف (مجاني، بدون توليد AI)</span>
+                        </label>
                         <div style="display: flex; gap: 16px; margin-top: 16px;">
                             <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importBilingualMenuOCR(false)"><i class="fa-solid fa-brain"></i> <span data-i18n="btn_import_ocr">قراءة واستيراد المنيو ➕</span></button>
                             <button class="btn btn-danger" id="parseAiReplaceBtn" style="flex: 1;" onclick="importBilingualMenuOCR(true)"><i class="fa-solid fa-rotate"></i> <span data-i18n="btn_replace_ocr">استبدال 🔄</span></button>
@@ -604,7 +1127,13 @@
                                     <input type="number" id="newItemDiscount" placeholder="0">
                                 </div>
                             </div>
-                            
+
+                            <div class="input-group">
+                                <label data-i18n="label_item_details">تفاصيل الصنف / المكونات والإضافات</label>
+                                <textarea id="newItemDetails" rows="4" data-i18n-placeholder="placeholder_item_details" placeholder="مثال: برجر لحم، جبنة شيدر، صوص خاص، مخلل..."></textarea>
+                                <small style="display:block;color:var(--text-muted);font-size:11px;margin-top:5px;">ستظهر هذه التفاصيل للعميل عند فتح الصنف من صفحة الطلب.</small>
+                            </div>
+
                             <div class="input-group">
                                 <label data-i18n="label_item_img">صورة الصنف</label>
                                 <div class="file-upload-box" style="padding: 20px;" onclick="document.getElementById('itemImgFile').click()">
@@ -615,6 +1144,7 @@
                             </div>
                             
                             <div style="display: flex; gap: 10px; margin-top: 20px;">
+                                <div id="itemImageStatus" style="font-size:12px;color:var(--secondary);margin:8px 0;text-align:center;"></div>
                                 <button class="btn" id="saveItemBtn" style="flex: 1;" onclick="saveItemAction()"><i class="fa-solid fa-rocket"></i> <span data-i18n="btn_save_item">إضافة الصنف</span></button>
                                 <button class="btn btn-secondary hidden" id="cancelEditBtn" onclick="resetItemForm()" data-i18n="btn_cancel">إلغاء</button>
                             </div>
@@ -634,6 +1164,29 @@
                                 <div id="currentItemsList" style="max-height: 500px; overflow-y: auto; padding-right: 5px;"></div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="card glass" style="margin-top:24px; border:1px dashed var(--secondary);">
+                        <h3><i class="fa-solid fa-receipt" style="color:var(--secondary);"></i> رسوم الطلبات والفواتير</h3>
+                        <p style="color:var(--text-muted);font-size:13px;margin-bottom:18px;line-height:1.8;">حدد الرسوم التي تريد إضافتها تلقائياً لكل فاتورة. اترك أي قيمة <strong>0</strong> لتعطيلها.</p>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+                            <div class="input-group">
+                                <label>رسوم الشحن للأونلاين (ج.م)</label>
+                                <small style="display:block;color:var(--text-muted);margin-bottom:6px;">تضاف لكل طلب أونلاين/دليفري فقط، ولا تضاف لطلبات الصالة.</small>
+                                <input type="number" id="deliveryFeeInput" min="0" step="0.01" value="0" placeholder="مثال: 40">
+                            </div>
+                            <div class="input-group">
+                                <label>خدمة الصالة (%)</label>
+                                <small style="display:block;color:var(--text-muted);margin-bottom:6px;">نسبة مئوية لطلبات الصالة فقط، وتحسب على قيمة الأصناف بعد الخصم.</small>
+                                <input type="number" id="dineInServicePercentInput" min="0" max="100" step="0.01" value="0" placeholder="مثال: 10">
+                            </div>
+                            <div class="input-group">
+                                <label>رسوم الدفع كاش للأونلاين (ج.م)</label>
+                                <small style="display:block;color:var(--text-muted);margin-bottom:6px;">تضاف لطلبات الأونلاين فقط، ولا تضاف لطلبات الصالة.</small>
+                                <input type="number" id="onlineCashFeeInput" min="0" step="0.01" value="0" placeholder="مثال: 5">
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" style="margin-top:8px;" onclick="saveOrderFeesSettings()"><i class="fa-solid fa-floppy-disk"></i> حفظ رسوم الطلبات</button>
                     </div>
                 </section>
 
@@ -711,8 +1264,8 @@
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+                import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -728,7 +1281,7 @@
         const auth = getAuth(app);
 
         window.FB = { 
-            db, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+            db, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, Timestamp, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
         };
 
         window.dispatchEvent(new Event('firebase-ready'));
@@ -747,10 +1300,15 @@
         let uploadedImageFile = null;
         let uploadedLogoFile = null;
         let aiMenuImageFile = null;
+        let restaurantSaveInFlight = false;
+        let restaurantSaveQueued = false;
+        let restaurantSavePromise = Promise.resolve();
+        let restaurantLocalRevision = 0;
+        let restaurantSnapshotRevision = 0;
         let defaultCategories = ["مشروبات / Drinks", "أكلات / Foods", "حلويات / Desserts"];
         let restaurantDataCache = { 
             primaryColor: '#FF4757', secondaryColor: '#2ED573', accentColor: '#FFA502', bgColor: '#0c090a', surfaceColor: '#191414', textColor: '#ffffff',
-            logo: '', categories: [...defaultCategories], items: [] 
+            logo: '', categories: [...defaultCategories], items: [], deliveryFee: 0, dineInServicePercent: 0, onlineCashFee: 0 
         };
         let appOrders = [];
         
@@ -779,7 +1337,7 @@
                 stat_delivery_total: "إجمالي الدليفري", stat_dinein_total: "إجمالي الصالة", stat_customers: "عدد العملاء", stat_canceled: "الطلبات الملغية",
                 section_identity: "إعدادات الهوية واللوجو", label_logo: "لوجو المكان", choose_logo: "اضغط لاختيار صورة اللوجو", label_color: "اللون الأساسي", btn_save_settings: "حفظ الإعدادات",
                 section_smart_menu: "استيراد المنيو الذكي", smart_menu_desc: "ارفع صورة المنيو، وسيقوم النظام بالتعرف على التصنيفات والأصناف بدقة.", choose_menu_img: "اضغط لاختيار صورة المنيو", btn_import_ocr: "قراءة واستيراد المنيو ➕", btn_replace_ocr: "استبدال 🔄",
-                section_add_item: "إضافة صنف جديد", label_item_name: "اسم الصنف", label_category: "التصنيف", btn_add: "إضافة", label_price: "السعر", label_discount: "الخصم (اختياري)", label_item_img: "صورة الصنف", choose_item_img: "اضغط لاختيار صورة", btn_save_item: "حفظ الصنف", btn_cancel: "إلغاء",
+                section_add_item: "إضافة صنف جديد", label_item_name: "اسم الصنف", label_category: "التصنيف", btn_add: "إضافة", label_price: "السعر", label_discount: "الخصم (اختياري)", label_item_details: "تفاصيل الصنف / المكونات والإضافات", placeholder_item_details: "مثال: برجر لحم، جبنة شيدر، صوص خاص، مخلل...", label_item_img: "صورة الصنف", choose_item_img: "اضغط لاختيار صورة", btn_save_item: "حفظ الصنف", btn_cancel: "إلغاء",
                 section_manage_cats: "إدارة التصنيفات", section_manage_items: "الأصناف الحالية", section_qr_generator: "مولد QR للطاولات", label_tables_count: "عدد الطاولات", btn_print_qr: "طباعة الأكواد", alert_title: "تنبيه", btn_ok: "حسناً", edit: "تعديل", delete: "حذف"
             },
             en: {
@@ -791,7 +1349,7 @@
                 stat_delivery_total: "Delivery Total", stat_dinein_total: "Dine-in Total", stat_customers: "Customers", stat_canceled: "Canceled",
                 section_identity: "Brand Identity", label_logo: "Store Logo", choose_logo: "Choose Logo", label_color: "Primary Color", btn_save_settings: "Save Settings",
                 section_smart_menu: "Smart Menu Import", smart_menu_desc: "Upload menu image, AI will extract items.", choose_menu_img: "Choose Image", btn_import_ocr: "Import Menu ➕", btn_replace_ocr: "Replace 🔄",
-                section_add_item: "Add New Item", label_item_name: "Item Name", label_category: "Category", btn_add: "Add", label_price: "Price", label_discount: "Discount", label_item_img: "Item Image", choose_item_img: "Choose Image", btn_save_item: "Save Item", btn_cancel: "Cancel",
+                section_add_item: "Add New Item", label_item_name: "Item Name", label_category: "Category", btn_add: "Add", label_price: "Price", label_discount: "Discount", label_item_details: "Item Details / Ingredients", placeholder_item_details: "Example: Beef burger, cheddar, special sauce, pickles...", label_item_img: "Item Image", choose_item_img: "Choose Image", btn_save_item: "Save Item", btn_cancel: "Cancel",
                 section_manage_cats: "Categories", section_manage_items: "Current Items", section_qr_generator: "QR Generator", label_tables_count: "Tables Count", btn_print_qr: "Print QRs", alert_title: "Alert", btn_ok: "OK", edit: "Edit", delete: "Delete"
             }
         };
@@ -858,6 +1416,10 @@
                 let key = el.getAttribute('data-i18n');
                 if (translations[lang][key]) el.innerText = translations[lang][key];
             });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                let key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang][key]) el.placeholder = translations[lang][key];
+            });
             renderItems();
             renderCategoriesManagement();
             renderOrdersTable();
@@ -898,6 +1460,10 @@
         }
         function parseLicenseDate(value){
             if(!value) return null;
+            if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+            if(typeof value.toDate === 'function') {
+                try { const d = value.toDate(); return Number.isNaN(d.getTime()) ? null : d; } catch(_) {}
+            }
             const d = new Date(value);
             return Number.isNaN(d.getTime()) ? null : d;
         }
@@ -967,13 +1533,13 @@
                 const restSnap=await window.FB.getDoc(restRef);
                 if(restSnap.exists() && restSnap.data().ownerUid) { await window.FB.signOut(window.FB.auth); return showCustomAlert('اسم/كود المطعم مستخدم بالفعل.'); }
                 const baseData=restSnap.exists()?restSnap.data():{};
-                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', licenseExpiresAt:license.expiresAt, createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? (typeof license.expiresAt.toDate === 'function' ? license.expiresAt : window.FB.Timestamp.fromDate(parseLicenseDate(license.expiresAt))) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
                 const batch=window.FB.writeBatch(window.FB.db);
                 batch.set(restRef,restaurantData,{merge:true});
                 batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString()});
                 batch.update(licenseRef,{status:'used',used:true,usedBy:uid,restaurantId:nameInput,usedAt:new Date().toISOString()});
                 await batch.commit();
-                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.expiresAt; ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
+                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.plan === 'lifetime' ? null : parseLicenseDate(license.expiresAt); ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
                 startDataListeners(); showDashboard(); switchTab('dashboard');
             }catch(e){
                 console.error('Registration error:',e);
@@ -1023,7 +1589,38 @@
             if (unsubscribeRestaurant) unsubscribeRestaurant();
             unsubscribeRestaurant = window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), async (docSnap) => {
                 if (docSnap.exists()) {
-                    restaurantDataCache = docSnap.data();
+                    if (restaurantSaveInFlight && restaurantLocalRevision > restaurantSnapshotRevision) {
+                        return;
+                    }
+                    let snapshotData = docSnap.data() || {};
+                    // Backward compatibility: older restaurant documents did not persist `plan`.
+                    // Read the linked license as the source of truth so existing restaurants keep working.
+                    if (!snapshotData.plan && snapshotData.licenseCode) {
+                        try {
+                            const licenseSnap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'licenses', snapshotData.licenseCode));
+                            if (licenseSnap.exists()) {
+                                const lic = licenseSnap.data() || {};
+                                snapshotData.plan = lic.plan || snapshotData.plan;
+                                if (snapshotData.licenseExpiresAt == null && lic.plan !== 'lifetime' && lic.expiresAt) {
+                                    snapshotData.licenseExpiresAt = lic.expiresAt;
+                                }
+                            }
+                        } catch (licenseErr) {
+                            console.warn('License compatibility lookup failed:', licenseErr);
+                        }
+                    }
+                    restaurantDataCache = snapshotData;
+                    if (Array.isArray(restaurantDataCache.items) && restaurantDataCache.items.some(isAutoFoodImage)) {
+                        try {
+                            const before = restaurantDataCache.items.map(i => i.img);
+                            await enrichItemsWithFreeImages(restaurantDataCache.items);
+                            const changed = restaurantDataCache.items.some((i, idx) => i.img !== before[idx]);
+                            if (changed && ownerAccessAllowed && currentOwnerUser) {
+                                await window.FB.setDoc(window.FB.doc(window.FB.db, 'restaurants', currentRestaurant), { items: restaurantDataCache.items }, { merge: true });
+                            }
+                        } catch (imageRefreshErr) { console.warn('Automatic food image refresh skipped:', imageRefreshErr); }
+                    }
+                    restaurantSnapshotRevision = restaurantLocalRevision;
 
                     // Live subscription check: if the owner expires or is suspended while
                     // the dashboard is open, immediately lock the dashboard.
@@ -1042,6 +1639,15 @@
 
                     if (!restaurantDataCache.categories) restaurantDataCache.categories = [...defaultCategories];
                     if (!restaurantDataCache.items) restaurantDataCache.items = [];
+                    if (!Number.isFinite(Number(restaurantDataCache.deliveryFee))) restaurantDataCache.deliveryFee = 0;
+                    if (!Number.isFinite(Number(restaurantDataCache.dineInServicePercent))) restaurantDataCache.dineInServicePercent = 0;
+                    if (!Number.isFinite(Number(restaurantDataCache.onlineCashFee))) restaurantDataCache.onlineCashFee = 0;
+                    const deliveryFeeInput = document.getElementById('deliveryFeeInput');
+                    const dineInServiceInput = document.getElementById('dineInServicePercentInput');
+                    const onlineCashFeeInput = document.getElementById('onlineCashFeeInput');
+                    if (deliveryFeeInput) deliveryFeeInput.value = restaurantDataCache.deliveryFee || 0;
+                    if (dineInServiceInput) dineInServiceInput.value = restaurantDataCache.dineInServicePercent || 0;
+                    if (onlineCashFeeInput) onlineCashFeeInput.value = restaurantDataCache.onlineCashFee || 0;
                     
                     // Brand Colors
                     document.getElementById('brandPrimaryColor').value = restaurantDataCache.primaryColor || '#FF4757';
@@ -1196,8 +1802,14 @@
                     <hr style="border-color: var(--panel-border); margin: 10px 0;">
                     <h4 style="margin-bottom:10px;">الأصناف:</h4>
                     <ul style="list-style:none; padding:0; background:var(--input-bg); border-radius:10px; padding:15px;">
-                        ${(o.items||[]).map(i => `<li style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--panel-border); padding-bottom:5px;"><span>${escapeHtml(i.quantity)}x ${escapeHtml(i.name)}</span> <span>${escapeHtml(i.price * i.quantity)} ج.م</span></li>`).join('')}
+                        ${(o.items||[]).map(i => `<li style="margin-bottom:10px;border-bottom:1px solid var(--panel-border);padding-bottom:8px;"><div style="display:flex;justify-content:space-between;gap:10px;"><span>${escapeHtml(i.quantity)}x ${escapeHtml(i.name)}</span><span>${escapeHtml(i.price * i.quantity)} ج.م</span></div>${i.details ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.7;">${escapeHtml(i.details)}</div>` : ''}</li>`).join('')}
                     </ul>
+                    <div style="background:var(--input-bg);border-radius:10px;padding:12px 15px;line-height:2;">
+                        <div style="display:flex;justify-content:space-between;"><span>قيمة الأصناف:</span><strong>${escapeHtml(o.subtotal ?? o.total)} ج.م</strong></div>
+                        ${Number(o.deliveryFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الشحن:</span><strong>${escapeHtml(o.deliveryFee)} ج.م</strong></div>` : ''}
+                        ${Number(o.dineInServiceFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>خدمة الصالة (${escapeHtml(o.dineInServicePercent||0)}%):</span><strong>${escapeHtml(o.dineInServiceFee)} ج.م</strong></div>` : ''}
+                        ${Number(o.onlineCashFee||0)>0 ? `<div style="display:flex;justify-content:space-between;"><span>رسوم الدفع كاش:</span><strong>${escapeHtml(o.onlineCashFee)} ج.م</strong></div>` : ''}
+                    </div>
                     <h3 style="text-align:left; color:var(--primary); margin-top:10px;">الإجمالي: ${escapeHtml(o.total)} ج.م</h3>
                 </div>
             `;
@@ -1208,22 +1820,71 @@
 
         // Settings & Identity Upload Fix
         async function saveRestaurantDataToCloud() {
-            if (!window.FB || !ownerAccessAllowed || !currentOwnerUser) return;
-            try { await window.FB.setDoc(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), restaurantDataCache, { merge: true }); }
-            catch(e) { console.error(e); }
+            if (!window.FB || !currentOwnerUser || !currentRestaurant) {
+                throw new Error('جلسة الإدارة غير صالحة.');
+            }
+
+            const requestedRevision = ++restaurantLocalRevision;
+            const runSave = async () => {
+                restaurantSaveInFlight = true;
+                const restRef = window.FB.doc(window.FB.db, 'restaurants', currentRestaurant);
+                const freshSnap = await window.FB.getDoc(restRef);
+                if (!freshSnap.exists()) throw new Error('بيانات المطعم غير موجودة.');
+
+                const serverData = freshSnap.data() || {};
+                if (serverData.ownerUid && serverData.ownerUid !== currentOwnerUser.uid) {
+                    throw new Error('لا تملك صلاحية تعديل هذا المطعم.');
+                }
+
+                // Branding/menu edits belong to the restaurant owner. They must
+                // not be blocked by legacy or malformed license fields. License
+                // status remains enforced for public ordering and order access.
+                const editable = {
+                    primaryColor: restaurantDataCache.primaryColor || '#FF4757',
+                    secondaryColor: restaurantDataCache.secondaryColor || '#2ED573',
+                    accentColor: restaurantDataCache.accentColor || '#FFA502',
+                    bgColor: restaurantDataCache.bgColor || '#0c090a',
+                    surfaceColor: restaurantDataCache.surfaceColor || '#191414',
+                    textColor: restaurantDataCache.textColor || '#ffffff',
+                    logo: restaurantDataCache.logo || '',
+                    menuImageUrl: restaurantDataCache.menuImageUrl || '',
+                    categories: Array.isArray(restaurantDataCache.categories) ? [...restaurantDataCache.categories] : [...defaultCategories],
+                    items: Array.isArray(restaurantDataCache.items) ? [...restaurantDataCache.items] : [],
+                    deliveryFee: Math.max(0, Number(restaurantDataCache.deliveryFee) || 0),
+                    dineInServicePercent: Math.min(100, Math.max(0, Number(restaurantDataCache.dineInServicePercent) || 0)),
+                    onlineCashFee: Math.max(0, Number(restaurantDataCache.onlineCashFee) || 0)
+                };
+
+                try {
+                    await window.FB.setDoc(restRef, editable, { merge: true });
+                    restaurantSnapshotRevision = Math.max(restaurantSnapshotRevision, requestedRevision);
+                } finally {
+                    restaurantSaveInFlight = false;
+                }
+            };
+
+            // Serialize all writes so a second edit cannot overwrite a first
+            // edit while its Firestore request is still in flight.
+            restaurantSavePromise = restaurantSavePromise.then(runSave, runSave);
+            return restaurantSavePromise.catch(e => {
+                console.error('Restaurant save error:', e);
+                if (e?.code === 'permission-denied') {
+                    throw new Error('لا توجد صلاحية لحفظ بيانات المطعم. تأكد أن حسابك هو صاحب المطعم وأن Firestore Rules المنشورة تسمح للـ owner بالتعديل.');
+                }
+                throw e;
+            });
         }
 
         async function uploadFileToStorage(file, folder) {
-            if (!file) return "";
+            if (!file) return '';
+            const maxSize = folder === 'logo' ? 320 : (folder === 'menu-source' ? 360 : 320);
             try {
-                // Firebase Storage is intentionally not used. The image is resized
-                // in the browser and stored as a compact data URL in Firestore.
-                const maxSize = folder === "logo" ? 500 : 600;
-                return await window.fileToDataURL(file, { maxSize, quality: 0.55 });
+                // Firebase Storage is intentionally NOT used.
+                // Images are resized/compressed in the browser and stored as Data URLs in Firestore.
+                return await window.fileToDataURL(file, { maxSize, quality: 0.38 });
             } catch (e) {
-                console.error("Image conversion error:", e);
-                showCustomAlert('تعذر تجهيز الصورة. جرّب صورة أخرى.');
-                return "";
+                console.error('Image preparation error:', e);
+                throw new Error('تعذر تجهيز الصورة. جرّب صورة أخرى.');
             }
         }
 
@@ -1350,7 +2011,8 @@
 
                 if(uploadedLogoFile) {
                     const prepared=await prepareLogoImage(uploadedLogoFile);
-                    restaurantDataCache.logo=prepared.dataUrl;
+                    const logoUrl = await window.fileToDataURL(uploadedLogoFile, { maxSize: 320, quality: 0.38 });
+                    if (logoUrl) restaurantDataCache.logo = logoUrl;
                     const extracted=extractBrandColors(prepared.canvas);
                     if(extracted) { setBrandColorInputs(extracted); Object.assign(restaurantDataCache,extracted); }
                 }
@@ -1386,6 +2048,30 @@
             }
         }
 
+        async function saveOrderFeesSettings() {
+            const deliveryFee = Math.max(0, Number(document.getElementById('deliveryFeeInput').value) || 0);
+            const dineInServicePercent = Math.min(100, Math.max(0, Number(document.getElementById('dineInServicePercentInput').value) || 0));
+            const onlineCashFee = Math.max(0, Number(document.getElementById('onlineCashFeeInput').value) || 0);
+            const previous = {
+                deliveryFee: restaurantDataCache.deliveryFee || 0,
+                dineInServicePercent: restaurantDataCache.dineInServicePercent || 0,
+                onlineCashFee: restaurantDataCache.onlineCashFee || 0
+            };
+            restaurantDataCache.deliveryFee = deliveryFee;
+            restaurantDataCache.dineInServicePercent = dineInServicePercent;
+            restaurantDataCache.onlineCashFee = onlineCashFee;
+            try {
+                await saveRestaurantDataToCloud();
+                showCustomAlert('تم حفظ رسوم الطلبات بنجاح.');
+            } catch (e) {
+                Object.assign(restaurantDataCache, previous);
+                document.getElementById('deliveryFeeInput').value = previous.deliveryFee;
+                document.getElementById('dineInServicePercentInput').value = previous.dineInServicePercent;
+                document.getElementById('onlineCashFeeInput').value = previous.onlineCashFee;
+                showCustomAlert('تعذر حفظ رسوم الطلبات: ' + (e.message || 'خطأ غير معروف'));
+            }
+        }
+
         function updateCategoryDropdown() {
             let select = document.getElementById('newItemCategory'); select.innerHTML = '';
             (restaurantDataCache.categories || defaultCategories).forEach(c => {
@@ -1401,17 +2087,37 @@
             `).join('');
         }
         async function addNewCategoryToList() {
-            let val = escapeHtml(document.getElementById('customCategoryInput').value.trim());
+            let val = document.getElementById('customCategoryInput').value.trim();
             if(!val) return;
             if(!restaurantDataCache.categories.includes(val)) {
                 restaurantDataCache.categories.push(val);
-                await saveRestaurantDataToCloud(); document.getElementById('customCategoryInput').value = '';
-                showCustomAlert('تم إضافة التصنيف بنجاح');
+                updateCategoryDropdown();
+                renderCategoriesManagement();
+                try {
+                    await saveRestaurantDataToCloud();
+                    document.getElementById('customCategoryInput').value = '';
+                    showCustomAlert('تم إضافة التصنيف بنجاح');
+                } catch (e) {
+                    restaurantDataCache.categories = restaurantDataCache.categories.filter(c => c !== val);
+                    updateCategoryDropdown();
+                    renderCategoriesManagement();
+                    showCustomAlert('تعذر حفظ التصنيف: ' + (e.message || 'خطأ غير معروف'));
+                }
             }
         }
         async function deleteCategory(cat) {
+            const previous = [...restaurantDataCache.categories];
             restaurantDataCache.categories = restaurantDataCache.categories.filter(c => c !== cat);
-            await saveRestaurantDataToCloud();
+            updateCategoryDropdown();
+            renderCategoriesManagement();
+            try {
+                await saveRestaurantDataToCloud();
+            } catch (e) {
+                restaurantDataCache.categories = previous;
+                updateCategoryDropdown();
+                renderCategoriesManagement();
+                showCustomAlert('تعذر حذف التصنيف: ' + (e.message || 'خطأ غير معروف'));
+            }
         }
 
         function handleImageUpload(e) {
@@ -1419,23 +2125,181 @@
             if (uploadedImageFile) document.getElementById('fileNameDisplay').innerText = uploadedImageFile.name;
         }
 
+        /* =========================================================
+           FREE SMART FOOD IMAGE PICKER v2
+           No AI generation / no API key.
+           Uses Wikimedia Commons and chooses a result by relevance,
+           so every item is searched from its own name instead of using
+           one generic photo for the whole menu.
+           ========================================================= */
+        const foodImageCacheKey = 'digital_menu_food_images_v2';
+        let foodImageCache = {};
+        try { foodImageCache = JSON.parse(localStorage.getItem(foodImageCacheKey) || '{}') || {}; } catch (_) { foodImageCache = {}; }
+
+        const foodKeywordMap = {
+            'شاورما فراخ':'chicken shawarma','شاورما لحم':'beef shawarma','شاورما':'shawarma',
+            'برجر لحم':'beef burger','برجر فراخ':'chicken burger','برجر بالبيض':'egg burger','برجر':'burger',
+            'بيتزا مارجريتا':'margherita pizza','مارجريتا':'margherita pizza','بيتزا':'pizza',
+            'مكرونة':'pasta','باستا':'pasta','كريب فراخ':'chicken crepe','كريب':'crepe',
+            'كفتة':'kofta','كباب':'kebab','فراخ':'chicken','دجاج':'chicken','لحمة':'beef','لحم':'beef',
+            'سمك':'fish','جمبري':'shrimp','روبيان':'shrimp','سجق':'sausage','كبدة':'liver',
+            'فتة':'fatteh','فول':'ful medames','طعمية':'falafel','فلافل':'falafel',
+            'بطاطس':'french fries','بطاطا':'sweet potato','أرز':'rice','رز':'rice',
+            'سلطة':'salad','شوربة':'soup','شوربه':'soup','ساندوتش':'sandwich','سندوتش':'sandwich',
+            'ناجتس':'chicken nuggets','ستيك':'steak','مشويات':'grilled meat','مشوي':'grilled food',
+            'كنافة':'kunafa','بقلاوة':'baklava','حلويات':'dessert','كيك':'cake','تشيز كيك':'cheesecake',
+            'وافل':'waffle','بان كيك':'pancakes','آيس كريم':'ice cream','ايس كريم':'ice cream',
+            'عصير مانجو':'mango juice','عصير ليمون':'lemonade','عصير برتقال':'orange juice',
+            'عصير موز':'banana smoothie','عصير فراولة':'strawberry juice','مانجو':'mango','ليمون':'lemon',
+            'برتقال':'orange','موز':'banana','فراولة':'strawberry','عصير':'juice',
+            'قهوة':'coffee','كابتشينو':'cappuccino','لاتيه':'latte','شاي':'tea',
+            'مشروب':'drink','مشروبات':'drinks','بيض':'egg'
+        };
+
+        const foodStopWords = new Set(['food','foods','restaurant','dish','dish food','menu','menus','item','items']);
+        const foodBadWords = ['salad','restaurant logo','menu','poster','advertisement','text only','drawing','illustration'];
+
+        function foodSearchText(name, category) {
+            let text = `${name || ''}`.trim();
+            Object.keys(foodKeywordMap).sort((a,b)=>b.length-a.length).forEach(ar => {
+                const re = new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                text = text.replace(re, ` ${foodKeywordMap[ar]} `);
+            });
+            // Category is only used as a weak hint; the item name is the main query.
+            const cleaned = text
+                .replace(/[0-9]+/g,' ')
+                .replace(/[،,:;|/\\-]+/g,' ')
+                .replace(/\s+/g,' ')
+                .trim();
+            return cleaned || 'food dish';
+        }
+
+        function isAutoFoodImage(item) {
+            const img = String(item?.img || '');
+            return !img || img === 'AUTO_IMAGE' || item?.imageSource === 'auto' ||
+                img.includes('commons.wikimedia.org') || img.includes('upload.wikimedia.org') ||
+                img.includes('images.unsplash.com/photo-1546069901-ba9599a7e63c');
+        }
+
+        function scoreFoodImage(page, query) {
+            const info = page.imageinfo?.[0] || {};
+            const title = String(page.title || '').toLowerCase();
+            const text = `${title} ${String(info.descriptionurl || '').toLowerCase()}`;
+            const tokens = query.toLowerCase().split(/\s+/).filter(t => t.length >= 3 && !foodStopWords.has(t));
+            let score = 0;
+            tokens.forEach(t => {
+                if (title.includes(t)) score += 8;
+                if (text.includes(t)) score += 2;
+            });
+            foodBadWords.forEach(w => { if (text.includes(w)) score -= 10; });
+            if (/\b(burger|pizza|shawarma|pasta|juice|lemonade|smoothie|coffee|tea|dessert|cake|ice cream|fries|chicken|beef|fish|shrimp|egg)\b/i.test(query)) score += 2;
+            return score;
+        }
+
+        async function findFreeFoodImage(name, category, statusEl=null) {
+            const key = `${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
+            if (foodImageCache[key]) return foodImageCache[key];
+
+            const q = foodSearchText(name, category);
+            const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=' + encodeURIComponent(q) + '&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=700&format=json&origin=*';
+            try {
+                if (statusEl) statusEl.innerText = `جاري اختيار صورة مناسبة لـ ${name}...`;
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) throw new Error('image search failed');
+                const data = await response.json();
+                const pages = Object.values(data.query?.pages || {});
+                const candidates = pages.filter(page => {
+                    const info = page.imageinfo?.[0];
+                    const mime = String(info?.mime || '').toLowerCase();
+                    const u = String(info?.thumburl || info?.url || '');
+                    return u && !mime.includes('svg') && /\.(jpe?g|png|webp)(\?|$)/i.test(u);
+                });
+                candidates.sort((a,b) => scoreFoodImage(b, q) - scoreFoodImage(a, q));
+                const best = candidates[0];
+                const img = best?.imageinfo?.[0]?.thumburl || best?.imageinfo?.[0]?.url || '';
+                if (img) {
+                    foodImageCache[key] = img;
+                    try { localStorage.setItem(foodImageCacheKey, JSON.stringify(foodImageCache)); } catch (_) {}
+                    return img;
+                }
+            } catch (e) {
+                console.warn('Free food image search failed:', e);
+            }
+            return '';
+        }
+
+        async function enrichItemsWithFreeImages(items, statusEl=null) {
+            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
+            let done = 0;
+            for (const item of items) {
+                if (isAutoFoodImage(item)) {
+                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
+                    if (found) {
+                        item.img = found;
+                        item.imageSource = 'auto';
+                    }
+                }
+                done++;
+                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
+            }
+            return items;
+        }
+
+        function autoImagesEnabled() {
+            const el = document.getElementById('autoFoodImages');
+            return !el || el.checked;
+        }
+
+        async function enrichItemsWithFreeImages(items, statusEl=null) {
+            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
+            let done = 0;
+            for (const item of items) {
+                if (!item.img || item.img === 'AUTO_IMAGE') {
+                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
+                    if (found) item.img = found;
+                }
+                done++;
+                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
+            }
+            return items;
+        }
+
         async function saveItemAction() {
             let editId = document.getElementById('editItemId').value;
-            let name = escapeHtml(document.getElementById('newItemName').value.trim());
-            let category = escapeHtml(document.getElementById('newItemCategory').value);
+            let name = document.getElementById('newItemName').value.trim();
+            let category = document.getElementById('newItemCategory').value;
             let price = Number(document.getElementById('newItemPrice').value);
             let discount = Number(document.getElementById('newItemDiscount').value) || 0;
+            let details = document.getElementById('newItemDetails').value.trim();
 
             if (!name || !price) return showCustomAlert('الرجاء إدخال الاسم والسعر');
-            let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
+            let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : '';
+            if (!img && autoImagesEnabled()) {
+                img = await findFreeFoodImage(name, category, document.getElementById('itemImageStatus'));
+            }
+            if (!img) img = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
             
+            const previousItems = restaurantDataCache.items.map(i => ({...i}));
             if (editId) {
                 let item = restaurantDataCache.items.find(i => i.id == editId);
-                if (item) { item.name=name; item.category=category; item.price=price; item.discount=discount; if(uploadedImageFile && img) item.img=img; }
+                if (item) {
+                    item.name=name; item.category=category; item.price=price; item.discount=discount; item.details=details;
+                    if(uploadedImageFile && img) { item.img=img; item.imageSource='manual'; }
+                    else if (!item.img || isAutoFoodImage(item)) { item.img=img; item.imageSource='auto'; }
+                }
             } else {
-                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, img });
+                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, details, img, imageSource: uploadedImageFile ? 'manual' : 'auto' });
             }
-            await saveRestaurantDataToCloud(); resetItemForm();
+            renderItems();
+            try {
+                await saveRestaurantDataToCloud();
+                resetItemForm();
+                showCustomAlert(editId ? 'تم تعديل الصنف وحفظه بنجاح' : 'تم إضافة الصنف وحفظه بنجاح');
+            } catch (e) {
+                restaurantDataCache.items = previousItems;
+                renderItems();
+                showCustomAlert('تعذر حفظ الصنف: ' + (e.message || 'خطأ غير معروف'));
+            }
         }
 
         function editItem(id) {
@@ -1445,18 +2309,27 @@
             document.getElementById('newItemCategory').value = item.category;
             document.getElementById('newItemPrice').value = item.price;
             document.getElementById('newItemDiscount').value = item.discount || 0;
+            document.getElementById('newItemDetails').value = item.details || '';
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             window.scrollTo({top:0, behavior:'smooth'});
         }
         function resetItemForm() {
             document.getElementById('editItemId').value=''; document.getElementById('newItemName').value='';
-            document.getElementById('newItemPrice').value=''; document.getElementById('newItemDiscount').value='';
+            document.getElementById('newItemPrice').value=''; document.getElementById('newItemDiscount').value=''; document.getElementById('newItemDetails').value='';
             uploadedImageFile=null; document.getElementById('fileNameDisplay').innerText='اضغط لاختيار صورة';
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
         async function deleteItem(id) {
+            const previous = [...restaurantDataCache.items];
             restaurantDataCache.items = restaurantDataCache.items.filter(i => i.id !== id);
-            await saveRestaurantDataToCloud();
+            renderItems();
+            try {
+                await saveRestaurantDataToCloud();
+            } catch (e) {
+                restaurantDataCache.items = previous;
+                renderItems();
+                showCustomAlert('تعذر حذف الصنف: ' + (e.message || 'خطأ غير معروف'));
+            }
         }
 
         function renderItems() {
@@ -1470,6 +2343,7 @@
                         <div>
                             <div style="font-weight:700;">${escapeHtml(item.name)} <span style="font-size:11px; color:var(--primary);">(${escapeHtml(item.category)})</span></div>
                             <div style="color:var(--secondary); font-size:14px; font-weight:700;">${item.price - (item.discount||0)} ج.م</div>
+                            ${item.details ? `<div style="color:var(--text-muted);font-size:11px;margin-top:4px;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="fa-solid fa-circle-info"></i> ${escapeHtml(item.details)}</div>` : `<div style="color:var(--text-muted);font-size:11px;margin-top:4px;">بدون تفاصيل</div>`}
                         </div>
                     </div>
                     <div class="action-btns">
@@ -1483,283 +2357,498 @@
         // Smart Menu AI
         function handleAiMenuUpload(e) {
             aiMenuImageFile = e.target.files[0];
-            if (aiMenuImageFile) document.getElementById('aiFileNameDisplay').innerText = aiMenuImageFile.name;
+            const wrap=document.getElementById('aiMenuPreviewWrap');
+            const preview=document.getElementById('aiMenuPreview');
+            const status=document.getElementById('aiMenuSavedStatus');
+            if(aiMenuImageFile){
+                document.getElementById('aiFileNameDisplay').innerText = aiMenuImageFile.name;
+                preview.src=URL.createObjectURL(aiMenuImageFile);
+                wrap.classList.remove('hidden');
+                status.innerText='الصورة جاهزة للتحليل والحفظ.';
+            }else{
+                wrap.classList.add('hidden');
+                preview.src='';
+                status.innerText='';
+            }
+        }
+        function normalizeOcrDigits(value) {
+            return String(value || '')
+                .replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+                .replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+        }
+
+        function cleanOcrLine(value) {
+            let line = normalizeOcrDigits(value)
+                .replace(/[©◯○◦•▪▫●■□◆◇♦️📌📍]/g, ' ')
+                .replace(/[|¦]/g, ' ')
+                // OCR frequently adds markdown/bullet/hash decoration before Arabic headings.
+                .replace(/^[#*+~^_`]+\s*/g, '')
+                .replace(/^[-–—:،,.;:]+\s*/g, '')
+                .replace(/\s*[◦○●▪▫•]+\s*$/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            // Keep Arabic + English text without a fixed food vocabulary.
+            // Only remove a few very common Tesseract hallucinations.
+            const ocrNoise = new Set([
+                'dials','dual','dao','dais','diols','e-a'
+            ]);
+            line = line.replace(/\b[A-Za-z][A-Za-z-]*\b/g, word => {
+                return ocrNoise.has(word.toLowerCase()) ? ' ' : word;
+            });
+            line = line.replace(/\s+/g, ' ').trim();
+            return line;
+        }
+
+        function normalizeArabicForMatch(value) {
+            return cleanOcrLine(value)
+                .toLowerCase()
+                .replace(/[إأآا]/g, 'ا')
+                .replace(/ة/g, 'ه')
+                .replace(/ى/g, 'ي')
+                .replace(/ی/g, 'ي')
+                .replace(/ؤ/g, 'و')
+                .replace(/ئ/g, 'ي')
+                .replace(/ـ/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        const MENU_CATEGORY_WORDS = [
+            'المقبلات والسلطات', 'المقبلات', 'السلطات',
+            'الشوربات', 'الشوربه',
+            'الأطباق الرئيسية', 'الاطباق الرئيسية', 'الاطباق الرئيسيه', 'وجبات رئيسية', 'الوجبات الرئيسية',
+            'المشروبات', 'العصائر', 'المشروبات الساخنة', 'المشروبات الباردة',
+            'الحلويات', 'البيتزا', 'البرجر', 'السندوتشات', 'ساندوتشات',
+            'المكرونة', 'المعجنات', 'الفطار', 'فطور', 'الافطار', 'الإفطار',
+            'Drinks', 'Foods', 'Desserts', 'Pizza', 'Burger', 'Sandwich', 'Salads', 'Soups', 'Appetizers'
+        ];
+
+        function detectMenuCategory(line) {
+            const cleaned = cleanOcrLine(line)
+                .replace(/^[#*+~^_`\-–—:،,.؛;]+\s*/g, '')
+                .replace(/[\uFE0F]/g, '')
+                .trim();
+            let n = normalizeArabicForMatch(cleaned)
+                .replace(/^(?:هر|ه|ا|aa|a)\s+/i, '')
+                .trim();
+            if (!n || n.length > 70) return '';
+
+            // Exact match first. The normalized comparison handles common Arabic OCR variants.
+            const hit = MENU_CATEGORY_WORDS.find(cat => normalizeArabicForMatch(cat) === n);
+            if (hit) return cleaned.replace(/^(?:هر|ه|ا|aa|a)\s+/i, '').trim();
+
+            // OCR may prepend a heading with a stray word/marker. Match known category names
+            // when they are clearly present at the start/end of the line.
+            for (const cat of MENU_CATEGORY_WORDS) {
+                const cn = normalizeArabicForMatch(cat);
+                if (!cn || cn.length < 4) continue;
+                if (n === cn || n.startsWith(cn + ' ') || n.endsWith(' ' + cn)) return cat;
+            }
+            return '';
+        }
+
+        function extractOcrPrice(line) {
+            const cleaned = normalizeOcrDigits(line).replace(/,/g, '.');
+            const matches = cleaned.match(/\d+(?:\.\d+)?/g);
+            if (!matches || !matches.length) return null;
+            const last = Number(matches[matches.length - 1]);
+            if (!Number.isFinite(last) || last <= 0 || last > 1000000) return null;
+            if (last < 5 && !/(?:السعر|price|ج\.?\s*م|جنيه|egp|sar|usd|\$)/i.test(cleaned)) return null;
+            return Math.round(last * 100) / 100;
+        }
+
+        function stripOcrPriceAndLabels(line) {
+            return cleanOcrLine(line)
+                .replace(/(?:السعر|price)\s*[:：-]?/gi, ' ')
+                .replace(/\d+(?:[.,]\d+)?\s*(?:ج\.?\s*م|جنيه(?:\s*مصري)?|egp|sar|usd|\$)?/gi, ' ')
+                .replace(/\s+/g, ' ')
+                .replace(/^[\-–—:،,\.\s]+|[\-–—:،,\.\s]+$/g, '')
+                .trim();
+        }
+
+        function looksLikeGenericOcrCategory(lines, index) {
+            const line = cleanOcrLine(lines[index] || '');
+            if (!line || line.length < 2 || line.length > 55) return false;
+            if (extractOcrPrice(line) || detectMenuCategory(line) || isOcrDetailsLine(line)) return false;
+            const words = line.split(/\s+/).filter(Boolean);
+            if (words.length > 6) return false;
+
+            let priceNeighbours = 0;
+            for (let j = index + 1; j < Math.min(lines.length, index + 4); j++) {
+                if (extractOcrPrice(lines[j])) priceNeighbours++;
+            }
+            if (priceNeighbours >= 2) return true;
+
+            if (index > 0 && extractOcrPrice(lines[index - 1]) &&
+                index + 1 < lines.length && extractOcrPrice(lines[index + 1])) return true;
+            return false;
+        }
+
+        function isOcrPriceOnlyLine(line) {
+            const cleaned = cleanOcrLine(line);
+            if (!cleaned || !extractOcrPrice(cleaned)) return false;
+            const withoutPrice = stripOcrPriceAndLabels(cleaned).replace(/[جمهنيه\s:：\-–—.,]/gi, '').trim();
+            const n = normalizeArabicForMatch(cleaned);
+            // OCR often turns the Arabic price label into noisy Latin fragments (e.g. "e-a 100 السعر").
+            if (n.includes('السعر') || n.includes('price')) return withoutPrice.length <= 8;
+            return withoutPrice.length <= 4;
+        }
+
+        function isOcrDetailsLine(line) {
+            const n = normalizeArabicForMatch(line);
+            return n.includes('التفاصيل') || n.includes('تفاصيل') || n.includes('details') || n.includes('description') || n.includes('وصف الصنف');
+        }
+
+        function stripOcrDetailsLabel(line) {
+            const cleaned = cleanOcrLine(line);
+            const match = cleaned.match(/(?:التفاصيل|التفاصیل|تفاصيل|details|description|وصف الصنف)\s*[:：-]?\s*/i);
+            if (match) return cleaned.slice(match.index + match[0].length).trim();
+            return cleaned;
+        }
+
+        function isMostlyArabicOcrText(line) {
+            const cleaned = cleanOcrLine(line);
+            const arabic = (cleaned.match(/[\u0600-\u06FF]/g) || []).length;
+            const latin = (cleaned.match(/[A-Za-z]/g) || []).length;
+            return arabic >= 2 && (latin === 0 || arabic >= latin * 2);
+        }
+
+        function appendUniqueOcrDetail(existing, next) {
+            const value = cleanOcrLine(next);
+            if (!value || !isMostlyArabicOcrText(value)) return existing || '';
+            if (!existing) return value;
+            const a = normalizeArabicForMatch(existing).replace(/[^\u0600-\u06FFa-z0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim();
+            const b = normalizeArabicForMatch(value).replace(/[^\u0600-\u06FFa-z0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim();
+            if (!b || a.includes(b) || b.includes(a)) return existing;
+            const at = new Set(a.split(' ').filter(Boolean));
+            const bt = b.split(' ').filter(Boolean);
+            const overlap = bt.length ? bt.filter(t => at.has(t)).length / bt.length : 0;
+            return overlap >= 0.72 ? existing : `${existing} ${value}`;
+        }
+
+        function looksLikeOcrItemTitle(line) {
+            const cleaned = cleanOcrLine(line);
+            if (cleaned.length < 3 || cleaned.length > 90) return false;
+            if (detectMenuCategory(cleaned) || isOcrPriceOnlyLine(cleaned) || isOcrDetailsLine(cleaned)) return false;
+            const n = normalizeArabicForMatch(cleaned);
+            if (/^(السعر|price|التفاصيل|details|description|ج م|جنيه)$/i.test(n)) return false;
+            const arabicCount = (cleaned.match(/[\u0600-\u06FF]/g) || []).length;
+            const latinCount = (cleaned.match(/[A-Za-z]/g) || []).length;
+            if (arabicCount > 0 && !isMostlyArabicOcrText(cleaned)) return false;
+            if (arabicCount === 0 && latinCount > 0) {
+                // Any real English product name is allowed; no restaurant-specific
+                // vocabulary is assumed.
+                if (latinCount < 2) return false;
+            }
+            return /[\u0600-\u06FFA-Za-z]/.test(cleaned);
+        }
+
+        function mergeOcrLines(rawTexts) {
+            const result = [];
+            const seen = new Set();
+            for (const text of rawTexts) {
+                const lines = String(text || '').split(/\r?\n/).map(cleanOcrLine).filter(Boolean);
+                for (const line of lines) {
+                    const key = normalizeArabicForMatch(line).replace(/[^\u0600-\u06FFa-z0-9]/gi, '');
+                    if (key.length < 2 || seen.has(key)) continue;
+                    seen.add(key);
+                    result.push(line);
+                }
+            }
+            return result;
+        }
+
+        function fileToOcrCanvas(file, maxWidth = 1800) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const scale = Math.min(2.2, Math.max(1, maxWidth / img.naturalWidth));
+                        const canvas = document.createElement('canvas');
+                        canvas.width = Math.max(900, Math.round(img.naturalWidth * scale));
+                        canvas.height = Math.round(img.naturalHeight * (canvas.width / img.naturalWidth));
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        for (let i = 0; i < imageData.data.length; i += 4) {
+                            const r = imageData.data[i], g = imageData.data[i + 1], b = imageData.data[i + 2];
+                            const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                            const boosted = gray < 128 ? Math.max(0, gray - 18) : Math.min(255, gray + 10);
+                            imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = boosted;
+                        }
+                        ctx.putImageData(imageData, 0, 0);
+                        resolve(canvas);
+                    };
+                    img.onerror = reject;
+                    img.src = reader.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function cropCanvasToDataUrl(canvas, top, bottom) {
+            const h = Math.max(1, bottom - top);
+            const out = document.createElement('canvas');
+            out.width = canvas.width;
+            out.height = h;
+            const ctx = out.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, out.width, h);
+            ctx.drawImage(canvas, 0, top, canvas.width, h, 0, 0, out.width, h);
+            return out.toDataURL('image/jpeg', 0.94);
+        }
+
+        async function recognizeOcrRegion(source, psm, stat, label) {
+            return await Tesseract.recognize(source, 'ara+eng', {
+                logger: m => {
+                    if (m.status === 'recognizing text') stat.innerText = `${label} ${Math.round((m.progress || 0) * 100)}%`;
+                },
+                tessedit_pageseg_mode: psm, preserve_interword_spaces: 1
+            });
+        }
+
+        function collectOcrResultLines(res, offsetTop, regionHeight, target, confidenceBoost = 0) {
+            const lines = res?.data?.lines;
+            if (Array.isArray(lines) && lines.length) {
+                lines.forEach(line => {
+                    if (line?.text) target.push({
+                        text: line.text,
+                        top: offsetTop + (line.bbox?.y0 || 0),
+                        confidence: Number(line.confidence || 0) + confidenceBoost
+                    });
+                });
+                return;
+            }
+            // Tesseract's text-only output is still usable on versions/builds that do not expose data.lines.
+            const fallback = String(res?.data?.text || '').split(/\r?\n/).map(cleanOcrLine).filter(Boolean);
+            fallback.forEach((text, i) => target.push({
+                text,
+                top: offsetTop + Math.round((i / Math.max(1, fallback.length)) * regionHeight),
+                confidence: confidenceBoost
+            }));
+        }
+
+        function mergeOcrLineObjects(objects) {
+            const sorted = [...objects].filter(o => o && o.text).sort((a, b) => (a.top || 0) - (b.top || 0));
+            const result = [];
+            const seen = new Set();
+            for (const obj of sorted) {
+                const line = cleanOcrLine(obj.text);
+                const key = normalizeArabicForMatch(line).replace(/[^\u0600-\u06FFa-z0-9]/gi, '');
+                if (key.length < 2 || seen.has(key)) continue;
+                seen.add(key);
+                result.push(line);
+            }
+            return result;
+        }
+
+        function parseStructuredMenuLines(lines, replace) {
+            const items = replace ? [] : [...(restaurantDataCache.items || [])];
+            const cats = replace ? [] : [...(restaurantDataCache.categories || [])];
+            let curCat = replace ? '' : (cats[0] || 'أكلات');
+            let pending = null;
+            let added = 0;
+
+            const normalizeName = value => cleanOcrLine(value)
+                .replace(/^(?:اسم الصنف|الصنف|item|name)\s*[:：-]?\s*/i, '')
+                .replace(/^[#*+~^_`\-–—:،,.؛;]+\s*/g, '')
+                .trim();
+
+            const ensureCategory = cat => {
+                const value = cleanOcrLine(cat);
+                if (!value) return;
+                curCat = value;
+                if (!cats.some(c => normalizeArabicForMatch(c) === normalizeArabicForMatch(value))) cats.push(value);
+            };
+
+            const finalizePending = price => {
+                if (!pending || !Number.isFinite(price) || price <= 0) return;
+                const name = normalizeName(pending.name);
+                const details = cleanOcrLine(pending.details || '').trim();
+                const category = pending.category || curCat || 'أكلات';
+                if (name.length >= 2 && !detectMenuCategory(name) && !/^\d+$/.test(name)) {
+                    // Guard against OCR accidentally turning a category heading into a product.
+                    items.push({
+                        id: Date.now() + Math.random(),
+                        name,
+                        category,
+                        price,
+                        discount: 0,
+                        details,
+                        img: 'AUTO_IMAGE'
+                    });
+                    added++;
+                }
+                pending = null;
+            };
+
+            const startPending = (name, details='') => {
+                const cleanName = normalizeName(name);
+                if (!cleanName || detectMenuCategory(cleanName)) return;
+                pending = { name: cleanName, category: curCat || 'أكلات', details: cleanOcrLine(details || '') };
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = cleanOcrLine(lines[i]);
+                if (!line) continue;
+
+                const category = detectMenuCategory(line);
+                const genericCategory = !category && looksLikeGenericOcrCategory(lines, i) ? line : '';
+                if (category || genericCategory) {
+                    const detectedCategory = category || genericCategory;
+                    // A heading belongs to the next products. Do not let it become an item title.
+                    if (pending && pending.name && i > 0) {
+                        // If a category appears before the pending item's price, keep the pending item
+                        // only if a price follows immediately; otherwise discard the incomplete OCR record.
+                        const nextPrice = i + 1 < lines.length ? extractOcrPrice(lines[i + 1]) : null;
+                        if (nextPrice) finalizePending(nextPrice);
+                        else pending = null;
+                    }
+                    ensureCategory(detectedCategory);
+                    continue;
+                }
+
+                const price = extractOcrPrice(line);
+                const priceOnly = isOcrPriceOnlyLine(line);
+                const detailsLine = isOcrDetailsLine(line);
+
+                if (detailsLine) {
+                    const detailText = stripOcrDetailsLabel(line);
+                    if (!pending && i > 0) {
+                        const previous = normalizeName(lines[i - 1]);
+                        if (looksLikeOcrItemTitle(previous) && !detectMenuCategory(previous)) {
+                            startPending(previous);
+                        }
+                    }
+                    if (pending && detailText) pending.details = appendUniqueOcrDetail(pending.details, detailText);
+                    continue;
+                }
+
+                if (price) {
+                    const namePart = normalizeName(stripOcrPriceAndLabels(line));
+                    if (pending) {
+                        if (!priceOnly && namePart && looksLikeOcrItemTitle(namePart) &&
+                            normalizeArabicForMatch(namePart) !== normalizeArabicForMatch(pending.name)) {
+                            // Occasionally OCR places the item name and price on one line after a wrapped title.
+                            pending.name = `${pending.name} ${namePart}`.trim();
+                        }
+                        finalizePending(price);
+                    } else if (!priceOnly && namePart && looksLikeOcrItemTitle(namePart) && !detectMenuCategory(namePart)) {
+                        items.push({ id: Date.now() + Math.random(), name: namePart, category: curCat || 'أكلات', price, discount: 0, details: '', img: 'AUTO_IMAGE' });
+                        added++;
+                    }
+                    continue;
+                }
+
+                if (looksLikeOcrItemTitle(line)) {
+                    if (!pending) {
+                        startPending(line);
+                    } else if (pending.details || line.length >= 22) {
+                        // Long Arabic text following a title is usually a wrapped description.
+                        pending.details = appendUniqueOcrDetail(pending.details, line);
+                    } else {
+                        // A short new title means OCR has started the next item; keep the newest title.
+                        startPending(line);
+                    }
+                    continue;
+                }
+
+                if (pending && line.length >= 12) {
+                    pending.details = appendUniqueOcrDetail(pending.details, line);
+                }
+            }
+
+            return { items, categories: cats, added };
         }
 
         async function importBilingualMenuOCR(replace) {
-            if (!aiMenuImageFile) return showCustomAlert('اختر صورة أولاً');
-
+            if(!aiMenuImageFile) return showCustomAlert('اختر صورة أولاً');
             const btn = document.getElementById('parseAiBtn');
+            const replaceBtn = document.getElementById('parseAiReplaceBtn');
             const stat = document.getElementById('aiProgressStatus');
-            const originalBtn = '<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';
-
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...';
-            stat.innerText = 'تحضير الصورة وتحليل تخطيط المنيو...';
-
+            btn.disabled = true; replaceBtn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة المنيو...';
             try {
-                // تحسين الصورة محلياً فقط: لا API ولا مفتاح ولا تغيير لباقي المشروع.
-                const preparedCanvas = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const maxW = 2600;
-                            const scale = Math.min(2.2, maxW / Math.max(1, img.naturalWidth));
-                            const w = Math.max(1, Math.round(img.naturalWidth * scale));
-                            const h = Math.max(1, Math.round(img.naturalHeight * scale));
-                            const canvas = document.createElement('canvas');
-                            canvas.width = w;
-                            canvas.height = h;
-                            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                            ctx.drawImage(img, 0, 0, w, h);
+                stat.innerText = 'تجهيز الصورة ورفع وضوح النص...';
+                const canvas = await fileToOcrCanvas(aiMenuImageFile);
+                const height = canvas.height;
+                const chunkCount = Math.min(3, Math.max(1, Math.ceil(height / 1400)));
+                const overlap = 90;
+                const ocrLines = [];
+                for (let partNo = 0; partNo < chunkCount; partNo++) {
+                    const sectionTop = Math.round(partNo * height / chunkCount);
+                    const sectionBottom = Math.round((partNo + 1) * height / chunkCount);
+                    const top = Math.max(0, sectionTop - (partNo ? overlap : 0));
+                    const bottom = Math.min(height, sectionBottom + (partNo < chunkCount - 1 ? overlap : 0));
+                    const region = cropCanvasToDataUrl(canvas, top, bottom);
+                    const res = await recognizeOcrRegion(region, 6, stat, `قراءة الجزء ${partNo + 1}...`);
+                    collectOcrResultLines(res, top, bottom - top, ocrLines);
+                }
 
-                            const image = ctx.getImageData(0, 0, w, h);
-                            const d = image.data;
-                            for (let i = 0; i < d.length; i += 4) {
-                                const gray = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
-                                const boosted = gray < 128 ? Math.max(0, gray - 8) : Math.min(255, gray + 8);
-                                d[i] = d[i + 1] = d[i + 2] = boosted;
-                            }
-                            ctx.putImageData(image, 0, 0);
-                            resolve(canvas);
-                        };
-                        img.onerror = reject;
-                        img.src = reader.result;
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(aiMenuImageFile);
+                // Sparse-text pass is used only to recover lines that block-based OCR can miss. Bounding boxes
+                // keep every recovered line in its original vertical position.
+                stat.innerText = 'مراجعة أسماء الأصناف والتصنيفات...';
+                const sparseRes = await recognizeOcrRegion(canvas.toDataURL('image/jpeg', 0.94), 11, stat, 'مراجعة النص...');
+                collectOcrResultLines(sparseRes, 0, height, ocrLines, 0.25);
+
+                // Top-area recovery catches the first product title in layouts where the category heading causes
+                // Tesseract's block mode to skip that title. It is deliberately limited to the top section only.
+                const recoveryTop = Math.round(height * 0.05);
+                const recoveryBottom = Math.min(height, Math.max(recoveryTop + 260, Math.round(height * 0.28)));
+                if (recoveryBottom > recoveryTop + 120) {
+                    const recoveryRes = await recognizeOcrRegion(cropCanvasToDataUrl(canvas, recoveryTop, recoveryBottom), 3, stat, 'استرجاع أسماء الأصناف...');
+                    collectOcrResultLines(recoveryRes, recoveryTop, recoveryBottom - recoveryTop, ocrLines, 0.5);
+                }
+
+                const lines = mergeOcrLineObjects(ocrLines);
+                const parsed = parseStructuredMenuLines(lines, replace);
+                if (!parsed.added) throw new Error('لم يتم العثور على أصناف واضحة. جرّب صورة أوضح أو صورة مستقيمة للمنيو.');
+
+                restaurantDataCache.categories = parsed.categories.length ? parsed.categories : (replace ? ['أكلات'] : restaurantDataCache.categories);
+                restaurantDataCache.items = parsed.items;
+                updateCategoryDropdown();
+                renderCategoriesManagement();
+                renderItems();
+
+                stat.innerText = `تم استخراج ${parsed.added} صنف في ${restaurantDataCache.categories.length} تصنيف. جاري الحفظ...`;
+                await enrichItemsWithFreeImages(restaurantDataCache.items, stat);
+                restaurantDataCache.items.forEach(item => {
+                    if (item.img === 'AUTO_IMAGE' || !item.img) {
+                        item.img = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=500";
+                        item.imageSource = 'auto-fallback';
+                    }
                 });
 
-                stat.innerText = 'قراءة العربية والإنجليزية ومواقع الأسعار...';
-
-                const res = await Tesseract.recognize(
-                    preparedCanvas,
-                    'ara+eng',
-                    {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                stat.innerText = `قراءة... ${Math.round((m.progress || 0) * 100)}%`;
-                            }
-                        }
-                    }
-                );
-
-                const rawLines = Array.isArray(res?.data?.lines) ? res.data.lines : [];
-                const allText = String(res?.data?.text || '');
-
-                // تحويل الأرقام العربية/الفارسية إلى أرقام عادية.
-                const normalizeDigits = value => String(value || '')
-                    .replace(/[٠-٩]/g, ch => String(ch.charCodeAt(0) - 1632))
-                    .replace(/[۰-۹]/g, ch => String(ch.charCodeAt(0) - 1776));
-
-                const cleanText = value => String(value || '')
-                    .replace(/\s+/g, ' ')
-                    .replace(/[|¦]/g, ' ')
-                    .trim();
-
-                const priceFromText = value => {
-                    const s = normalizeDigits(value);
-                    const matches = s.match(/(?:\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)/g) || [];
-                    const nums = matches
-                        .map(x => Number(x.replace(/,/g, '')))
-                        .filter(n => Number.isFinite(n) && n > 0 && n < 1000000);
-                    return nums.length ? nums[nums.length - 1] : null;
-                };
-
-                const removePriceAndCurrency = value => cleanText(
-                    normalizeDigits(value)
-                        .replace(/(?:\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)/g, ' ')
-                        .replace(/(?:ج\.?م|جنيه|جنية|ريال|ر\.?س|د\.?إ|درهم|دولار|usd|egp|sar|aed|\$|€|£)/gi, ' ')
-                        .replace(/^[\s~\-–—:.,*+\/]+|[\s~\-–—:.,*+\/]+$/g, '')
-                );
-
-                const arabicRatio = s => {
-                    const chars = String(s || '').replace(/\s/g, '');
-                    if (!chars) return 0;
-                    const ar = (chars.match(/[\u0600-\u06FF]/g) || []).length;
-                    return ar / chars.length;
-                };
-
-                const looksLikeCategory = (line, nextLine) => {
-                    const s = cleanText(line);
-                    if (!s || s.length < 2 || s.length > 45) return false;
-                    if (priceFromText(s)) return false;
-                    if (/[.!?،,:؛]$/.test(s)) return false;
-                    const words = s.split(/\s+/).filter(Boolean);
-                    if (words.length > 7) return false;
-                    if (nextLine && priceFromText(nextLine)) return false;
-
-                    // عناوين الأقسام عادة قصيرة، ولا تحتوي وصفاً طويلاً.
-                    const categoryWords = /(مشروبات|مقبلات|سلطات|وجبات|أطباق|أكلات|برجر|بيتزا|باستا|سندوتش|ساندوتش|حلويات|حلو|عصائر|مشروب|كريب|فطار|غداء|عشاء|شوربة|سناكس|drinks|appetizers|salads|meals|foods|burger|pizza|pasta|sandwich|desserts|breakfast|lunch|dinner|snacks)/i;
-                    return categoryWords.test(s) || words.length <= 3;
-                };
-
-                // نستخدم الـbounding boxes عندما تكون متاحة، حتى لا نربط السعر البعيد بصنف خاطئ.
-                const lines = rawLines.map((line, index) => {
-                    const words = Array.isArray(line.words) ? line.words : [];
-                    const textLine = cleanText(line.text);
-                    const bbox = line.bbox || {};
-                    const wordData = words.map(w => ({
-                        text: cleanText(w.text),
-                        x0: Number(w.bbox?.x0 ?? 0),
-                        x1: Number(w.bbox?.x1 ?? 0),
-                        y0: Number(w.bbox?.y0 ?? 0),
-                        y1: Number(w.bbox?.y1 ?? 0),
-                        conf: Number(w.confidence ?? w.conf ?? 0)
-                    })).filter(w => w.text);
-
-                    return {
-                        index,
-                        text: textLine,
-                        words: wordData,
-                        x0: Number(bbox.x0 ?? (wordData.length ? Math.min(...wordData.map(w => w.x0)) : 0)),
-                        x1: Number(bbox.x1 ?? (wordData.length ? Math.max(...wordData.map(w => w.x1)) : 0)),
-                        y0: Number(bbox.y0 ?? (wordData.length ? Math.min(...wordData.map(w => w.y0)) : index * 40)),
-                        y1: Number(bbox.y1 ?? (wordData.length ? Math.max(...wordData.map(w => w.y1)) : index * 40 + 30)),
-                        conf: Number(line.confidence ?? line.conf ?? 0)
-                    };
-                }).filter(l => l.text);
-
-                // لو نسخة Tesseract الحالية لم ترجع lines، نرجع للنص الخام بدون تعطيل الاستيراد.
-                if (!lines.length && allText.trim()) {
-                    allText.split(/\r?\n/).map(cleanText).filter(Boolean).forEach((t, i) => {
-                        lines.push({ index:i, text:t, words:[], x0:0, x1:0, y0:i*40, y1:i*40+30, conf:0 });
-                    });
+                try {
+                    const menuImageUrl = await uploadFileToStorage(aiMenuImageFile, "menu-source");
+                    if (menuImageUrl) restaurantDataCache.menuImageUrl = menuImageUrl;
+                    const status = document.getElementById('aiMenuSavedStatus');
+                    if(status) status.innerText = 'تم حفظ صورة المنيو ونتيجة القراءة.';
+                } catch(uploadErr) {
+                    console.warn('Menu source upload failed; OCR result will still be saved.', uploadErr);
+                    const status = document.getElementById('aiMenuSavedStatus');
+                    if(status) status.innerText = 'تم حفظ الأصناف والتصنيفات، وتعذر تجهيز الصورة الأصلية.';
                 }
-
-                // تجميع السطور القريبة عمودياً، ثم التعامل مع كل مجموعة كمقطع مستقل.
-                lines.sort((a,b) => a.y0 - b.y0 || a.x0 - b.x0);
-
-                const used = new Set();
-                const groups = [];
-                const yTolerance = 32;
-
-                for (let i = 0; i < lines.length; i++) {
-                    if (used.has(i)) continue;
-                    const base = lines[i];
-                    const group = [base];
-                    used.add(i);
-
-                    for (let j = i + 1; j < lines.length; j++) {
-                        if (used.has(j)) continue;
-                        const candidate = lines[j];
-                        if (Math.abs(candidate.y0 - base.y0) <= yTolerance) {
-                            group.push(candidate);
-                            used.add(j);
-                        }
-                    }
-
-                    // ترتيب القراءة مناسب للعربي: من اليمين لليسار، وللإنجليزي حسب موقعه.
-                    group.sort((a,b) => b.x0 - a.x0);
-                    groups.push(...group);
-                }
-
-                const parsed = [];
-                let currentCategory = "أكلات / Foods";
-
-                for (let i = 0; i < groups.length; i++) {
-                    const line = groups[i];
-                    const next = groups[i + 1];
-                    const prev = groups[i - 1];
-
-                    let price = priceFromText(line.text);
-                    let name = removePriceAndCurrency(line.text);
-
-                    // السعر قد يكون في سطر منفصل: نربطه بأقرب اسم فوقه/تحته فقط.
-                    if (!price && next && priceFromText(next.text) && removePriceAndCurrency(next.text).length < 12) {
-                        const nextPrice = priceFromText(next.text);
-                        const possibleName = name || removePriceAndCurrency(line.text);
-                        if (possibleName.length >= 2) {
-                            price = nextPrice;
-                        }
-                    }
-
-                    if (!price && prev && priceFromText(prev.text) && name.length >= 2) {
-                        const prevName = removePriceAndCurrency(prev.text);
-                        if (prevName.length >= 2) price = priceFromText(prev.text);
-                    }
-
-                    if (!price && looksLikeCategory(line.text, next?.text)) {
-                        currentCategory = escapeHtml(cleanText(line.text));
-                        continue;
-                    }
-
-                    // السطر الذي يحتوي وصفاً طويلاً بدون سعر يُربط بالصنف السابق.
-                    if (!price && parsed.length && cleanText(line.text).length > 12 && !looksLikeCategory(line.text, next?.text)) {
-                        const previous = parsed[parsed.length - 1];
-                        const desc = cleanText(line.text);
-                        if (!previous.details) previous.details = escapeHtml(desc);
-                        else previous.details += ' ' + escapeHtml(desc);
-                        continue;
-                    }
-
-                    if (price && name.length >= 2) {
-                        // إزالة رموز زخرفية فقط، بدون "تصحيح" الكلمات أو تخمينها.
-                        name = name.replace(/^[\s\-–—:.,*+\/]+|[\s\-–—:.,*+\/]+$/g, '').trim();
-
-                        // تجاهل الأسطر التي هي عملة/سعر فقط.
-                        if (name.length < 2 || /^[\d\s.,\-–—]+$/.test(name)) continue;
-
-                        parsed.push({
-                            name: escapeHtml(name),
-                            category: escapeHtml(currentCategory),
-                            price,
-                            discount: 0,
-                            details: ''
-                        });
-                    }
-                }
-
-                // إزالة التكرارات الناتجة عن الأعمدة/إعادة القراءة.
-                const unique = [];
-                const seen = new Set();
-                for (const item of parsed) {
-                    const key = `${item.category}|${item.name}|${item.price}`.toLowerCase();
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        unique.push(item);
-                    }
-                }
-
-                let items = replace ? [] : restaurantDataCache.items;
-                let cats = replace ? [] : [...(restaurantDataCache.categories || defaultCategories)];
-
-                unique.forEach((item, idx) => {
-                    if (!cats.includes(item.category)) cats.push(item.category);
-
-                    items.push({
-                        id: Date.now() + idx + Math.random(),
-                        name: item.name,
-                        category: item.category,
-                        price: item.price,
-                        discount: 0,
-                        details: item.details || '',
-                        img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'
-                    });
-                });
-
-                restaurantDataCache.categories = cats;
-                restaurantDataCache.items = items;
 
                 await saveRestaurantDataToCloud();
-
                 stat.innerText = '';
-                btn.innerHTML = originalBtn;
-
-                if (!unique.length) {
-                    showCustomAlert('لم يتم العثور على أصناف واضحة بأسعار. جرّب صورة أوضح أو صورة أقرب للمنيو.');
-                } else {
-                    showCustomAlert(`تم استيراد ${unique.length} صنف بنجاح!`);
-                }
-
+                btn.innerHTML = '<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';
+                showCustomAlert(`تم استيراد ${parsed.added} صنف في ${restaurantDataCache.categories.length} تصنيف بنجاح!`);
             } catch(e) {
-                console.error('Menu OCR error:', e);
+                console.error('OCR import error:', e);
                 stat.innerText = '';
-                btn.innerHTML = originalBtn;
-                showCustomAlert('حدث خطأ أثناء قراءة المنيو. جرّب صورة أوضح أو صورة بجودة أعلى.');
+                btn.innerHTML = '<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';
+                showCustomAlert('تعذر تحليل المنيو: ' + (e.message || 'خطأ غير معروف'));
+            } finally {
+                btn.disabled = false;
+                replaceBtn.disabled = false;
             }
         }
-
         function buildOrdersUrl(tableNum=null) {
             const url=new URL('orders.html',document.baseURI);
             url.searchParams.set('restaurant',currentRestaurant||'default');
@@ -1779,7 +2868,7 @@
                     <h4 style="margin-bottom:5px;color:var(--primary);">طاولة ${i}</h4>
                     <div id="${id}" class="qr-img-container"></div>
                     <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-                        <button class="btn btn-secondary" style="padding:8px 12px;font-size:12px;width:100%;" onclick="printSingleTableQR(${i})"><i class="fa-solid fa-print"></i> طباعة هذه البطاقة (Print One)</button>
+                        <button class="btn btn-secondary qr-single-print-btn" style="padding:10px 12px;font-size:13px;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;" onclick="printSingleTableQR(${i})"><i class="fa-solid fa-print"></i> طباعة QR للطاولة ${i}</button>
                         <a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:var(--text-muted);font-size:11px;text-decoration:none;"><i class="fa-solid fa-arrow-up-right-from-square"></i> عرض صفحة العميل</a>
                     </div>`;
                 container.appendChild(box);
