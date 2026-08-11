@@ -2129,7 +2129,7 @@ td {
            Search-only: no AI generation and no paid image generation.
            One search per item, then cache the selected photo URL.
            ========================================================= */
-        const foodImageCacheKey = 'digital_menu_food_images_pexels_v1';
+        const foodImageCacheKey = 'digital_menu_food_images_pexels_v2';
         const pexelsKeyStorage = 'digital_menu_pexels_api_key';
         let foodImageCache = {};
         try { foodImageCache = JSON.parse(localStorage.getItem(foodImageCacheKey) || '{}') || {}; } catch (_) { foodImageCache = {}; }
@@ -2213,7 +2213,8 @@ td {
         }
         async function findFreeFoodImage(name, category, statusEl=null) {
             const key=`${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
-            if(foodImageCache[key]) return foodImageCache[key];
+            const cached=foodImageCache[key];
+            if(cached) return typeof cached === 'string' ? cached : (cached.url || cached.fallback || '');
             const apiKey=getPexelsApiKey();
             if(!apiKey) return '';
             const q=foodSearchText(name,category);
@@ -2226,10 +2227,12 @@ td {
                 const photos=Array.isArray(data.photos)?data.photos:[];
                 if(!photos.length) return '';
                 photos.sort((a,b)=>scorePexelsPhoto(b,q,name,category)-scorePexelsPhoto(a,q,name,category));
-                const best=photos.find(p=>p?.src?.large || p?.src?.large2x || p?.src?.medium);
-                const img=best?.src?.large2x || best?.src?.large || best?.src?.medium || '';
+                // Prefer the stable Pexels CDN 'large' URL for menu cards. Keep a medium
+                // fallback so a single CDN variant cannot leave a broken-image icon.
+                const best=photos.find(p=>p?.src?.large || p?.src?.medium || p?.src?.original);
+                const img=best?.src?.large || best?.src?.medium || best?.src?.original || '';
                 if(img) {
-                    foodImageCache[key]=img;
+                    foodImageCache[key]={url:img, fallback:best?.src?.medium || best?.src?.original || ''};
                     try { localStorage.setItem(foodImageCacheKey,JSON.stringify(foodImageCache)); } catch(_){ }
                     return img;
                 }
@@ -2327,6 +2330,36 @@ td {
             }
         }
 
+        function handleFoodImageError(imgEl) {
+            if (!imgEl || imgEl.dataset.retried === '1') {
+                if (imgEl) {
+                    imgEl.style.objectFit='cover';
+                    imgEl.style.background='linear-gradient(135deg, rgba(40,40,40,.95), rgba(90,70,20,.65))';
+                    imgEl.removeAttribute('src');
+                }
+                return;
+            }
+            imgEl.dataset.retried='1';
+            const itemId=imgEl.dataset.itemId;
+            const item=restaurantDataCache.items.find(i=>String(i.id)===String(itemId));
+            const key=`${String(item?.name||'').trim()}|${String(item?.category||'').trim()}`.toLowerCase();
+            const cached=foodImageCache[key];
+            const fallback=typeof cached==='object' ? cached.fallback : '';
+            if(fallback && fallback!==imgEl.src) {
+                imgEl.src=fallback;
+                return;
+            }
+            // Drop a bad cached URL so the next render can fetch a fresh Pexels result.
+            try { delete foodImageCache[key]; localStorage.setItem(foodImageCacheKey,JSON.stringify(foodImageCache)); } catch(_){}
+            if(item) item.img='';
+            imgEl.removeAttribute('src');
+            if(item) {
+                findFreeFoodImage(item.name,item.category).then(found=>{
+                    if(found) { item.img=found; item.imageSource='pexels-auto'; renderItems(); }
+                }).catch(()=>{});
+            }
+        }
+
         function renderItems() {
             let container = document.getElementById('currentItemsList');
             document.getElementById('itemsCount').innerText = restaurantDataCache.items.length;
@@ -2334,7 +2367,7 @@ td {
             container.innerHTML = restaurantDataCache.items.map(item => `
                 <div class="item-row">
                     <div class="item-info">
-                        <img src="${escapeHtml(item.img)}" alt="" loading="lazy">
+                        <img src="${escapeHtml(item.img || '')}" data-item-id="${escapeHtml(item.id)}" alt="${escapeHtml(item.name || '')}" loading="lazy" onerror="handleFoodImageError(this)">
                         <div>
                             <div style="font-weight:700;">${escapeHtml(item.name)} <span style="font-size:11px; color:var(--primary);">(${escapeHtml(item.category)})</span></div>
                             <div style="color:var(--secondary); font-size:14px; font-weight:700;">${item.price - (item.discount||0)} ج.م</div>
