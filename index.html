@@ -2378,7 +2378,7 @@ td {
         }
 
         function cleanOcrLine(value) {
-            return normalizeOcrDigits(value)
+            let line = normalizeOcrDigits(value)
                 .replace(/[©◯○◦•▪▫●■□◆◇♦️📌📍]/g, ' ')
                 .replace(/[|¦]/g, ' ')
                 // OCR frequently adds markdown/bullet/hash decoration before Arabic headings.
@@ -2387,6 +2387,30 @@ td {
                 .replace(/\s*[◦○●▪▫•]+\s*$/g, '')
                 .replace(/\s+/g, ' ')
                 .trim();
+
+            // Tesseract can hallucinate short Latin fragments inside Arabic text
+            // (for example: "dials", "dual", "dao"). Do not let those fragments
+            // become part of the saved product name/details. Legitimate bilingual
+            // food words are kept through this small allow-list.
+            const arabicCount = (line.match(/[\u0600-\u06FF]/g) || []).length;
+            if (arabicCount >= 2) {
+                const keepLatin = new Set([
+                    'burger','pizza','chicken','beef','fish','shrimp','cheese','crispy','fries','pasta',
+                    'salad','sauce','juice','coffee','tea','latte','mocha','cappuccino','nuggets','steak',
+                    'double','single','combo','meal','small','medium','large','kids','cola','water','rice',
+                    'sandwich','sandwiches','burger','dessert','cake','mozzarella','mango','lemon','orange'
+                ]);
+                const ocrNoise = new Set([
+                    'dials','dual','dao','dais','diols','dials','e-a','ea','aa','aaa','a','x','xx','pi','pa'
+                ]);
+                line = line.replace(/\b[A-Za-z][A-Za-z-]*\b/g, word => {
+                    const w = word.toLowerCase();
+                    if (ocrNoise.has(w)) return ' ';
+                    return keepLatin.has(w) ? word : ' ';
+                });
+                line = line.replace(/\s+/g, ' ').trim();
+            }
+            return line;
         }
 
         function normalizeArabicForMatch(value) {
