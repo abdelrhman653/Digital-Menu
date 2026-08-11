@@ -1600,6 +1600,16 @@ td {
                         }
                     }
                     restaurantDataCache = snapshotData;
+                    if (Array.isArray(restaurantDataCache.items) && restaurantDataCache.items.some(isAutoFoodImage)) {
+                        try {
+                            const before = restaurantDataCache.items.map(i => i.img);
+                            await enrichItemsWithFreeImages(restaurantDataCache.items);
+                            const changed = restaurantDataCache.items.some((i, idx) => i.img !== before[idx]);
+                            if (changed && ownerAccessAllowed && currentOwnerUser) {
+                                await window.FB.setDoc(window.FB.doc(window.FB.db, 'restaurants', currentRestaurant), { items: restaurantDataCache.items }, { merge: true });
+                            }
+                        } catch (imageRefreshErr) { console.warn('Automatic food image refresh skipped:', imageRefreshErr); }
+                    }
                     restaurantSnapshotRevision = restaurantLocalRevision;
 
                     // Live subscription check: if the owner expires or is suspended while
@@ -2106,60 +2116,97 @@ td {
         }
 
         /* =========================================================
-           FREE SMART FOOD IMAGE PICKER
-           No AI generation / no API key. Uses Wikimedia Commons
-           public search to find a relevant food photo by item name.
+           FREE SMART FOOD IMAGE PICKER v2
+           No AI generation / no API key.
+           Uses Wikimedia Commons and chooses a result by relevance,
+           so every item is searched from its own name instead of using
+           one generic photo for the whole menu.
            ========================================================= */
-        const foodImageCacheKey = 'digital_menu_food_images_v1';
+        const foodImageCacheKey = 'digital_menu_food_images_v2';
         let foodImageCache = {};
         try { foodImageCache = JSON.parse(localStorage.getItem(foodImageCacheKey) || '{}') || {}; } catch (_) { foodImageCache = {}; }
 
         const foodKeywordMap = {
-            'شاورما':'shawarma','شاورما فراخ':'chicken shawarma','شاورما لحم':'beef shawarma',
-            'برجر':'burger','برجر لحم':'beef burger','برجر فراخ':'chicken burger',
-            'بيتزا':'pizza','مارجريتا':'margherita pizza','مكرونة':'pasta','باستا':'pasta',
-            'كريب':'crepe','كريب فراخ':'chicken crepe','كفتة':'kofta','كباب':'kebab',
-            'فراخ':'chicken','دجاج':'chicken','لحمة':'beef','لحم':'beef','سمك':'fish',
-            'جمبري':'shrimp','روبيان':'shrimp','سجق':'sausage','كبدة':'liver',
+            'شاورما فراخ':'chicken shawarma','شاورما لحم':'beef shawarma','شاورما':'shawarma',
+            'برجر لحم':'beef burger','برجر فراخ':'chicken burger','برجر بالبيض':'egg burger','برجر':'burger',
+            'بيتزا مارجريتا':'margherita pizza','مارجريتا':'margherita pizza','بيتزا':'pizza',
+            'مكرونة':'pasta','باستا':'pasta','كريب فراخ':'chicken crepe','كريب':'crepe',
+            'كفتة':'kofta','كباب':'kebab','فراخ':'chicken','دجاج':'chicken','لحمة':'beef','لحم':'beef',
+            'سمك':'fish','جمبري':'shrimp','روبيان':'shrimp','سجق':'sausage','كبدة':'liver',
             'فتة':'fatteh','فول':'ful medames','طعمية':'falafel','فلافل':'falafel',
             'بطاطس':'french fries','بطاطا':'sweet potato','أرز':'rice','رز':'rice',
             'سلطة':'salad','شوربة':'soup','شوربه':'soup','ساندوتش':'sandwich','سندوتش':'sandwich',
             'ناجتس':'chicken nuggets','ستيك':'steak','مشويات':'grilled meat','مشوي':'grilled food',
             'كنافة':'kunafa','بقلاوة':'baklava','حلويات':'dessert','كيك':'cake','تشيز كيك':'cheesecake',
             'وافل':'waffle','بان كيك':'pancakes','آيس كريم':'ice cream','ايس كريم':'ice cream',
-            'عصير':'juice','مانجو':'mango juice','ليمون':'lemonade','قهوة':'coffee','كابتشينو':'cappuccino',
-            'لاتيه':'latte','شاي':'tea','مشروب':'drink','مشروبات':'drinks'
+            'عصير مانجو':'mango juice','عصير ليمون':'lemonade','عصير برتقال':'orange juice',
+            'عصير موز':'banana smoothie','عصير فراولة':'strawberry juice','مانجو':'mango','ليمون':'lemon',
+            'برتقال':'orange','موز':'banana','فراولة':'strawberry','عصير':'juice',
+            'قهوة':'coffee','كابتشينو':'cappuccino','لاتيه':'latte','شاي':'tea',
+            'مشروب':'drink','مشروبات':'drinks','بيض':'egg'
         };
 
+        const foodStopWords = new Set(['food','foods','restaurant','dish','dish food','menu','menus','item','items']);
+        const foodBadWords = ['salad','restaurant logo','menu','poster','advertisement','text only','drawing','illustration'];
+
         function foodSearchText(name, category) {
-            let text = `${name || ''} ${category || ''}`.trim();
+            let text = `${name || ''}`.trim();
             Object.keys(foodKeywordMap).sort((a,b)=>b.length-a.length).forEach(ar => {
-                text = text.replace(new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ` ${foodKeywordMap[ar]} `);
+                const re = new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                text = text.replace(re, ` ${foodKeywordMap[ar]} `);
             });
-            // Search Commons in English for better food-photo results.
-            const cleaned = text.replace(/[0-9]+/g,' ').replace(/[،,:;|/\\-]+/g,' ').replace(/\s+/g,' ').trim();
-            return cleaned || 'food restaurant dish';
+            // Category is only used as a weak hint; the item name is the main query.
+            const cleaned = text
+                .replace(/[0-9]+/g,' ')
+                .replace(/[،,:;|/\\-]+/g,' ')
+                .replace(/\s+/g,' ')
+                .trim();
+            return cleaned || 'food dish';
+        }
+
+        function isAutoFoodImage(item) {
+            const img = String(item?.img || '');
+            return !img || img === 'AUTO_IMAGE' || item?.imageSource === 'auto' ||
+                img.includes('commons.wikimedia.org') || img.includes('upload.wikimedia.org') ||
+                img.includes('images.unsplash.com/photo-1546069901-ba9599a7e63c');
+        }
+
+        function scoreFoodImage(page, query) {
+            const info = page.imageinfo?.[0] || {};
+            const title = String(page.title || '').toLowerCase();
+            const text = `${title} ${String(info.descriptionurl || '').toLowerCase()}`;
+            const tokens = query.toLowerCase().split(/\s+/).filter(t => t.length >= 3 && !foodStopWords.has(t));
+            let score = 0;
+            tokens.forEach(t => {
+                if (title.includes(t)) score += 8;
+                if (text.includes(t)) score += 2;
+            });
+            foodBadWords.forEach(w => { if (text.includes(w)) score -= 10; });
+            if (/\b(burger|pizza|shawarma|pasta|juice|lemonade|smoothie|coffee|tea|dessert|cake|ice cream|fries|chicken|beef|fish|shrimp|egg)\b/i.test(query)) score += 2;
+            return score;
         }
 
         async function findFreeFoodImage(name, category, statusEl=null) {
             const key = `${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
             if (foodImageCache[key]) return foodImageCache[key];
 
-            const q = `${foodSearchText(name, category)} food`;
-            const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch=' + encodeURIComponent(q) + '&prop=imageinfo&iiprop=url|mime&iiurlwidth=700&format=json&origin=*';
+            const q = foodSearchText(name, category);
+            const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=' + encodeURIComponent(q) + '&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=700&format=json&origin=*';
             try {
                 if (statusEl) statusEl.innerText = `جاري اختيار صورة مناسبة لـ ${name}...`;
                 const response = await fetch(url, { cache: 'no-store' });
                 if (!response.ok) throw new Error('image search failed');
                 const data = await response.json();
                 const pages = Object.values(data.query?.pages || {});
-                const candidate = pages.find(page => {
+                const candidates = pages.filter(page => {
                     const info = page.imageinfo?.[0];
                     const mime = String(info?.mime || '').toLowerCase();
                     const u = String(info?.thumburl || info?.url || '');
                     return u && !mime.includes('svg') && /\.(jpe?g|png|webp)(\?|$)/i.test(u);
-                }) || pages.find(page => page.imageinfo?.[0]?.thumburl || page.imageinfo?.[0]?.url);
-                const img = candidate?.imageinfo?.[0]?.thumburl || candidate?.imageinfo?.[0]?.url || '';
+                });
+                candidates.sort((a,b) => scoreFoodImage(b, q) - scoreFoodImage(a, q));
+                const best = candidates[0];
+                const img = best?.imageinfo?.[0]?.thumburl || best?.imageinfo?.[0]?.url || '';
                 if (img) {
                     foodImageCache[key] = img;
                     try { localStorage.setItem(foodImageCacheKey, JSON.stringify(foodImageCache)); } catch (_) {}
@@ -2169,6 +2216,23 @@ td {
                 console.warn('Free food image search failed:', e);
             }
             return '';
+        }
+
+        async function enrichItemsWithFreeImages(items, statusEl=null) {
+            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
+            let done = 0;
+            for (const item of items) {
+                if (isAutoFoodImage(item)) {
+                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
+                    if (found) {
+                        item.img = found;
+                        item.imageSource = 'auto';
+                    }
+                }
+                done++;
+                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
+            }
+            return items;
         }
 
         function autoImagesEnabled() {
@@ -2207,9 +2271,13 @@ td {
             const previousItems = restaurantDataCache.items.map(i => ({...i}));
             if (editId) {
                 let item = restaurantDataCache.items.find(i => i.id == editId);
-                if (item) { item.name=name; item.category=category; item.price=price; item.discount=discount; if(uploadedImageFile && img) item.img=img; }
+                if (item) {
+                    item.name=name; item.category=category; item.price=price; item.discount=discount;
+                    if(uploadedImageFile && img) { item.img=img; item.imageSource='manual'; }
+                    else if (!item.img || isAutoFoodImage(item)) { item.img=img; item.imageSource='auto'; }
+                }
             } else {
-                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, img });
+                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, img, imageSource: uploadedImageFile ? 'manual' : 'auto' });
             }
             renderItems();
             try {
@@ -2314,7 +2382,12 @@ td {
                 });
                 stat.innerText = 'تم استخراج الأصناف. جاري اختيار صورة مناسبة لكل صنف...';
                 await enrichItemsWithFreeImages(items, stat);
-                items.forEach(item => { if (item.img === 'AUTO_IMAGE') item.img = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500"; });
+                items.forEach(item => {
+                    if (item.img === 'AUTO_IMAGE' || !item.img) {
+                        item.img = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=500";
+                        item.imageSource = 'auto-fallback';
+                    }
+                });
                 restaurantDataCache.categories = cats;
                 restaurantDataCache.items = items;
                 updateCategoryDropdown();
