@@ -1086,6 +1086,10 @@ td {
                             <div id="aiMenuSavedStatus" style="font-size:12px;color:var(--secondary);margin-top:7px;"></div>
                         </div>
                         <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
+                        <label style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border:1px solid var(--panel-border);border-radius:14px;background:var(--input-bg);cursor:pointer;font-weight:700;">
+                            <input id="autoFoodImages" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary);">
+                            <span>اختيار صورة أكل مناسبة تلقائيًا لكل صنف (مجاني، بدون توليد AI)</span>
+                        </label>
                         <div style="display: flex; gap: 16px; margin-top: 16px;">
                             <button class="btn btn-ai" id="parseAiBtn" style="flex: 2;" onclick="importBilingualMenuOCR(false)"><i class="fa-solid fa-brain"></i> <span data-i18n="btn_import_ocr">قراءة واستيراد المنيو ➕</span></button>
                             <button class="btn btn-danger" id="parseAiReplaceBtn" style="flex: 1;" onclick="importBilingualMenuOCR(true)"><i class="fa-solid fa-rotate"></i> <span data-i18n="btn_replace_ocr">استبدال 🔄</span></button>
@@ -1134,6 +1138,7 @@ td {
                             </div>
                             
                             <div style="display: flex; gap: 10px; margin-top: 20px;">
+                                <div id="itemImageStatus" style="font-size:12px;color:var(--secondary);margin:8px 0;text-align:center;"></div>
                                 <button class="btn" id="saveItemBtn" style="flex: 1;" onclick="saveItemAction()"><i class="fa-solid fa-rocket"></i> <span data-i18n="btn_save_item">إضافة الصنف</span></button>
                                 <button class="btn btn-secondary hidden" id="cancelEditBtn" onclick="resetItemForm()" data-i18n="btn_cancel">إلغاء</button>
                             </div>
@@ -2100,6 +2105,91 @@ td {
             if (uploadedImageFile) document.getElementById('fileNameDisplay').innerText = uploadedImageFile.name;
         }
 
+        /* =========================================================
+           FREE SMART FOOD IMAGE PICKER
+           No AI generation / no API key. Uses Wikimedia Commons
+           public search to find a relevant food photo by item name.
+           ========================================================= */
+        const foodImageCacheKey = 'digital_menu_food_images_v1';
+        let foodImageCache = {};
+        try { foodImageCache = JSON.parse(localStorage.getItem(foodImageCacheKey) || '{}') || {}; } catch (_) { foodImageCache = {}; }
+
+        const foodKeywordMap = {
+            'شاورما':'shawarma','شاورما فراخ':'chicken shawarma','شاورما لحم':'beef shawarma',
+            'برجر':'burger','برجر لحم':'beef burger','برجر فراخ':'chicken burger',
+            'بيتزا':'pizza','مارجريتا':'margherita pizza','مكرونة':'pasta','باستا':'pasta',
+            'كريب':'crepe','كريب فراخ':'chicken crepe','كفتة':'kofta','كباب':'kebab',
+            'فراخ':'chicken','دجاج':'chicken','لحمة':'beef','لحم':'beef','سمك':'fish',
+            'جمبري':'shrimp','روبيان':'shrimp','سجق':'sausage','كبدة':'liver',
+            'فتة':'fatteh','فول':'ful medames','طعمية':'falafel','فلافل':'falafel',
+            'بطاطس':'french fries','بطاطا':'sweet potato','أرز':'rice','رز':'rice',
+            'سلطة':'salad','شوربة':'soup','شوربه':'soup','ساندوتش':'sandwich','سندوتش':'sandwich',
+            'ناجتس':'chicken nuggets','ستيك':'steak','مشويات':'grilled meat','مشوي':'grilled food',
+            'كنافة':'kunafa','بقلاوة':'baklava','حلويات':'dessert','كيك':'cake','تشيز كيك':'cheesecake',
+            'وافل':'waffle','بان كيك':'pancakes','آيس كريم':'ice cream','ايس كريم':'ice cream',
+            'عصير':'juice','مانجو':'mango juice','ليمون':'lemonade','قهوة':'coffee','كابتشينو':'cappuccino',
+            'لاتيه':'latte','شاي':'tea','مشروب':'drink','مشروبات':'drinks'
+        };
+
+        function foodSearchText(name, category) {
+            let text = `${name || ''} ${category || ''}`.trim();
+            Object.keys(foodKeywordMap).sort((a,b)=>b.length-a.length).forEach(ar => {
+                text = text.replace(new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ` ${foodKeywordMap[ar]} `);
+            });
+            // Search Commons in English for better food-photo results.
+            const cleaned = text.replace(/[0-9]+/g,' ').replace(/[،,:;|/\\-]+/g,' ').replace(/\s+/g,' ').trim();
+            return cleaned || 'food restaurant dish';
+        }
+
+        async function findFreeFoodImage(name, category, statusEl=null) {
+            const key = `${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
+            if (foodImageCache[key]) return foodImageCache[key];
+
+            const q = `${foodSearchText(name, category)} food`;
+            const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch=' + encodeURIComponent(q) + '&prop=imageinfo&iiprop=url|mime&iiurlwidth=700&format=json&origin=*';
+            try {
+                if (statusEl) statusEl.innerText = `جاري اختيار صورة مناسبة لـ ${name}...`;
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) throw new Error('image search failed');
+                const data = await response.json();
+                const pages = Object.values(data.query?.pages || {});
+                const candidate = pages.find(page => {
+                    const info = page.imageinfo?.[0];
+                    const mime = String(info?.mime || '').toLowerCase();
+                    const u = String(info?.thumburl || info?.url || '');
+                    return u && !mime.includes('svg') && /\.(jpe?g|png|webp)(\?|$)/i.test(u);
+                }) || pages.find(page => page.imageinfo?.[0]?.thumburl || page.imageinfo?.[0]?.url);
+                const img = candidate?.imageinfo?.[0]?.thumburl || candidate?.imageinfo?.[0]?.url || '';
+                if (img) {
+                    foodImageCache[key] = img;
+                    try { localStorage.setItem(foodImageCacheKey, JSON.stringify(foodImageCache)); } catch (_) {}
+                    return img;
+                }
+            } catch (e) {
+                console.warn('Free food image search failed:', e);
+            }
+            return '';
+        }
+
+        function autoImagesEnabled() {
+            const el = document.getElementById('autoFoodImages');
+            return !el || el.checked;
+        }
+
+        async function enrichItemsWithFreeImages(items, statusEl=null) {
+            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
+            let done = 0;
+            for (const item of items) {
+                if (!item.img || item.img === 'AUTO_IMAGE') {
+                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
+                    if (found) item.img = found;
+                }
+                done++;
+                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
+            }
+            return items;
+        }
+
         async function saveItemAction() {
             let editId = document.getElementById('editItemId').value;
             let name = document.getElementById('newItemName').value.trim();
@@ -2108,7 +2198,11 @@ td {
             let discount = Number(document.getElementById('newItemDiscount').value) || 0;
 
             if (!name || !price) return showCustomAlert('الرجاء إدخال الاسم والسعر');
-            let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
+            let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : '';
+            if (!img && autoImagesEnabled()) {
+                img = await findFreeFoodImage(name, category, document.getElementById('itemImageStatus'));
+            }
+            if (!img) img = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
             
             const previousItems = restaurantDataCache.items.map(i => ({...i}));
             if (editId) {
@@ -2213,11 +2307,14 @@ td {
                         let price = parseInt(pm[pm.length-1]);
                         let name = line.replace(/(\d+)/g, '').replace(/ريال|ج.م|جنيه|usd|\$|egp|SAR/gi, '').replace(/[\~\-\.\,\*\+\/]/g, '').trim();
                         if(name.length>=2 && price>0) {
-                            items.push({ id: Date.now()+i+Math.random(), name, category: curCat, price, discount: 0, img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500' });
+                            items.push({ id: Date.now()+i+Math.random(), name, category: curCat, price, discount: 0, img: 'AUTO_IMAGE' });
                             added++;
                         }
                     }
                 });
+                stat.innerText = 'تم استخراج الأصناف. جاري اختيار صورة مناسبة لكل صنف...';
+                await enrichItemsWithFreeImages(items, stat);
+                items.forEach(item => { if (item.img === 'AUTO_IMAGE') item.img = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500"; });
                 restaurantDataCache.categories = cats;
                 restaurantDataCache.items = items;
                 updateCategoryDropdown();
