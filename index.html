@@ -1241,6 +1241,15 @@ td {
                                 <input type="color" id="brandBgColor" value="#0c090a">
                             </div>
                         </div>
+                        <div style="margin-top:18px; padding:16px; border-radius:18px; background:rgba(255,255,255,.035); border:1px solid var(--panel-border);">
+                            <div style="font-weight:800; margin-bottom:6px;"><i class="fa-solid fa-camera-retro" style="color:var(--primary);"></i> صور الأصناف التلقائية — Pexels</div>
+                            <div style="font-size:12px; color:var(--text-muted); line-height:1.7; margin-bottom:10px;">اكتب مفتاح Pexels المجاني هنا. سيتم استخدامه فقط للبحث عن صور أكل احترافية حسب اسم الصنف، وليس لتوليد الصور.</div>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input id="pexelsApiKeyInput" type="password" placeholder="Pexels API Key" autocomplete="off" style="flex:1;">
+                                <button class="btn btn-secondary" type="button" onclick="savePexelsApiKey()"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
+                            </div>
+                            <div id="pexelsKeyStatus" style="font-size:11px; margin-top:8px; color:var(--text-muted);"></div>
+                        </div>
                         <div style="margin-top:12px; padding:12px 14px; border-radius:12px; background:rgba(46,213,115,.08); border:1px solid rgba(46,213,115,.15); font-size:12px; color:var(--text-muted);">
                             <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--secondary);"></i> لون البطاقات والنصوص يتم ضبطهما تلقائياً بما يناسب الخلفية والبراند، لذلك لن تحتاج إلى اختيار ألوان إضافية.
                         </div>
@@ -2116,13 +2125,12 @@ td {
         }
 
         /* =========================================================
-           FREE SMART FOOD IMAGE PICKER v2
-           No AI generation / no API key.
-           Uses Wikimedia Commons and chooses a result by relevance,
-           so every item is searched from its own name instead of using
-           one generic photo for the whole menu.
+           FREE SMART FOOD IMAGE PICKER — PEXELS
+           Search-only: no AI generation and no paid image generation.
+           One search per item, then cache the selected photo URL.
            ========================================================= */
-        const foodImageCacheKey = 'digital_menu_food_images_v2';
+        const foodImageCacheKey = 'digital_menu_food_images_pexels_v1';
+        const pexelsKeyStorage = 'digital_menu_pexels_api_key';
         let foodImageCache = {};
         try { foodImageCache = JSON.parse(localStorage.getItem(foodImageCacheKey) || '{}') || {}; } catch (_) { foodImageCache = {}; }
 
@@ -2139,119 +2147,118 @@ td {
             'ناجتس':'chicken nuggets','ستيك':'steak','مشويات':'grilled meat','مشوي':'grilled food',
             'كنافة':'kunafa','بقلاوة':'baklava','حلويات':'dessert','كيك':'cake','تشيز كيك':'cheesecake',
             'وافل':'waffle','بان كيك':'pancakes','آيس كريم':'ice cream','ايس كريم':'ice cream',
-            'عصير مانجو':'mango juice','عصير ليمون':'lemonade','عصير برتقال':'orange juice',
+            'عصير مانجو':'mango juice','عصير ليمون':'lemon lemonade','عصير برتقال':'orange juice',
             'عصير موز':'banana smoothie','عصير فراولة':'strawberry juice','مانجو':'mango','ليمون':'lemon',
             'برتقال':'orange','موز':'banana','فراولة':'strawberry','عصير':'juice',
             'قهوة':'coffee','كابتشينو':'cappuccino','لاتيه':'latte','شاي':'tea',
             'مشروب':'drink','مشروبات':'drinks','بيض':'egg'
         };
 
-        const foodStopWords = new Set(['food','foods','restaurant','dish','dish food','menu','menus','item','items']);
-        const foodBadWords = ['salad','restaurant logo','menu','poster','advertisement','text only','drawing','illustration'];
+        const genericFoodTerms = new Set(['food','restaurant','dish','menu','item','items','drink','drinks']);
+        const badPhotoTerms = ['logo','poster','menu','text','illustration','drawing','advertisement','person holding','packaged'];
+        const goodPhotoTerms = ['food','dish','meal','restaurant','fresh','delicious','homemade','cuisine','plate','drink','burger','pizza','chicken','beef','juice','dessert'];
 
+        function getPexelsApiKey() {
+            return String(localStorage.getItem(pexelsKeyStorage) || '').trim();
+        }
+        function savePexelsApiKey() {
+            const el=document.getElementById('pexelsApiKeyInput');
+            const key=String(el?.value || '').trim();
+            if(!key) return showCustomAlert('اكتب مفتاح Pexels أولاً');
+            localStorage.setItem(pexelsKeyStorage,key);
+            const st=document.getElementById('pexelsKeyStatus'); if(st) st.innerText='تم حفظ مفتاح Pexels على هذا الجهاز.';
+            showCustomAlert('تم حفظ مفتاح Pexels');
+        }
+        function loadPexelsApiKeyUI() {
+            const el=document.getElementById('pexelsApiKeyInput');
+            const st=document.getElementById('pexelsKeyStatus');
+            if(el && getPexelsApiKey()) el.value=getPexelsApiKey();
+            if(st) st.innerText=getPexelsApiKey() ? 'مفتاح Pexels محفوظ.' : 'لم يتم إضافة مفتاح بعد.';
+        }
         function foodSearchText(name, category) {
-            let text = `${name || ''}`.trim();
-            Object.keys(foodKeywordMap).sort((a,b)=>b.length-a.length).forEach(ar => {
-                const re = new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-                text = text.replace(re, ` ${foodKeywordMap[ar]} `);
+            let raw = String(name || '').trim();
+            let mapped = raw;
+            Object.keys(foodKeywordMap).sort((a,b)=>b.length-a.length).forEach(ar=>{
+                mapped = mapped.replace(new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), ` ${foodKeywordMap[ar]} `);
             });
-            // Category is only used as a weak hint; the item name is the main query.
-            const cleaned = text
-                .replace(/[0-9]+/g,' ')
-                .replace(/[،,:;|/\\-]+/g,' ')
-                .replace(/\s+/g,' ')
-                .trim();
-            return cleaned || 'food dish';
+            const cat=String(category||'').trim();
+            let categoryHint='';
+            if(cat) {
+                const c=foodKeywordMap[cat] || cat;
+                categoryHint=` ${c}`;
+            }
+            const q=`${mapped} ${categoryHint} food restaurant photography`.replace(/\s+/g,' ').trim();
+            return q;
         }
-
         function isAutoFoodImage(item) {
-            const img = String(item?.img || '');
-            return !img || img === 'AUTO_IMAGE' || item?.imageSource === 'auto' ||
-                img.includes('commons.wikimedia.org') || img.includes('upload.wikimedia.org') ||
-                img.includes('images.unsplash.com/photo-1546069901-ba9599a7e63c');
+            const img=String(item?.img||'');
+            return !img || img==='AUTO_IMAGE' || item?.imageSource==='auto' || item?.imageSource==='auto-fallback' || img.includes('commons.wikimedia.org') || img.includes('upload.wikimedia.org') || img.includes('images.unsplash.com');
         }
-
-        function scoreFoodImage(page, query) {
-            const info = page.imageinfo?.[0] || {};
-            const title = String(page.title || '').toLowerCase();
-            const text = `${title} ${String(info.descriptionurl || '').toLowerCase()}`;
-            const tokens = query.toLowerCase().split(/\s+/).filter(t => t.length >= 3 && !foodStopWords.has(t));
-            let score = 0;
-            tokens.forEach(t => {
-                if (title.includes(t)) score += 8;
-                if (text.includes(t)) score += 2;
-            });
-            foodBadWords.forEach(w => { if (text.includes(w)) score -= 10; });
-            if (/\b(burger|pizza|shawarma|pasta|juice|lemonade|smoothie|coffee|tea|dessert|cake|ice cream|fries|chicken|beef|fish|shrimp|egg)\b/i.test(query)) score += 2;
+        function scorePexelsPhoto(photo, query, name, category) {
+            const alt=String(photo?.alt||'').toLowerCase();
+            const q=query.toLowerCase();
+            let score=0;
+            const tokens=q.split(/\s+/).filter(t=>t.length>=3 && !genericFoodTerms.has(t));
+            tokens.forEach(t=>{ if(alt.includes(t)) score+=10; if(q.includes(t) && alt.includes(t)) score+=3; });
+            goodPhotoTerms.forEach(t=>{ if(alt.includes(t)) score+=2; });
+            badPhotoTerms.forEach(t=>{ if(alt.includes(t)) score-=20; });
+            const w=Number(photo?.width||0), h=Number(photo?.height||0);
+            if(w>=1200) score+=5;
+            if(h>=700) score+=3;
+            if(w>h) score+=4;
+            const exact=String(name||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').trim();
+            if(exact && alt.includes(exact)) score+=20;
+            if(String(category||'').trim() && alt.includes(String(category).toLowerCase())) score+=4;
             return score;
         }
-
         async function findFreeFoodImage(name, category, statusEl=null) {
-            const key = `${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
-            if (foodImageCache[key]) return foodImageCache[key];
-
-            const q = foodSearchText(name, category);
-            const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=' + encodeURIComponent(q) + '&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=700&format=json&origin=*';
+            const key=`${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
+            if(foodImageCache[key]) return foodImageCache[key];
+            const apiKey=getPexelsApiKey();
+            if(!apiKey) return '';
+            const q=foodSearchText(name,category);
             try {
-                if (statusEl) statusEl.innerText = `جاري اختيار صورة مناسبة لـ ${name}...`;
-                const response = await fetch(url, { cache: 'no-store' });
-                if (!response.ok) throw new Error('image search failed');
-                const data = await response.json();
-                const pages = Object.values(data.query?.pages || {});
-                const candidates = pages.filter(page => {
-                    const info = page.imageinfo?.[0];
-                    const mime = String(info?.mime || '').toLowerCase();
-                    const u = String(info?.thumburl || info?.url || '');
-                    return u && !mime.includes('svg') && /\.(jpe?g|png|webp)(\?|$)/i.test(u);
-                });
-                candidates.sort((a,b) => scoreFoodImage(b, q) - scoreFoodImage(a, q));
-                const best = candidates[0];
-                const img = best?.imageinfo?.[0]?.thumburl || best?.imageinfo?.[0]?.url || '';
-                if (img) {
-                    foodImageCache[key] = img;
-                    try { localStorage.setItem(foodImageCacheKey, JSON.stringify(foodImageCache)); } catch (_) {}
+                if(statusEl) statusEl.innerText=`جاري اختيار صورة احترافية لـ ${name}...`;
+                const endpoint='https://api.pexels.com/v1/search?'+new URLSearchParams({query:q,orientation:'landscape',size:'large',per_page:'30',locale:'en-US'}).toString();
+                const response=await fetch(endpoint,{headers:{Authorization:apiKey}});
+                if(!response.ok) throw new Error(`Pexels HTTP ${response.status}`);
+                const data=await response.json();
+                const photos=Array.isArray(data.photos)?data.photos:[];
+                if(!photos.length) return '';
+                photos.sort((a,b)=>scorePexelsPhoto(b,q,name,category)-scorePexelsPhoto(a,q,name,category));
+                const best=photos.find(p=>p?.src?.large || p?.src?.large2x || p?.src?.medium);
+                const img=best?.src?.large2x || best?.src?.large || best?.src?.medium || '';
+                if(img) {
+                    foodImageCache[key]=img;
+                    try { localStorage.setItem(foodImageCacheKey,JSON.stringify(foodImageCache)); } catch(_){ }
                     return img;
                 }
-            } catch (e) {
-                console.warn('Free food image search failed:', e);
+            } catch(e) {
+                console.warn('Pexels food image search failed:',e);
+                if(statusEl) statusEl.innerText='تعذر البحث عن صورة تلقائيًا؛ يمكنك رفع صورة يدويًا.';
             }
             return '';
         }
-
-        async function enrichItemsWithFreeImages(items, statusEl=null) {
-            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
-            let done = 0;
-            for (const item of items) {
-                if (isAutoFoodImage(item)) {
-                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
-                    if (found) {
-                        item.img = found;
-                        item.imageSource = 'auto';
-                    }
+        async function enrichItemsWithFreeImages(items,statusEl=null) {
+            if(!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
+            if(!getPexelsApiKey()) {
+                if(statusEl) statusEl.innerText='أضف مفتاح Pexels من الإعدادات لتفعيل الصور التلقائية.';
+                return items;
+            }
+            let done=0;
+            for(const item of items) {
+                if(isAutoFoodImage(item)) {
+                    const found=await findFreeFoodImage(item.name,item.category,statusEl);
+                    if(found) { item.img=found; item.imageSource='pexels-auto'; }
                 }
                 done++;
-                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
+                if(statusEl) statusEl.innerText=`تجهيز صور الأصناف... ${done}/${items.length}`;
             }
             return items;
         }
-
         function autoImagesEnabled() {
-            const el = document.getElementById('autoFoodImages');
+            const el=document.getElementById('autoFoodImages');
             return !el || el.checked;
-        }
-
-        async function enrichItemsWithFreeImages(items, statusEl=null) {
-            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
-            let done = 0;
-            for (const item of items) {
-                if (!item.img || item.img === 'AUTO_IMAGE') {
-                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
-                    if (found) item.img = found;
-                }
-                done++;
-                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
-            }
-            return items;
         }
 
         async function saveItemAction() {
@@ -2266,7 +2273,7 @@ td {
             if (!img && autoImagesEnabled()) {
                 img = await findFreeFoodImage(name, category, document.getElementById('itemImageStatus'));
             }
-            if (!img) img = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
+            if (!img) img = "";
             
             const previousItems = restaurantDataCache.items.map(i => ({...i}));
             if (editId) {
@@ -2383,9 +2390,9 @@ td {
                 stat.innerText = 'تم استخراج الأصناف. جاري اختيار صورة مناسبة لكل صنف...';
                 await enrichItemsWithFreeImages(items, stat);
                 items.forEach(item => {
-                    if (item.img === 'AUTO_IMAGE' || !item.img) {
-                        item.img = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=500";
-                        item.imageSource = 'auto-fallback';
+                    if (item.img === 'AUTO_IMAGE') {
+                        item.img = "";
+                        item.imageSource = 'auto-pending';
                     }
                 });
                 restaurantDataCache.categories = cats;
@@ -2497,6 +2504,8 @@ td {
             }
         }
 
-    </script>
+    
+        try { setTimeout(loadPexelsApiKeyUI, 400); } catch(_) {}
+</script>
 </body>
 </html>
