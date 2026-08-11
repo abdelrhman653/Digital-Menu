@@ -2379,8 +2379,12 @@ td {
 
         function cleanOcrLine(value) {
             return normalizeOcrDigits(value)
-                .replace(/[©◯○◦•▪▫●■□◆◇♦️]/g, ' ')
+                .replace(/[©◯○◦•▪▫●■□◆◇♦️📌📍]/g, ' ')
                 .replace(/[|¦]/g, ' ')
+                // OCR frequently adds markdown/bullet/hash decoration before Arabic headings.
+                .replace(/^[#*+~^_`]+\s*/g, '')
+                .replace(/^[-–—:،,.;:]+\s*/g, '')
+                .replace(/\s*[◦○●▪▫•]+\s*$/g, '')
                 .replace(/\s+/g, ' ')
                 .trim();
         }
@@ -2410,13 +2414,27 @@ td {
         ];
 
         function detectMenuCategory(line) {
-            const cleaned = cleanOcrLine(line);
+            const cleaned = cleanOcrLine(line)
+                .replace(/^[#*+~^_`\-–—:،,.؛;]+\s*/g, '')
+                .replace(/[\uFE0F]/g, '')
+                .trim();
             let n = normalizeArabicForMatch(cleaned)
                 .replace(/^(?:هر|ه|ا|aa|a)\s+/i, '')
                 .trim();
-            if (!n || n.length > 60) return '';
+            if (!n || n.length > 70) return '';
+
+            // Exact match first. The normalized comparison handles common Arabic OCR variants.
             const hit = MENU_CATEGORY_WORDS.find(cat => normalizeArabicForMatch(cat) === n);
-            return hit ? cleaned.replace(/^(?:هر|ه|ا|aa|a)\s+/i, '').trim() : '';
+            if (hit) return cleaned.replace(/^(?:هر|ه|ا|aa|a)\s+/i, '').trim();
+
+            // OCR may prepend a heading with a stray word/marker. Match known category names
+            // when they are clearly present at the start/end of the line.
+            for (const cat of MENU_CATEGORY_WORDS) {
+                const cn = normalizeArabicForMatch(cat);
+                if (!cn || cn.length < 4) continue;
+                if (n === cn || n.startsWith(cn + ' ') || n.endsWith(' ' + cn)) return cat;
+            }
+            return '';
         }
 
         function extractOcrPrice(line) {
@@ -2602,24 +2620,47 @@ td {
         function parseStructuredMenuLines(lines, replace) {
             const items = replace ? [] : [...(restaurantDataCache.items || [])];
             const cats = replace ? [] : [...(restaurantDataCache.categories || [])];
-            let curCat = 'أكلات';
+            let curCat = replace ? '' : (cats[0] || 'أكلات');
             let pending = null;
             let added = 0;
 
+            const normalizeName = value => cleanOcrLine(value)
+                .replace(/^(?:اسم الصنف|الصنف|item|name)\s*[:：-]?\s*/i, '')
+                .replace(/^[#*+~^_`\-–—:،,.؛;]+\s*/g, '')
+                .trim();
+
             const ensureCategory = cat => {
-                curCat = cat || curCat;
-                if (!cats.some(c => normalizeArabicForMatch(c) === normalizeArabicForMatch(curCat))) cats.push(curCat);
+                const value = cleanOcrLine(cat);
+                if (!value) return;
+                curCat = value;
+                if (!cats.some(c => normalizeArabicForMatch(c) === normalizeArabicForMatch(value))) cats.push(value);
             };
 
             const finalizePending = price => {
-                if (!pending) return;
-                const name = cleanOcrLine(pending.name).replace(/^[\-–—:،,\.\s]+|[\-–—:،,\.\s]+$/g, '').trim();
+                if (!pending || !Number.isFinite(price) || price <= 0) return;
+                const name = normalizeName(pending.name);
                 const details = cleanOcrLine(pending.details || '').trim();
-                if (name.length >= 2 && price > 0 && !detectMenuCategory(name)) {
-                    items.push({ id: Date.now() + Math.random(), name, category: pending.category || curCat, price, discount: 0, details, img: 'AUTO_IMAGE' });
+                const category = pending.category || curCat || 'أكلات';
+                if (name.length >= 2 && !detectMenuCategory(name) && !/^\d+$/.test(name)) {
+                    // Guard against OCR accidentally turning a category heading into a product.
+                    items.push({
+                        id: Date.now() + Math.random(),
+                        name,
+                        category,
+                        price,
+                        discount: 0,
+                        details,
+                        img: 'AUTO_IMAGE'
+                    });
                     added++;
                 }
                 pending = null;
+            };
+
+            const startPending = (name, details='') => {
+                const cleanName = normalizeName(name);
+                if (!cleanName || detectMenuCategory(cleanName)) return;
+                pending = { name: cleanName, category: curCat || 'أكلات', details: cleanOcrLine(details || '') };
             };
 
             for (let i = 0; i < lines.length; i++) {
@@ -2628,7 +2669,14 @@ td {
 
                 const category = detectMenuCategory(line);
                 if (category) {
-                    if (pending) pending = null;
+                    // A heading belongs to the next products. Do not let it become an item title.
+                    if (pending && pending.name && i > 0) {
+                        // If a category appears before the pending item's price, keep the pending item
+                        // only if a price follows immediately; otherwise discard the incomplete OCR record.
+                        const nextPrice = i + 1 < lines.length ? extractOcrPrice(lines[i + 1]) : null;
+                        if (nextPrice) finalizePending(nextPrice);
+                        else pending = null;
+                    }
                     ensureCategory(category);
                     continue;
                 }
@@ -2639,39 +2687,48 @@ td {
 
                 if (detailsLine) {
                     const detailText = stripOcrDetailsLabel(line);
-                    if (!pending && i > 0 && looksLikeOcrItemTitle(lines[i - 1])) pending = { name: cleanOcrLine(lines[i - 1]), category: curCat, details: '' };
+                    if (!pending && i > 0) {
+                        const previous = normalizeName(lines[i - 1]);
+                        if (looksLikeOcrItemTitle(previous) && !detectMenuCategory(previous)) {
+                            startPending(previous);
+                        }
+                    }
                     if (pending && detailText) pending.details = appendUniqueOcrDetail(pending.details, detailText);
                     continue;
                 }
 
                 if (price) {
-                    const namePart = stripOcrPriceAndLabels(line);
+                    const namePart = normalizeName(stripOcrPriceAndLabels(line));
                     if (pending) {
-                        if (!priceOnly && namePart && looksLikeOcrItemTitle(namePart) && normalizeArabicForMatch(namePart) !== normalizeArabicForMatch(pending.name)) {
+                        if (!priceOnly && namePart && looksLikeOcrItemTitle(namePart) &&
+                            normalizeArabicForMatch(namePart) !== normalizeArabicForMatch(pending.name)) {
+                            // Occasionally OCR places the item name and price on one line after a wrapped title.
                             pending.name = `${pending.name} ${namePart}`.trim();
                         }
                         finalizePending(price);
-                    } else if (!priceOnly && namePart && looksLikeOcrItemTitle(namePart)) {
-                        items.push({ id: Date.now() + Math.random(), name: namePart, category: curCat, price, discount: 0, details: '', img: 'AUTO_IMAGE' });
+                    } else if (!priceOnly && namePart && looksLikeOcrItemTitle(namePart) && !detectMenuCategory(namePart)) {
+                        items.push({ id: Date.now() + Math.random(), name: namePart, category: curCat || 'أكلات', price, discount: 0, details: '', img: 'AUTO_IMAGE' });
                         added++;
                     }
                     continue;
                 }
 
                 if (looksLikeOcrItemTitle(line)) {
-                    if (pending && (pending.details || line.length >= 18)) {
-                        // Long text after an item title is usually a wrapped description line.
+                    if (!pending) {
+                        startPending(line);
+                    } else if (pending.details || line.length >= 22) {
+                        // Long Arabic text following a title is usually a wrapped description.
                         pending.details = appendUniqueOcrDetail(pending.details, line);
-                    } else if (pending) {
-                        // Short duplicate title: keep the newest OCR title.
-                        pending = { name: line, category: curCat, details: '' };
                     } else {
-                        pending = { name: line, category: curCat, details: '' };
+                        // A short new title means OCR has started the next item; keep the newest title.
+                        startPending(line);
                     }
                     continue;
                 }
 
-                if (pending && line.length >= 12) pending.details = appendUniqueOcrDetail(pending.details, line);
+                if (pending && line.length >= 12) {
+                    pending.details = appendUniqueOcrDetail(pending.details, line);
+                }
             }
 
             return { items, categories: cats, added };
