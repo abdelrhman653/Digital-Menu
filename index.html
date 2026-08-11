@@ -1127,7 +1127,13 @@ td {
                                     <input type="number" id="newItemDiscount" placeholder="0">
                                 </div>
                             </div>
-                            
+
+                            <div class="input-group">
+                                <label data-i18n="label_item_details">تفاصيل الصنف / المكونات والإضافات</label>
+                                <textarea id="newItemDetails" rows="4" data-i18n-placeholder="placeholder_item_details" placeholder="مثال: برجر لحم، جبنة شيدر، صوص خاص، مخلل..."></textarea>
+                                <small style="display:block;color:var(--text-muted);font-size:11px;margin-top:5px;">ستظهر هذه التفاصيل للعميل عند فتح الصنف من صفحة الطلب.</small>
+                            </div>
+
                             <div class="input-group">
                                 <label data-i18n="label_item_img">صورة الصنف</label>
                                 <div class="file-upload-box" style="padding: 20px;" onclick="document.getElementById('itemImgFile').click()">
@@ -1241,15 +1247,6 @@ td {
                                 <input type="color" id="brandBgColor" value="#0c090a">
                             </div>
                         </div>
-                        <div style="margin-top:18px; padding:16px; border-radius:18px; background:rgba(255,255,255,.035); border:1px solid var(--panel-border);">
-                            <div style="font-weight:800; margin-bottom:6px;"><i class="fa-solid fa-camera-retro" style="color:var(--primary);"></i> صور الأصناف التلقائية — Pexels</div>
-                            <div style="font-size:12px; color:var(--text-muted); line-height:1.7; margin-bottom:10px;">اكتب مفتاح Pexels المجاني هنا. سيتم استخدامه فقط للبحث عن صور أكل احترافية حسب اسم الصنف، وليس لتوليد الصور.</div>
-                            <div style="display:flex; gap:8px; align-items:center;">
-                                <input id="pexelsApiKeyInput" type="password" placeholder="Pexels API Key" autocomplete="off" style="flex:1;">
-                                <button class="btn btn-secondary" type="button" onclick="savePexelsApiKey()"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
-                            </div>
-                            <div id="pexelsKeyStatus" style="font-size:11px; margin-top:8px; color:var(--text-muted);"></div>
-                        </div>
                         <div style="margin-top:12px; padding:12px 14px; border-radius:12px; background:rgba(46,213,115,.08); border:1px solid rgba(46,213,115,.15); font-size:12px; color:var(--text-muted);">
                             <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--secondary);"></i> لون البطاقات والنصوص يتم ضبطهما تلقائياً بما يناسب الخلفية والبراند، لذلك لن تحتاج إلى اختيار ألوان إضافية.
                         </div>
@@ -1340,7 +1337,7 @@ td {
                 stat_delivery_total: "إجمالي الدليفري", stat_dinein_total: "إجمالي الصالة", stat_customers: "عدد العملاء", stat_canceled: "الطلبات الملغية",
                 section_identity: "إعدادات الهوية واللوجو", label_logo: "لوجو المكان", choose_logo: "اضغط لاختيار صورة اللوجو", label_color: "اللون الأساسي", btn_save_settings: "حفظ الإعدادات",
                 section_smart_menu: "استيراد المنيو الذكي", smart_menu_desc: "ارفع صورة المنيو، وسيقوم النظام بالتعرف على التصنيفات والأصناف بدقة.", choose_menu_img: "اضغط لاختيار صورة المنيو", btn_import_ocr: "قراءة واستيراد المنيو ➕", btn_replace_ocr: "استبدال 🔄",
-                section_add_item: "إضافة صنف جديد", label_item_name: "اسم الصنف", label_category: "التصنيف", btn_add: "إضافة", label_price: "السعر", label_discount: "الخصم (اختياري)", label_item_img: "صورة الصنف", choose_item_img: "اضغط لاختيار صورة", btn_save_item: "حفظ الصنف", btn_cancel: "إلغاء",
+                section_add_item: "إضافة صنف جديد", label_item_name: "اسم الصنف", label_category: "التصنيف", btn_add: "إضافة", label_price: "السعر", label_discount: "الخصم (اختياري)", label_item_details: "تفاصيل الصنف / المكونات والإضافات", placeholder_item_details: "مثال: برجر لحم، جبنة شيدر، صوص خاص، مخلل...", label_item_img: "صورة الصنف", choose_item_img: "اضغط لاختيار صورة", btn_save_item: "حفظ الصنف", btn_cancel: "إلغاء",
                 section_manage_cats: "إدارة التصنيفات", section_manage_items: "الأصناف الحالية", section_qr_generator: "مولد QR للطاولات", label_tables_count: "عدد الطاولات", btn_print_qr: "طباعة الأكواد", alert_title: "تنبيه", btn_ok: "حسناً", edit: "تعديل", delete: "حذف"
             },
             en: {
@@ -1352,7 +1349,7 @@ td {
                 stat_delivery_total: "Delivery Total", stat_dinein_total: "Dine-in Total", stat_customers: "Customers", stat_canceled: "Canceled",
                 section_identity: "Brand Identity", label_logo: "Store Logo", choose_logo: "Choose Logo", label_color: "Primary Color", btn_save_settings: "Save Settings",
                 section_smart_menu: "Smart Menu Import", smart_menu_desc: "Upload menu image, AI will extract items.", choose_menu_img: "Choose Image", btn_import_ocr: "Import Menu ➕", btn_replace_ocr: "Replace 🔄",
-                section_add_item: "Add New Item", label_item_name: "Item Name", label_category: "Category", btn_add: "Add", label_price: "Price", label_discount: "Discount", label_item_img: "Item Image", choose_item_img: "Choose Image", btn_save_item: "Save Item", btn_cancel: "Cancel",
+                section_add_item: "Add New Item", label_item_name: "Item Name", label_category: "Category", btn_add: "Add", label_price: "Price", label_discount: "Discount", label_item_details: "Item Details / Ingredients", placeholder_item_details: "Example: Beef burger, cheddar, special sauce, pickles...", label_item_img: "Item Image", choose_item_img: "Choose Image", btn_save_item: "Save Item", btn_cancel: "Cancel",
                 section_manage_cats: "Categories", section_manage_items: "Current Items", section_qr_generator: "QR Generator", label_tables_count: "Tables Count", btn_print_qr: "Print QRs", alert_title: "Alert", btn_ok: "OK", edit: "Edit", delete: "Delete"
             }
         };
@@ -1418,6 +1415,10 @@ td {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 let key = el.getAttribute('data-i18n');
                 if (translations[lang][key]) el.innerText = translations[lang][key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                let key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang][key]) el.placeholder = translations[lang][key];
             });
             renderItems();
             renderCategoriesManagement();
@@ -1801,7 +1802,7 @@ td {
                     <hr style="border-color: var(--panel-border); margin: 10px 0;">
                     <h4 style="margin-bottom:10px;">الأصناف:</h4>
                     <ul style="list-style:none; padding:0; background:var(--input-bg); border-radius:10px; padding:15px;">
-                        ${(o.items||[]).map(i => `<li style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--panel-border); padding-bottom:5px;"><span>${escapeHtml(i.quantity)}x ${escapeHtml(i.name)}</span> <span>${escapeHtml(i.price * i.quantity)} ج.م</span></li>`).join('')}
+                        ${(o.items||[]).map(i => `<li style="margin-bottom:10px;border-bottom:1px solid var(--panel-border);padding-bottom:8px;"><div style="display:flex;justify-content:space-between;gap:10px;"><span>${escapeHtml(i.quantity)}x ${escapeHtml(i.name)}</span><span>${escapeHtml(i.price * i.quantity)} ج.م</span></div>${i.details ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.7;">${escapeHtml(i.details)}</div>` : ''}</li>`).join('')}
                     </ul>
                     <div style="background:var(--input-bg);border-radius:10px;padding:12px 15px;line-height:2;">
                         <div style="display:flex;justify-content:space-between;"><span>قيمة الأصناف:</span><strong>${escapeHtml(o.subtotal ?? o.total)} ج.م</strong></div>
@@ -2125,12 +2126,13 @@ td {
         }
 
         /* =========================================================
-           FREE SMART FOOD IMAGE PICKER — PEXELS
-           Search-only: no AI generation and no paid image generation.
-           One search per item, then cache the selected photo URL.
+           FREE SMART FOOD IMAGE PICKER v2
+           No AI generation / no API key.
+           Uses Wikimedia Commons and chooses a result by relevance,
+           so every item is searched from its own name instead of using
+           one generic photo for the whole menu.
            ========================================================= */
-        const foodImageCacheKey = 'digital_menu_food_images_pexels_v2';
-        const pexelsKeyStorage = 'digital_menu_pexels_api_key';
+        const foodImageCacheKey = 'digital_menu_food_images_v2';
         let foodImageCache = {};
         try { foodImageCache = JSON.parse(localStorage.getItem(foodImageCacheKey) || '{}') || {}; } catch (_) { foodImageCache = {}; }
 
@@ -2147,121 +2149,119 @@ td {
             'ناجتس':'chicken nuggets','ستيك':'steak','مشويات':'grilled meat','مشوي':'grilled food',
             'كنافة':'kunafa','بقلاوة':'baklava','حلويات':'dessert','كيك':'cake','تشيز كيك':'cheesecake',
             'وافل':'waffle','بان كيك':'pancakes','آيس كريم':'ice cream','ايس كريم':'ice cream',
-            'عصير مانجو':'mango juice','عصير ليمون':'lemon lemonade','عصير برتقال':'orange juice',
+            'عصير مانجو':'mango juice','عصير ليمون':'lemonade','عصير برتقال':'orange juice',
             'عصير موز':'banana smoothie','عصير فراولة':'strawberry juice','مانجو':'mango','ليمون':'lemon',
             'برتقال':'orange','موز':'banana','فراولة':'strawberry','عصير':'juice',
             'قهوة':'coffee','كابتشينو':'cappuccino','لاتيه':'latte','شاي':'tea',
             'مشروب':'drink','مشروبات':'drinks','بيض':'egg'
         };
 
-        const genericFoodTerms = new Set(['food','restaurant','dish','menu','item','items','drink','drinks']);
-        const badPhotoTerms = ['logo','poster','menu','text','illustration','drawing','advertisement','person holding','packaged'];
-        const goodPhotoTerms = ['food','dish','meal','restaurant','fresh','delicious','homemade','cuisine','plate','drink','burger','pizza','chicken','beef','juice','dessert'];
+        const foodStopWords = new Set(['food','foods','restaurant','dish','dish food','menu','menus','item','items']);
+        const foodBadWords = ['salad','restaurant logo','menu','poster','advertisement','text only','drawing','illustration'];
 
-        function getPexelsApiKey() {
-            return String(localStorage.getItem(pexelsKeyStorage) || '').trim();
-        }
-        function savePexelsApiKey() {
-            const el=document.getElementById('pexelsApiKeyInput');
-            const key=String(el?.value || '').trim();
-            if(!key) return showCustomAlert('اكتب مفتاح Pexels أولاً');
-            localStorage.setItem(pexelsKeyStorage,key);
-            const st=document.getElementById('pexelsKeyStatus'); if(st) st.innerText='تم حفظ مفتاح Pexels على هذا الجهاز.';
-            showCustomAlert('تم حفظ مفتاح Pexels');
-        }
-        function loadPexelsApiKeyUI() {
-            const el=document.getElementById('pexelsApiKeyInput');
-            const st=document.getElementById('pexelsKeyStatus');
-            if(el && getPexelsApiKey()) el.value=getPexelsApiKey();
-            if(st) st.innerText=getPexelsApiKey() ? 'مفتاح Pexels محفوظ.' : 'لم يتم إضافة مفتاح بعد.';
-        }
         function foodSearchText(name, category) {
-            let raw = String(name || '').trim();
-            let mapped = raw;
-            Object.keys(foodKeywordMap).sort((a,b)=>b.length-a.length).forEach(ar=>{
-                mapped = mapped.replace(new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), ` ${foodKeywordMap[ar]} `);
+            let text = `${name || ''}`.trim();
+            Object.keys(foodKeywordMap).sort((a,b)=>b.length-a.length).forEach(ar => {
+                const re = new RegExp(ar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                text = text.replace(re, ` ${foodKeywordMap[ar]} `);
             });
-            const cat=String(category||'').trim();
-            let categoryHint='';
-            if(cat) {
-                const c=foodKeywordMap[cat] || cat;
-                categoryHint=` ${c}`;
-            }
-            const q=`${mapped} ${categoryHint} food restaurant photography`.replace(/\s+/g,' ').trim();
-            return q;
+            // Category is only used as a weak hint; the item name is the main query.
+            const cleaned = text
+                .replace(/[0-9]+/g,' ')
+                .replace(/[،,:;|/\\-]+/g,' ')
+                .replace(/\s+/g,' ')
+                .trim();
+            return cleaned || 'food dish';
         }
+
         function isAutoFoodImage(item) {
-            const img=String(item?.img||'');
-            return !img || img==='AUTO_IMAGE' || item?.imageSource==='auto' || item?.imageSource==='auto-fallback' || img.includes('commons.wikimedia.org') || img.includes('upload.wikimedia.org') || img.includes('images.unsplash.com');
+            const img = String(item?.img || '');
+            return !img || img === 'AUTO_IMAGE' || item?.imageSource === 'auto' ||
+                img.includes('commons.wikimedia.org') || img.includes('upload.wikimedia.org') ||
+                img.includes('images.unsplash.com/photo-1546069901-ba9599a7e63c');
         }
-        function scorePexelsPhoto(photo, query, name, category) {
-            const alt=String(photo?.alt||'').toLowerCase();
-            const q=query.toLowerCase();
-            let score=0;
-            const tokens=q.split(/\s+/).filter(t=>t.length>=3 && !genericFoodTerms.has(t));
-            tokens.forEach(t=>{ if(alt.includes(t)) score+=10; if(q.includes(t) && alt.includes(t)) score+=3; });
-            goodPhotoTerms.forEach(t=>{ if(alt.includes(t)) score+=2; });
-            badPhotoTerms.forEach(t=>{ if(alt.includes(t)) score-=20; });
-            const w=Number(photo?.width||0), h=Number(photo?.height||0);
-            if(w>=1200) score+=5;
-            if(h>=700) score+=3;
-            if(w>h) score+=4;
-            const exact=String(name||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').trim();
-            if(exact && alt.includes(exact)) score+=20;
-            if(String(category||'').trim() && alt.includes(String(category).toLowerCase())) score+=4;
+
+        function scoreFoodImage(page, query) {
+            const info = page.imageinfo?.[0] || {};
+            const title = String(page.title || '').toLowerCase();
+            const text = `${title} ${String(info.descriptionurl || '').toLowerCase()}`;
+            const tokens = query.toLowerCase().split(/\s+/).filter(t => t.length >= 3 && !foodStopWords.has(t));
+            let score = 0;
+            tokens.forEach(t => {
+                if (title.includes(t)) score += 8;
+                if (text.includes(t)) score += 2;
+            });
+            foodBadWords.forEach(w => { if (text.includes(w)) score -= 10; });
+            if (/\b(burger|pizza|shawarma|pasta|juice|lemonade|smoothie|coffee|tea|dessert|cake|ice cream|fries|chicken|beef|fish|shrimp|egg)\b/i.test(query)) score += 2;
             return score;
         }
+
         async function findFreeFoodImage(name, category, statusEl=null) {
-            const key=`${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
-            const cached=foodImageCache[key];
-            if(cached) return typeof cached === 'string' ? cached : (cached.url || cached.fallback || '');
-            const apiKey=getPexelsApiKey();
-            if(!apiKey) return '';
-            const q=foodSearchText(name,category);
+            const key = `${String(name||'').trim()}|${String(category||'').trim()}`.toLowerCase();
+            if (foodImageCache[key]) return foodImageCache[key];
+
+            const q = foodSearchText(name, category);
+            const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=' + encodeURIComponent(q) + '&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=700&format=json&origin=*';
             try {
-                if(statusEl) statusEl.innerText=`جاري اختيار صورة احترافية لـ ${name}...`;
-                const endpoint='https://api.pexels.com/v1/search?'+new URLSearchParams({query:q,orientation:'landscape',size:'large',per_page:'30',locale:'en-US'}).toString();
-                const response=await fetch(endpoint,{headers:{Authorization:apiKey}});
-                if(!response.ok) throw new Error(`Pexels HTTP ${response.status}`);
-                const data=await response.json();
-                const photos=Array.isArray(data.photos)?data.photos:[];
-                if(!photos.length) return '';
-                photos.sort((a,b)=>scorePexelsPhoto(b,q,name,category)-scorePexelsPhoto(a,q,name,category));
-                // Prefer the stable Pexels CDN 'large' URL for menu cards. Keep a medium
-                // fallback so a single CDN variant cannot leave a broken-image icon.
-                const best=photos.find(p=>p?.src?.large || p?.src?.medium || p?.src?.original);
-                const img=best?.src?.large || best?.src?.medium || best?.src?.original || '';
-                if(img) {
-                    foodImageCache[key]={url:img, fallback:best?.src?.medium || best?.src?.original || ''};
-                    try { localStorage.setItem(foodImageCacheKey,JSON.stringify(foodImageCache)); } catch(_){ }
+                if (statusEl) statusEl.innerText = `جاري اختيار صورة مناسبة لـ ${name}...`;
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) throw new Error('image search failed');
+                const data = await response.json();
+                const pages = Object.values(data.query?.pages || {});
+                const candidates = pages.filter(page => {
+                    const info = page.imageinfo?.[0];
+                    const mime = String(info?.mime || '').toLowerCase();
+                    const u = String(info?.thumburl || info?.url || '');
+                    return u && !mime.includes('svg') && /\.(jpe?g|png|webp)(\?|$)/i.test(u);
+                });
+                candidates.sort((a,b) => scoreFoodImage(b, q) - scoreFoodImage(a, q));
+                const best = candidates[0];
+                const img = best?.imageinfo?.[0]?.thumburl || best?.imageinfo?.[0]?.url || '';
+                if (img) {
+                    foodImageCache[key] = img;
+                    try { localStorage.setItem(foodImageCacheKey, JSON.stringify(foodImageCache)); } catch (_) {}
                     return img;
                 }
-            } catch(e) {
-                console.warn('Pexels food image search failed:',e);
-                if(statusEl) statusEl.innerText='تعذر البحث عن صورة تلقائيًا؛ يمكنك رفع صورة يدويًا.';
+            } catch (e) {
+                console.warn('Free food image search failed:', e);
             }
             return '';
         }
-        async function enrichItemsWithFreeImages(items,statusEl=null) {
-            if(!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
-            if(!getPexelsApiKey()) {
-                if(statusEl) statusEl.innerText='أضف مفتاح Pexels من الإعدادات لتفعيل الصور التلقائية.';
-                return items;
-            }
-            let done=0;
-            for(const item of items) {
-                if(isAutoFoodImage(item)) {
-                    const found=await findFreeFoodImage(item.name,item.category,statusEl);
-                    if(found) { item.img=found; item.imageSource='pexels-auto'; }
+
+        async function enrichItemsWithFreeImages(items, statusEl=null) {
+            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
+            let done = 0;
+            for (const item of items) {
+                if (isAutoFoodImage(item)) {
+                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
+                    if (found) {
+                        item.img = found;
+                        item.imageSource = 'auto';
+                    }
                 }
                 done++;
-                if(statusEl) statusEl.innerText=`تجهيز صور الأصناف... ${done}/${items.length}`;
+                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
             }
             return items;
         }
+
         function autoImagesEnabled() {
-            const el=document.getElementById('autoFoodImages');
+            const el = document.getElementById('autoFoodImages');
             return !el || el.checked;
+        }
+
+        async function enrichItemsWithFreeImages(items, statusEl=null) {
+            if (!autoImagesEnabled() || !Array.isArray(items) || !items.length) return items;
+            let done = 0;
+            for (const item of items) {
+                if (!item.img || item.img === 'AUTO_IMAGE') {
+                    const found = await findFreeFoodImage(item.name, item.category, statusEl);
+                    if (found) item.img = found;
+                }
+                done++;
+                if (statusEl) statusEl.innerText = `تجهيز صور الأصناف... ${done}/${items.length}`;
+            }
+            return items;
         }
 
         async function saveItemAction() {
@@ -2270,24 +2270,25 @@ td {
             let category = document.getElementById('newItemCategory').value;
             let price = Number(document.getElementById('newItemPrice').value);
             let discount = Number(document.getElementById('newItemDiscount').value) || 0;
+            let details = document.getElementById('newItemDetails').value.trim();
 
             if (!name || !price) return showCustomAlert('الرجاء إدخال الاسم والسعر');
             let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : '';
             if (!img && autoImagesEnabled()) {
                 img = await findFreeFoodImage(name, category, document.getElementById('itemImageStatus'));
             }
-            if (!img) img = "";
+            if (!img) img = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
             
             const previousItems = restaurantDataCache.items.map(i => ({...i}));
             if (editId) {
                 let item = restaurantDataCache.items.find(i => i.id == editId);
                 if (item) {
-                    item.name=name; item.category=category; item.price=price; item.discount=discount;
+                    item.name=name; item.category=category; item.price=price; item.discount=discount; item.details=details;
                     if(uploadedImageFile && img) { item.img=img; item.imageSource='manual'; }
                     else if (!item.img || isAutoFoodImage(item)) { item.img=img; item.imageSource='auto'; }
                 }
             } else {
-                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, img, imageSource: uploadedImageFile ? 'manual' : 'auto' });
+                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, details, img, imageSource: uploadedImageFile ? 'manual' : 'auto' });
             }
             renderItems();
             try {
@@ -2308,12 +2309,13 @@ td {
             document.getElementById('newItemCategory').value = item.category;
             document.getElementById('newItemPrice').value = item.price;
             document.getElementById('newItemDiscount').value = item.discount || 0;
+            document.getElementById('newItemDetails').value = item.details || '';
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             window.scrollTo({top:0, behavior:'smooth'});
         }
         function resetItemForm() {
             document.getElementById('editItemId').value=''; document.getElementById('newItemName').value='';
-            document.getElementById('newItemPrice').value=''; document.getElementById('newItemDiscount').value='';
+            document.getElementById('newItemPrice').value=''; document.getElementById('newItemDiscount').value=''; document.getElementById('newItemDetails').value='';
             uploadedImageFile=null; document.getElementById('fileNameDisplay').innerText='اضغط لاختيار صورة';
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
@@ -2330,36 +2332,6 @@ td {
             }
         }
 
-        function handleFoodImageError(imgEl) {
-            if (!imgEl || imgEl.dataset.retried === '1') {
-                if (imgEl) {
-                    imgEl.style.objectFit='cover';
-                    imgEl.style.background='linear-gradient(135deg, rgba(40,40,40,.95), rgba(90,70,20,.65))';
-                    imgEl.removeAttribute('src');
-                }
-                return;
-            }
-            imgEl.dataset.retried='1';
-            const itemId=imgEl.dataset.itemId;
-            const item=restaurantDataCache.items.find(i=>String(i.id)===String(itemId));
-            const key=`${String(item?.name||'').trim()}|${String(item?.category||'').trim()}`.toLowerCase();
-            const cached=foodImageCache[key];
-            const fallback=typeof cached==='object' ? cached.fallback : '';
-            if(fallback && fallback!==imgEl.src) {
-                imgEl.src=fallback;
-                return;
-            }
-            // Drop a bad cached URL so the next render can fetch a fresh Pexels result.
-            try { delete foodImageCache[key]; localStorage.setItem(foodImageCacheKey,JSON.stringify(foodImageCache)); } catch(_){}
-            if(item) item.img='';
-            imgEl.removeAttribute('src');
-            if(item) {
-                findFreeFoodImage(item.name,item.category).then(found=>{
-                    if(found) { item.img=found; item.imageSource='pexels-auto'; renderItems(); }
-                }).catch(()=>{});
-            }
-        }
-
         function renderItems() {
             let container = document.getElementById('currentItemsList');
             document.getElementById('itemsCount').innerText = restaurantDataCache.items.length;
@@ -2367,10 +2339,11 @@ td {
             container.innerHTML = restaurantDataCache.items.map(item => `
                 <div class="item-row">
                     <div class="item-info">
-                        <img src="${escapeHtml(item.img || '')}" data-item-id="${escapeHtml(item.id)}" alt="${escapeHtml(item.name || '')}" loading="lazy" onerror="handleFoodImageError(this)">
+                        <img src="${escapeHtml(item.img)}" alt="" loading="lazy">
                         <div>
                             <div style="font-weight:700;">${escapeHtml(item.name)} <span style="font-size:11px; color:var(--primary);">(${escapeHtml(item.category)})</span></div>
                             <div style="color:var(--secondary); font-size:14px; font-weight:700;">${item.price - (item.discount||0)} ج.م</div>
+                            ${item.details ? `<div style="color:var(--text-muted);font-size:11px;margin-top:4px;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="fa-solid fa-circle-info"></i> ${escapeHtml(item.details)}</div>` : `<div style="color:var(--text-muted);font-size:11px;margin-top:4px;">بدون تفاصيل</div>`}
                         </div>
                     </div>
                     <div class="action-btns">
@@ -2406,26 +2379,34 @@ td {
                 let res = await Tesseract.recognize(aiMenuImageFile, 'ara+eng', { logger: m => { if(m.status==='recognizing text') stat.innerText = `قراءة... ${Math.round(m.progress*100)}%`; } });
                 let lines = res.data.text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
                 let items = replace ? [] : restaurantDataCache.items; let cats = restaurantDataCache.categories;
-                let curCat = "أكلات"; let added = 0;
+                let curCat = "أكلات"; let added = 0; let lastItem = null;
                 lines.forEach((line, i) => {
                     let hasNum = /\d/.test(line);
-                    if(!hasNum && line.length>2 && line.length<30) { curCat = line; if(!cats.includes(curCat)) cats.push(curCat); return; }
+                    if(!hasNum && line.length>2 && line.length<30 && /^(مشروبات|مشروبات|اكلات|أكلات|وجبات|حلويات|بيتزا|برجر|ساندوتش|سلطات|مقبلات|Drinks|Foods|Desserts|Pizza|Burger|Sandwich|Salads)/i.test(line)) {
+                        curCat = line; if(!cats.includes(curCat)) cats.push(curCat); return;
+                    }
                     let pm = line.match(/(\d+)/g);
                     if(pm && pm.length>0) {
                         let price = parseInt(pm[pm.length-1]);
                         let name = line.replace(/(\d+)/g, '').replace(/ريال|ج.م|جنيه|usd|\$|egp|SAR/gi, '').replace(/[\~\-\.\,\*\+\/]/g, '').trim();
                         if(name.length>=2 && price>0) {
-                            items.push({ id: Date.now()+i+Math.random(), name, category: curCat, price, discount: 0, img: 'AUTO_IMAGE' });
+                            lastItem = { id: Date.now()+i+Math.random(), name, category: curCat, price, discount: 0, details: '', img: 'AUTO_IMAGE' };
+                            items.push(lastItem);
                             added++;
+                            return;
                         }
+                    }
+                    // If OCR finds a longer line directly under an item, keep it as that item's description.
+                    if(lastItem && line.length >= 25) {
+                        lastItem.details = lastItem.details ? `${lastItem.details} ${line}` : line;
                     }
                 });
                 stat.innerText = 'تم استخراج الأصناف. جاري اختيار صورة مناسبة لكل صنف...';
                 await enrichItemsWithFreeImages(items, stat);
                 items.forEach(item => {
-                    if (item.img === 'AUTO_IMAGE') {
-                        item.img = "";
-                        item.imageSource = 'auto-pending';
+                    if (item.img === 'AUTO_IMAGE' || !item.img) {
+                        item.img = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=500";
+                        item.imageSource = 'auto-fallback';
                     }
                 });
                 restaurantDataCache.categories = cats;
@@ -2537,8 +2518,6 @@ td {
             }
         }
 
-    
-        try { setTimeout(loadPexelsApiKeyUI, 400); } catch(_) {}
-</script>
+    </script>
 </body>
 </html>
