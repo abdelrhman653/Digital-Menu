@@ -560,15 +560,11 @@
                 <section id="tab-menu" class="section">
                     
                     <div class="card glass" style="border: 1px dashed var(--primary);">
-                        <h3 data-i18n="section_smart_menu"><i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي — بدون مفتاح (عربي / إنجليزي)</h3>
-                        <p style="margin-bottom: 20px;" data-i18n="smart_menu_desc">ارفع صورة المنيو (سواء عربي أو إنجليزي)، ويقرأ الصورة محليًا بدون API أو مفتاح، ويرتب الأصناف والتصنيفات والأسعار حسب مكانها في المنيو. لن يتم الحفظ قبل المراجعة.</p>
+                        <h3 data-i18n="section_smart_menu"><i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (عربي / إنجليزي)</h3>
+                        <p style="margin-bottom: 20px;" data-i18n="smart_menu_desc">ارفع صورة المنيو (سواء عربي أو إنجليزي)، وسيقوم النظام بالتعرف على التصنيفات والأصناف بدقة.</p>
                         <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                             <i class="fa-solid fa-file-arrow-up"></i>
                             <div id="aiFileNameDisplay" data-i18n="choose_menu_img">اضغط لاختيار صورة المنيو من جهازك</div>
-                        </div>
-                        <div id="aiMenuPreviewWrap" class="hidden" style="margin-top:14px;text-align:center;">
-                            <img id="aiMenuPreview" src="" alt="معاينة المنيو" style="max-width:100%;max-height:240px;border-radius:14px;border:1px solid var(--panel-border);object-fit:contain;background:#fff;">
-                            <div id="aiMenuSavedStatus" style="font-size:12px;color:var(--secondary);margin-top:7px;"></div>
                         </div>
                         <input type="file" id="aiMenuFile" accept="image/*" class="hidden" onchange="handleAiMenuUpload(event)">
                         <div style="display: flex; gap: 16px; margin-top: 16px;">
@@ -715,10 +711,8 @@
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
-        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-functions.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkDKnpfuxVuRH4g9FwlMBZWCaH3NAfFSs",
@@ -732,11 +726,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const functions = getFunctions(app, "us-central1");
-        const storage = getStorage(app);
 
         window.FB = { 
-            db, auth, storage, storageRef, uploadBytes, getDownloadURL, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, Timestamp, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+            db, auth, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where, orderBy, writeBatch, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
         };
 
         window.dispatchEvent(new Event('firebase-ready'));
@@ -755,10 +747,6 @@
         let uploadedImageFile = null;
         let uploadedLogoFile = null;
         let aiMenuImageFile = null;
-        let restaurantSaveInFlight = false;
-        let restaurantSaveQueued = false;
-        let restaurantLocalRevision = 0;
-        let restaurantSnapshotRevision = 0;
         let defaultCategories = ["مشروبات / Drinks", "أكلات / Foods", "حلويات / Desserts"];
         let restaurantDataCache = { 
             primaryColor: '#FF4757', secondaryColor: '#2ED573', accentColor: '#FFA502', bgColor: '#0c090a', surfaceColor: '#191414', textColor: '#ffffff',
@@ -790,7 +778,7 @@
                 stat_revenue: "إجمالي الإيرادات", stat_orders: "إجمالي الطلبات", stat_active: "الطلبات النشطة", stat_delivered: "الطلبات المسلمة",
                 stat_delivery_total: "إجمالي الدليفري", stat_dinein_total: "إجمالي الصالة", stat_customers: "عدد العملاء", stat_canceled: "الطلبات الملغية",
                 section_identity: "إعدادات الهوية واللوجو", label_logo: "لوجو المكان", choose_logo: "اضغط لاختيار صورة اللوجو", label_color: "اللون الأساسي", btn_save_settings: "حفظ الإعدادات",
-                section_smart_menu: "استيراد المنيو الذكي", smart_menu_desc: "ارفع صورة المنيو، ويقرأ الصورة محليًا بدون API أو مفتاح، ويرتب الأصناف والتصنيفات والأسعار حسب مكانها في المنيو. لن يتم الحفظ قبل المراجعة.", choose_menu_img: "اضغط لاختيار صورة المنيو", btn_import_ocr: "قراءة واستيراد المنيو ➕", btn_replace_ocr: "استبدال 🔄",
+                section_smart_menu: "استيراد المنيو الذكي", smart_menu_desc: "ارفع صورة المنيو، وسيقوم النظام بالتعرف على التصنيفات والأصناف بدقة.", choose_menu_img: "اضغط لاختيار صورة المنيو", btn_import_ocr: "قراءة واستيراد المنيو ➕", btn_replace_ocr: "استبدال 🔄",
                 section_add_item: "إضافة صنف جديد", label_item_name: "اسم الصنف", label_category: "التصنيف", btn_add: "إضافة", label_price: "السعر", label_discount: "الخصم (اختياري)", label_item_img: "صورة الصنف", choose_item_img: "اضغط لاختيار صورة", btn_save_item: "حفظ الصنف", btn_cancel: "إلغاء",
                 section_manage_cats: "إدارة التصنيفات", section_manage_items: "الأصناف الحالية", section_qr_generator: "مولد QR للطاولات", label_tables_count: "عدد الطاولات", btn_print_qr: "طباعة الأكواد", alert_title: "تنبيه", btn_ok: "حسناً", edit: "تعديل", delete: "حذف"
             },
@@ -979,7 +967,7 @@
                 const restSnap=await window.FB.getDoc(restRef);
                 if(restSnap.exists() && restSnap.data().ownerUid) { await window.FB.signOut(window.FB.auth); return showCustomAlert('اسم/كود المطعم مستخدم بالفعل.'); }
                 const baseData=restSnap.exists()?restSnap.data():{};
-                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? window.FB.Timestamp.fromDate(new Date(license.expiresAt)) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', licenseExpiresAt:license.expiresAt, createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
                 const batch=window.FB.writeBatch(window.FB.db);
                 batch.set(restRef,restaurantData,{merge:true});
                 batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString()});
@@ -1035,11 +1023,7 @@
             if (unsubscribeRestaurant) unsubscribeRestaurant();
             unsubscribeRestaurant = window.FB.onSnapshot(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), async (docSnap) => {
                 if (docSnap.exists()) {
-                    if (restaurantSaveInFlight && restaurantLocalRevision > restaurantSnapshotRevision) {
-                        return;
-                    }
                     restaurantDataCache = docSnap.data();
-                    restaurantSnapshotRevision = restaurantLocalRevision;
 
                     // Live subscription check: if the owner expires or is suspended while
                     // the dashboard is open, immediately lock the dashboard.
@@ -1224,93 +1208,22 @@
 
         // Settings & Identity Upload Fix
         async function saveRestaurantDataToCloud() {
-            if (!window.FB || !ownerAccessAllowed || !currentOwnerUser || !currentRestaurant) {
-                throw new Error('جلسة الإدارة غير صالحة.');
-            }
-
-            // Keep the UI responsive and prevent the real-time listener from
-            // immediately restoring an older snapshot while a write is pending.
-            restaurantLocalRevision++;
-            if (restaurantSaveInFlight) {
-                restaurantSaveQueued = true;
-                return;
-            }
-
-            restaurantSaveInFlight = true;
-            const revisionAtStart = restaurantLocalRevision;
-            try {
-                const restRef = window.FB.doc(window.FB.db, 'restaurants', currentRestaurant);
-                const freshSnap = await window.FB.getDoc(restRef);
-                if (!freshSnap.exists()) throw new Error('بيانات المطعم غير موجودة.');
-
-                const serverData = freshSnap.data() || {};
-                if (serverData.ownerUid && serverData.ownerUid !== currentOwnerUser.uid) {
-                    throw new Error('لا تملك صلاحية تعديل هذا المطعم.');
-                }
-                if (!licenseIsActive(serverData)) {
-                    throw new Error('اشتراك المطعم غير نشط أو منتهي.');
-                }
-
-                // Never overwrite protected account/license fields from a stale
-                // browser object. Merge only the editable restaurant data.
-                const editable = {
-                    primaryColor: restaurantDataCache.primaryColor || '#FF4757',
-                    secondaryColor: restaurantDataCache.secondaryColor || '#2ED573',
-                    accentColor: restaurantDataCache.accentColor || '#FFA502',
-                    bgColor: restaurantDataCache.bgColor || '#0c090a',
-                    surfaceColor: restaurantDataCache.surfaceColor || '#191414',
-                    textColor: restaurantDataCache.textColor || '#ffffff',
-                    logo: restaurantDataCache.logo || '',
-                    menuImageUrl: restaurantDataCache.menuImageUrl || '',
-                    categories: Array.isArray(restaurantDataCache.categories) ? restaurantDataCache.categories : [...defaultCategories],
-                    items: Array.isArray(restaurantDataCache.items) ? restaurantDataCache.items : []
-                };
-
-                await window.FB.setDoc(restRef, editable, { merge: true });
-                restaurantSnapshotRevision = Math.max(restaurantSnapshotRevision, revisionAtStart);
-            } catch (e) {
-                console.error('Restaurant save error:', e);
-                throw e;
-            } finally {
-                restaurantSaveInFlight = false;
-                if (restaurantSaveQueued) {
-                    restaurantSaveQueued = false;
-                    // A later edit happened while the first save was running.
-                    // Persist the latest cache once, without recursive bursts.
-                    if (restaurantLocalRevision > revisionAtStart) {
-                        setTimeout(() => saveRestaurantDataToCloud().catch(err => {
-                            console.error('Queued restaurant save error:', err);
-                            showCustomAlert('تعذر حفظ آخر تعديل: ' + (err.message || 'خطأ غير معروف'));
-                        }), 0);
-                    }
-                }
-            }
+            if (!window.FB || !ownerAccessAllowed || !currentOwnerUser) return;
+            try { await window.FB.setDoc(window.FB.doc(window.FB.db, "restaurants", currentRestaurant), restaurantDataCache, { merge: true }); }
+            catch(e) { console.error(e); }
         }
 
         async function uploadFileToStorage(file, folder) {
             if (!file) return "";
-            const maxSize = folder === "logo" ? 700 : 900;
-            const dataUrl = await window.fileToDataURL(file, { maxSize, quality: 0.78 });
             try {
-                if (!window.FB?.storage || !currentRestaurant || !currentOwnerUser) {
-                    throw new Error('خدمة التخزين غير جاهزة أو لم يتم تسجيل الدخول.');
-                }
-                const blob = await (await fetch(dataUrl)).blob();
-                const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g, '_');
-                const path = `restaurants/${currentRestaurant}/${folder}/${Date.now()}_${safeName}.jpg`;
-                const fileRef = window.FB.storageRef(window.FB.storage, path);
-                await window.FB.uploadBytes(fileRef, blob, {
-                    contentType: 'image/jpeg',
-                    cacheControl: 'public,max-age=31536000'
-                });
-                return await window.FB.getDownloadURL(fileRef);
+                // Firebase Storage is intentionally not used. The image is resized
+                // in the browser and stored as a compact data URL in Firestore.
+                const maxSize = folder === "logo" ? 500 : 600;
+                return await window.fileToDataURL(file, { maxSize, quality: 0.55 });
             } catch (e) {
-                console.error("Storage upload error:", e);
-                // Graceful fallback: if Storage rules are not deployed yet,
-                // keep the resized image in the restaurant document so the
-                // menu can still be saved. The image is already compressed and
-                // resized by fileToDataURL().
-                return dataUrl;
+                console.error("Image conversion error:", e);
+                showCustomAlert('تعذر تجهيز الصورة. جرّب صورة أخرى.');
+                return "";
             }
         }
 
@@ -1437,8 +1350,7 @@
 
                 if(uploadedLogoFile) {
                     const prepared=await prepareLogoImage(uploadedLogoFile);
-                    const logoUrl = await uploadFileToStorage(uploadedLogoFile, "logo");
-                    if (logoUrl) restaurantDataCache.logo = logoUrl;
+                    restaurantDataCache.logo=prepared.dataUrl;
                     const extracted=extractBrandColors(prepared.canvas);
                     if(extracted) { setBrandColorInputs(extracted); Object.assign(restaurantDataCache,extracted); }
                 }
@@ -1489,37 +1401,17 @@
             `).join('');
         }
         async function addNewCategoryToList() {
-            let val = document.getElementById('customCategoryInput').value.trim();
+            let val = escapeHtml(document.getElementById('customCategoryInput').value.trim());
             if(!val) return;
             if(!restaurantDataCache.categories.includes(val)) {
                 restaurantDataCache.categories.push(val);
-                updateCategoryDropdown();
-                renderCategoriesManagement();
-                try {
-                    await saveRestaurantDataToCloud();
-                    document.getElementById('customCategoryInput').value = '';
-                    showCustomAlert('تم إضافة التصنيف بنجاح');
-                } catch (e) {
-                    restaurantDataCache.categories = restaurantDataCache.categories.filter(c => c !== val);
-                    updateCategoryDropdown();
-                    renderCategoriesManagement();
-                    showCustomAlert('تعذر حفظ التصنيف: ' + (e.message || 'خطأ غير معروف'));
-                }
+                await saveRestaurantDataToCloud(); document.getElementById('customCategoryInput').value = '';
+                showCustomAlert('تم إضافة التصنيف بنجاح');
             }
         }
         async function deleteCategory(cat) {
-            const previous = [...restaurantDataCache.categories];
             restaurantDataCache.categories = restaurantDataCache.categories.filter(c => c !== cat);
-            updateCategoryDropdown();
-            renderCategoriesManagement();
-            try {
-                await saveRestaurantDataToCloud();
-            } catch (e) {
-                restaurantDataCache.categories = previous;
-                updateCategoryDropdown();
-                renderCategoriesManagement();
-                showCustomAlert('تعذر حذف التصنيف: ' + (e.message || 'خطأ غير معروف'));
-            }
+            await saveRestaurantDataToCloud();
         }
 
         function handleImageUpload(e) {
@@ -1529,8 +1421,8 @@
 
         async function saveItemAction() {
             let editId = document.getElementById('editItemId').value;
-            let name = document.getElementById('newItemName').value.trim();
-            let category = document.getElementById('newItemCategory').value;
+            let name = escapeHtml(document.getElementById('newItemName').value.trim());
+            let category = escapeHtml(document.getElementById('newItemCategory').value);
             let price = Number(document.getElementById('newItemPrice').value);
             let discount = Number(document.getElementById('newItemDiscount').value) || 0;
 
@@ -1543,14 +1435,7 @@
             } else {
                 restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, img });
             }
-            renderItems();
-            try {
-                await saveRestaurantDataToCloud();
-                resetItemForm();
-            } catch (e) {
-                renderItems();
-                showCustomAlert('تعذر حفظ الصنف: ' + (e.message || 'خطأ غير معروف'));
-            }
+            await saveRestaurantDataToCloud(); resetItemForm();
         }
 
         function editItem(id) {
@@ -1570,16 +1455,8 @@
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
         async function deleteItem(id) {
-            const previous = [...restaurantDataCache.items];
             restaurantDataCache.items = restaurantDataCache.items.filter(i => i.id !== id);
-            renderItems();
-            try {
-                await saveRestaurantDataToCloud();
-            } catch (e) {
-                restaurantDataCache.items = previous;
-                renderItems();
-                showCustomAlert('تعذر حذف الصنف: ' + (e.message || 'خطأ غير معروف'));
-            }
+            await saveRestaurantDataToCloud();
         }
 
         function renderItems() {
@@ -1603,170 +1480,187 @@
             `).join('');
         }
 
-        // Smart Menu Import — Local OCR only (NO API KEY / NO Gemini).
-        // Pipeline: image preprocessing -> Arabic+English OCR -> layout-aware grouping -> review -> save.
-        let aiMenuPendingResult = null;
-        let aiMenuPendingReplace = false;
-
+        // Smart Menu OCR - Local only, no API key, no changes to the rest of the app.
+        // Uses Tesseract bounding boxes so Arabic/English menus can be parsed by layout.
         function handleAiMenuUpload(e) {
             aiMenuImageFile = e.target.files[0];
-            const wrap=document.getElementById('aiMenuPreviewWrap');
-            const preview=document.getElementById('aiMenuPreview');
-            const status=document.getElementById('aiMenuSavedStatus');
-            if(aiMenuImageFile){
+            if(aiMenuImageFile) {
                 document.getElementById('aiFileNameDisplay').innerText = aiMenuImageFile.name;
-                preview.src=URL.createObjectURL(aiMenuImageFile);
-                wrap.classList.remove('hidden');
-                status.innerText='الصورة جاهزة للقراءة المحلية — لن يتم حفظ أي صنف قبل المراجعة.';
-            }else{
-                wrap.classList.add('hidden'); preview.src=''; status.innerText='';
+                const wrap = document.getElementById('aiMenuPreviewWrap');
+                const preview = document.getElementById('aiMenuPreview');
+                if(wrap && preview) { preview.src = URL.createObjectURL(aiMenuImageFile); wrap.classList.remove('hidden'); }
             }
         }
 
-        const arabicDigitMap = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
-        function normalizeArabicDigits(s){ return String(s||'').replace(/[٠-٩۰-۹]/g,ch=>arabicDigitMap[ch]||ch); }
-        function cleanOcrText(s){
-            return String(s||'').replace(/\u00a0/g,' ').replace(/[|¦]+/g,' ').replace(/[ \t]+/g,' ').trim();
+        function normalizeOCRText(text) {
+            return String(text || '')
+                .replace(/[|¦]/g, 'I')
+                .replace(/[ـ]+/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
         }
-        function parsePriceFromText(text){
-            const t=normalizeArabicDigits(text).replace(/٬/g,',').replace(/٫/g,'.');
-            const matches=[];
-            const re=/(?:\b|^)(\d{1,5}(?:[.,]\d{1,2})?)(?:\s*(?:ج\.?م|جنيه|ج|EGP|LE|SAR|ريال|USD|\$|€|دولار|ريال))(?:\b|$)|(?:^|\s)(\d{1,5})(?:\s|$)/gi;
-            let m; while((m=re.exec(t))) matches.push(Number((m[1]||m[2]||'').replace(/,/g,'')));
-            const good=matches.filter(n=>n>0 && n<=100000);
-            return good.length?good[good.length-1]:null;
+
+        function parseMenuPrice(text) {
+            const t = String(text || '').replace(/[٬,]/g, '').replace(/[٫]/g, '.');
+            const matches = t.match(/(?:\d{1,4}(?:\.\d{1,2})?|\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?)/g) || [];
+            if(!matches.length) return null;
+            const n = Number(matches[matches.length - 1].replace(/,/g,''));
+            return Number.isFinite(n) && n > 0 && n < 100000 ? n : null;
         }
-        function removePriceFromText(text){
-            let t=normalizeArabicDigits(text);
-            t=t.replace(/(?:\d{1,5}(?:[.,]\d{1,2})?\s*(?:ج\.?م|جنيه|ج|EGP|LE|SAR|ريال|USD|\$|€|دولار)|\b\d{1,5}\b)\s*$/i,'');
-            return cleanOcrText(t.replace(/[•·|]+/g,' '));
+
+        function stripMenuPrice(text) {
+            return normalizeOCRText(String(text || '')
+                .replace(/(?:\d{1,4}(?:[.,]\d{1,2})?|\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?)/g, '')
+                .replace(/(?:ج\.م|جنيه|ريال|درهم|دولار|egp|sar|aed|usd|\$|€|£)/gi, '')
+                .replace(/[.·•:؛|]+$/g, '')
+            ).trim();
         }
-        function imageToCanvasVariants(file){
+
+        function looksLikeCategory(text) {
+            const t = normalizeOCRText(text);
+            if(t.length < 2 || t.length > 55) return false;
+            if(parseMenuPrice(t)) return false;
+            const words = t.split(/\s+/).length;
+            if(words > 6) return false;
+            // Headings are commonly short and contain no sentence punctuation.
+            if(/[.!?،,:؛]/.test(t) && words > 3) return false;
+            return true;
+        }
+
+        function preprocessMenuImage(file, scale=2) {
             return new Promise((resolve,reject)=>{
-                const fr=new FileReader(); fr.onload=()=>{
-                    const im=new Image(); im.onload=()=>{
-                        const maxW=2600,maxH=3600,scale=Math.min(1,maxW/im.naturalWidth,maxH/im.naturalHeight);
-                        const w=Math.max(1,Math.round(im.naturalWidth*scale)),h=Math.max(1,Math.round(im.naturalHeight*scale));
-                        const c=document.createElement('canvas'); c.width=w;c.height=h;
-                        const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(im,0,0,w,h);
-                        const src=x.getImageData(0,0,w,h), gray=new Uint8ClampedArray(src.data.length);
-                        for(let i=0;i<src.data.length;i+=4){ const y=0.299*src.data[i]+0.587*src.data[i+1]+0.114*src.data[i+2]; gray[i]=gray[i+1]=gray[i+2]=y; gray[i+3]=255; }
-                        const g=document.createElement('canvas');g.width=w;g.height=h;g.getContext('2d').putImageData(new ImageData(gray,w,h),0,0);
-                        const hi=document.createElement('canvas');hi.width=w;hi.height=h;const hx=hi.getContext('2d');hx.filter='contrast(1.18) brightness(1.03)';hx.drawImage(g,0,0);
-                        resolve([c,g,hi]);
-                    }; im.onerror=reject; im.src=fr.result;
-                }; fr.onerror=reject; fr.readAsDataURL(file);
+                const reader=new FileReader();
+                reader.onload=()=>{
+                    const img=new Image();
+                    img.onload=()=>{
+                        const maxW=2200, maxH=3200;
+                        const s=Math.min(scale, maxW/img.naturalWidth, maxH/img.naturalHeight);
+                        const canvas=document.createElement('canvas');
+                        canvas.width=Math.max(1,Math.round(img.naturalWidth*s));
+                        canvas.height=Math.max(1,Math.round(img.naturalHeight*s));
+                        const ctx=canvas.getContext('2d',{willReadFrequently:true});
+                        ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                        // Gentle contrast/sharpening through grayscale; keeps Arabic/English shapes readable.
+                        const image=ctx.getImageData(0,0,canvas.width,canvas.height);
+                        for(let i=0;i<image.data.length;i+=4){
+                            const g=Math.round(image.data[i]*0.299+image.data[i+1]*0.587+image.data[i+2]*0.114);
+                            const v=Math.max(0,Math.min(255,(g-128)*1.18+128));
+                            image.data[i]=image.data[i+1]=image.data[i+2]=v;
+                        }
+                        ctx.putImageData(image,0,0);
+                        resolve(canvas);
+                    };
+                    img.onerror=reject; img.src=reader.result;
+                };
+                reader.onerror=reject; reader.readAsDataURL(file);
             });
         }
-        function tsvLinesFromData(data){
-            const words=Array.isArray(data?.words)?data.words:[];
-            const valid=words.filter(w=>cleanOcrText(w.text).length && Number(w.conf)>=18);
-            const map=new Map();
-            valid.forEach(w=>{
-                const key=[w.block_num,w.par_num,w.line_num].join(':');
-                if(!map.has(key)) map.set(key,{text:[],x0:Infinity,y0:Infinity,x1:0,y1:0,conf:[]});
-                const l=map.get(key); l.text.push(w.text); l.x0=Math.min(l.x0,Number(w.left)||0); l.y0=Math.min(l.y0,Number(w.top)||0); l.x1=Math.max(l.x1,(Number(w.left)||0)+(Number(w.width)||0)); l.y1=Math.max(l.y1,(Number(w.top)||0)+(Number(w.height)||0)); l.conf.push(Number(w.conf)||0);
+
+        async function runLocalMenuOCR(file, stat) {
+            const canvas = await preprocessMenuImage(file, 2);
+            const result = await Tesseract.recognize(canvas, 'ara+eng', {
+                logger: m => {
+                    if(m.status === 'recognizing text' && stat) stat.innerText = `قراءة المنيو... ${Math.round((m.progress||0)*100)}%`;
+                }
             });
-            return [...map.values()].map(l=>({text:cleanOcrText(l.text.join(' ')),x0:l.x0,y0:l.y0,x1:l.x1,y1:l.y1,h:l.y1-l.y0,conf:l.conf.reduce((a,b)=>a+b,0)/Math.max(1,l.conf.length)})).filter(l=>l.text.length>0).sort((a,b)=>a.y0-b.y0||a.x0-b.x0);
-        }
-        function layoutAwareExtract(lines, canvas){
-            // Split the page into visual rows, then attach nearby price/details to the nearest name.
-            const H=canvas.height, W=canvas.width;
-            const sorted=lines.slice().sort((a,b)=>a.y0-b.y0||a.x0-b.x0);
-            const clusters=[];
-            for(const l of sorted){
-                let c=clusters[clusters.length-1];
-                const gap=c ? l.y0-c.y1 : 9999;
-                const overlap=c ? Math.max(0,Math.min(l.x1,c.x1)-Math.max(l.x0,c.x0))/Math.max(1,Math.min(l.x1-l.x0,c.x1-c.x0)) : 0;
-                if(c && gap <= Math.max(18,l.h*0.8) && (overlap>0.08 || gap<l.h*0.7)){ c.lines.push(l);c.y1=Math.max(c.y1,l.y1);c.x0=Math.min(c.x0,l.x0);c.x1=Math.max(c.x1,l.x1); }
-                else clusters.push({lines:[l],x0:l.x0,x1:l.x1,y0:l.y0,y1:l.y1});
+            const words = (result.data.words || []).filter(w => String(w.text||'').trim() && Number(w.confidence||0) >= 25);
+            // Group words by their visual Y position, then sort RTL/LTR safely by X.
+            const rows = [];
+            words.sort((a,b)=> (a.bbox.y0-b.bbox.y0) || (a.bbox.x0-b.bbox.x0));
+            for(const w of words){
+                const y=(w.bbox.y0+w.bbox.y1)/2, h=Math.max(1,w.bbox.y1-w.bbox.y0);
+                let row=rows.find(r=>Math.abs(r.y-y) <= Math.max(12,h*0.55));
+                if(!row){ row={y,h,words:[]}; rows.push(row); }
+                row.words.push(w);
             }
-            const rows=clusters.map(c=>({text:cleanOcrText(c.lines.map(x=>x.text).join(' ')),x0:c.x0,x1:c.x1,y0:c.y0,y1:c.y1,h:c.y1-c.y0,conf:c.lines.reduce((a,b)=>a+b*b.conf,0)/Math.max(1,c.lines.length), lines:c.lines}));
-            const categories=[]; let current={name:'أكلات',items:[]}; categories.push(current);
-            const looksLikeCategory=(r,idx)=>{
-                if(!r.text || r.text.length<2 || r.text.length>42) return false;
-                if(parsePriceFromText(r.text)!=null) return false;
-                const letters=r.text.replace(/[\d\W_]/g,'');
-                const next=rows[idx+1], prev=rows[idx-1];
-                const isolated=!prev || r.y0-prev.y1>Math.max(22,r.h*0.8);
-                const nextHasPrice=next && parsePriceFromText(next.text)!=null;
-                const large=r.h >= (next?.h||r.h)*1.12;
-                return isolated && (large || nextHasPrice || r.text.length<24);
-            };
+            rows.sort((a,b)=>a.y-b.y);
+            return rows.map(r=>{
+                const ws=r.words.sort((a,b)=>a.bbox.x0-b.bbox.x0);
+                return { text: normalizeOCRText(ws.map(w=>w.text).join(' ')), words:ws, y:r.y, height:r.h };
+            }).filter(r=>r.text.length>=2);
+        }
+
+        function buildMenuCandidates(rows) {
+            const candidates=[];
+            let currentCategory='أكلات';
             for(let i=0;i<rows.length;i++){
-                const r=rows[i]; const price=parsePriceFromText(r.text);
-                if(looksLikeCategory(r,i)){
-                    current={name:r.text,items:[]}; categories.push(current); continue;
+                const row=rows[i], text=row.text;
+                const price=parseMenuPrice(text);
+                const name=stripMenuPrice(text);
+                if(!price && looksLikeCategory(name)){
+                    // Only treat it as a category when the following nearby rows look item-like.
+                    const next=rows.slice(i+1,i+4).some(r=>parseMenuPrice(r.text));
+                    if(next){ currentCategory=name; continue; }
                 }
-                if(price!=null){
-                    let name=removePriceFromText(r.text), details='';
-                    // If the price is on its own line, take the closest previous non-category row.
-                    if(!name || name.length<2){
-                        const prev=rows[i-1];
-                        if(prev && prev.y1<=r.y0+Math.max(50,r.h*1.8) && parsePriceFromText(prev.text)==null){ name=cleanOcrText(prev.text); }
-                    }
-                    // If a short name row is immediately followed by a price row, attach following small rows as details.
-                    if(name.length>=2){
-                        const next=rows[i+1];
-                        if(next && parsePriceFromText(next.text)==null && next.y0-r.y1<Math.max(35,r.h*1.2) && next.text.length>18){ details=next.text; i++; }
-                        current.items.push({name,price,currency:'',details,confidence:Math.max(.45,Math.min(.99,r.conf/100)),needsReview:r.conf<70||name.length<3,evidence:r.text});
-                    }
-                } else {
-                    // Name first, price later: if this is a plausible short row and next/next+1 contains price, defer it.
-                    const n1=rows[i+1], n2=rows[i+2];
-                    if(n1 && parsePriceFromText(n1.text)!=null){
-                        const name=r.text; const p=parsePriceFromText(n1.text); current.items.push({name,price:p,currency:'',details:'',confidence:Math.min(r.conf,n1.conf)/100,needsReview:r.conf<70,evidence:name+' | '+n1.text}); i++; continue;
-                    }
-                    if(n2 && parsePriceFromText(n2.text)!=null && r.text.length>=2){
-                        const details=(n1&&parsePriceFromText(n1.text)==null)?n1.text:''; const p=parsePriceFromText(n2.text); current.items.push({name:r.text,price:p,currency:'',details,confidence:Math.min(r.conf,n2.conf)/100,needsReview:r.conf<70,evidence:r.text+' | '+n2.text}); i+=2; continue;
-                    }
+                if(price && name.length>=2){
+                    let details='';
+                    // A nearby following row without a price and with sentence-like length is likely description.
+                    const next=rows[i+1];
+                    if(next && !parseMenuPrice(next.text) && next.text.length>12 && !looksLikeCategory(next.text)) details=next.text;
+                    candidates.push({name,category:currentCategory,price,discount:0,details,img:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'});
                 }
             }
-            return {categories:categories.filter(c=>c.items.length),warnings:['القراءة محلية بدون API. راجع العناصر التي عليها تنبيه قبل الحفظ.'],source:'local-ocr'};
+            return candidates;
         }
-        function escapeReviewValue(v){ return escapeHtml(String(v ?? '')); }
-        function renderAiReview(result){
-            const cats=Array.isArray(result?.categories)?result.categories:[];
-            const items=cats.flatMap(c=>Array.isArray(c.items)?c.items.map(i=>({...i,category:c.name})):[]);
-            const needs=items.filter(i=>i.needsReview || Number(i.confidence||0)<.75 || !i.price).length;
-            document.getElementById('aiReviewSummary').innerText=`${cats.length} تصنيف • ${items.length} صنف • ${needs?needs+' يحتاج مراجعة':'النتيجة تبدو واضحة'}`;
-            const warnings=Array.isArray(result?.warnings)?result.warnings:[];
-            document.getElementById('aiReviewWarnings').innerHTML=(needs||warnings.length)?`<div style="background:rgba(255,165,2,.10);border:1px solid rgba(255,165,2,.35);border-radius:14px;padding:12px 14px;font-size:13px;"><strong><i class="fa-solid fa-triangle-exclamation"></i> راجع البيانات قبل الحفظ.</strong><div style="margin-top:5px;">${warnings.map(escapeHtml).join(' • ')}</div></div>`:'';
-            document.getElementById('aiReviewContent').innerHTML=cats.map((cat,ci)=>`<div class="ai-review-cat" data-ci="${ci}" style="margin-bottom:18px;border:1px solid var(--panel-border,#333);border-radius:16px;padding:14px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><input class="ai-review-category" data-ci="${ci}" value="${escapeReviewValue(cat.name)}" style="font-size:18px;font-weight:800;flex:1;"><span style="font-size:12px;color:var(--text-muted,#aaa);">${cat.items?.length||0} صنف</span></div><div style="display:grid;gap:10px;">${(cat.items||[]).map((item,ii)=>{const bad=item.needsReview||Number(item.confidence||0)<.75||!item.price;return `<div class="ai-review-item" data-ci="${ci}" data-ii="${ii}" style="border:1px solid ${bad?'rgba(255,165,2,.45)':'var(--panel-border,#333)'};border-radius:14px;padding:12px;background:rgba(255,255,255,.02);"><div style="display:grid;grid-template-columns:1.4fr .55fr .65fr;gap:10px;"><div><label style="font-size:11px;color:var(--text-muted,#aaa);">اسم الصنف</label><input class="ai-review-name" value="${escapeReviewValue(item.name)}"></div><div><label style="font-size:11px;color:var(--text-muted,#aaa);">السعر</label><input class="ai-review-price" type="number" step="0.01" value="${Number(item.price)||0}"></div><div><label style="font-size:11px;color:var(--text-muted,#aaa);">العملة</label><input class="ai-review-currency" value="${escapeReviewValue(item.currency)}"></div></div><div style="margin-top:9px;"><label style="font-size:11px;color:var(--text-muted,#aaa);">التفاصيل الموجودة في الصورة فقط</label><textarea class="ai-review-details" rows="2">${escapeReviewValue(item.details)}</textarea></div><div style="margin-top:7px;font-size:11px;color:${bad?'#ffb020':'#7bd88f'};">${bad?'⚠ يحتاج مراجعة':'✓ قراءة واضحة'} • ${Math.round((Number(item.confidence)||0)*100)}% • ${escapeReviewValue(item.evidence)}</div><button class="btn btn-danger ai-review-delete" style="margin-top:8px;padding:6px 10px;font-size:11px;">حذف هذا الصنف</button></div>`;}).join('')}</div></div>`).join('')||'<div class="empty-state">لم يتم العثور على أصناف مؤكدة.</div>';
-            document.querySelectorAll('.ai-review-delete').forEach(btn=>btn.onclick=()=>btn.closest('.ai-review-item')?.remove());
+
+        function showOCRReview(items, categories, replace) {
+            const old=document.getElementById('menuOcrReviewModal');
+            if(old) old.remove();
+            const wrap=document.createElement('div'); wrap.id='menuOcrReviewModal'; wrap.className='modal-overlay active';
+            wrap.innerHTML=`<div class="modal-content glass" style="max-width:900px;max-height:92vh;overflow-y:auto;">
+                <h3><i class="fa-solid fa-magnifying-glass-check"></i> مراجعة المنيو قبل الحفظ</h3>
+                <p style="margin-bottom:16px">راجع الأصناف المستخرجة. لن يتم حفظ أي تغيير حتى تضغط «اعتماد وحفظ».</p>
+                <div id="ocrReviewRows"></div>
+                <div style="display:flex;gap:10px;margin-top:18px;position:sticky;bottom:0;background:var(--bg-color);padding-top:12px;">
+                    <button class="btn btn-success" id="ocrApproveBtn" style="flex:2">اعتماد وحفظ</button>
+                    <button class="btn btn-secondary" id="ocrCancelBtn" style="flex:1">إلغاء</button>
+                </div></div>`;
+            document.body.appendChild(wrap);
+            const list=wrap.querySelector('#ocrReviewRows');
+            list.innerHTML=items.map((it,i)=>`<div class="item-row" data-idx="${i}" style="display:grid;grid-template-columns:1.4fr 1fr .7fr 1.5fr auto;gap:8px;align-items:center;">
+                <input data-k="name" value="${escapeHtml(it.name)}" placeholder="اسم الصنف">
+                <input data-k="category" value="${escapeHtml(it.category)}" placeholder="التصنيف">
+                <input data-k="price" type="number" value="${escapeHtml(it.price)}" placeholder="السعر">
+                <input data-k="details" value="${escapeHtml(it.details||'')}" placeholder="التفاصيل / المكونات">
+                <button class="btn btn-danger" data-remove="1" style="padding:8px 10px"><i class="fa-solid fa-trash"></i></button>
+            </div>`).join('') || '<div class="empty-state">لم يتم العثور على أصناف واضحة. جرّب صورة أوضح.</div>';
+            wrap.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>btn.closest('[data-idx]').remove());
+            wrap.querySelector('#ocrCancelBtn').onclick=()=>wrap.remove();
+            wrap.querySelector('#ocrApproveBtn').onclick=async()=>{
+                const finalItems=[];
+                wrap.querySelectorAll('[data-idx]').forEach(row=>{
+                    const get=k=>row.querySelector(`[data-k="${k}"]`)?.value?.trim()||'';
+                    const name=get('name'), category=get('category')||'أكلات', price=Number(get('price'))||0, details=get('details');
+                    if(name && price>0) finalItems.push({id:Date.now()+Math.random(),name,category,price,discount:0,details,img:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'});
+                });
+                if(!finalItems.length) return showCustomAlert('لا يوجد صنف صالح للحفظ.');
+                const mergedCats=[...(restaurantDataCache.categories||defaultCategories)];
+                finalItems.forEach(x=>{if(!mergedCats.includes(x.category)) mergedCats.push(x.category);});
+                restaurantDataCache.categories=mergedCats;
+                restaurantDataCache.items=replace?finalItems:[...(restaurantDataCache.items||[]),...finalItems];
+                await saveRestaurantDataToCloud();
+                updateCategoryDropdown(); renderCategoriesManagement(); renderItems();
+                wrap.remove(); showCustomAlert(`تم اعتماد ${finalItems.length} صنف وحفظها بنجاح.`);
+            };
         }
-        function collectAiReviewEdits(){
-            const result={categories:[]};
-            document.querySelectorAll('.ai-review-cat').forEach((catEl,ci)=>{
-                const name=catEl.querySelector('.ai-review-category')?.value.trim()||''; const items=[];
-                catEl.querySelectorAll('.ai-review-item').forEach(box=>{items.push({name:box.querySelector('.ai-review-name')?.value.trim()||'',price:Number(box.querySelector('.ai-review-price')?.value)||0,currency:box.querySelector('.ai-review-currency')?.value.trim()||'',details:box.querySelector('.ai-review-details')?.value.trim()||''});});
-                if(name&&items.length) result.categories.push({name,items});
-            }); return result;
-        }
-        function closeAiMenuReview(){document.getElementById('aiMenuReviewModal').classList.add('hidden');aiMenuPendingResult=null;}
-        async function reanalyzeAiMenu(){const replace=aiMenuPendingReplace;closeAiMenuReview();await importBilingualMenuOCR(replace);}
-        async function importBilingualMenuOCR(replace){
+
+        async function importBilingualMenuOCR(replace) {
             if(!aiMenuImageFile) return showCustomAlert('اختر صورة أولاً');
-            const btn=document.getElementById('parseAiBtn'),stat=document.getElementById('aiProgressStatus'); btn.disabled=true;document.getElementById('parseAiReplaceBtn').disabled=true;
-            btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...';stat.innerText='تحسين الصورة ثم قراءة العربي والإنجليزي وترتيب العناصر حسب مكانها...';
+            const btn=document.getElementById('parseAiBtn'), stat=document.getElementById('aiProgressStatus');
+            btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...'; btn.disabled=true; stat.innerText='تجهيز الصورة...';
             try{
-                const variants=await imageToCanvasVariants(aiMenuImageFile); let best=null;
-                for(let vi=0;vi<variants.length;vi++){
-                    const canvas=variants[vi];
-                    const data=await Tesseract.recognize(canvas,'ara+eng',{logger:m=>{if(m.status==='recognizing text') stat.innerText=`قراءة النسخة ${vi+1}/3... ${Math.round(m.progress*100)}%`;},tessedit_pageseg_mode:11,preserve_interword_spaces:'1'});
-                    const lines=tsvLinesFromData(data.data); const candidate=layoutAwareExtract(lines,canvas); const score=candidate.categories.reduce((a,c)=>a+c.items.reduce((b,i)=>b+(i.confidence||0),0),0);
-                    if(!best||score>best.score) best={result:candidate,score};
-                }
-                aiMenuPendingResult=best?.result||{categories:[],warnings:['لم يتم التعرف على أصناف واضحة.']};aiMenuPendingReplace=!!replace;renderAiReview(aiMenuPendingResult);document.getElementById('aiMenuReviewModal').classList.remove('hidden');stat.innerText='تمت القراءة محليًا — راجع النتيجة قبل الحفظ.';
-            }catch(e){console.error('Local OCR menu import:',e);showCustomAlert('تعذر قراءة المنيو: '+(e?.message||'خطأ غير معروف'));stat.innerText='';}
-            finally{btn.disabled=false;document.getElementById('parseAiReplaceBtn').disabled=false;btn.innerHTML='<i class="fa-solid fa-wand-magic-sparkles"></i> قراءة ومراجعة المنيو';}
-        }
-        async function confirmAiMenuImport(){
-            const result=collectAiReviewEdits(); const categories=(result.categories||[]).map(c=>({...c,name:String(c.name||'').trim(),items:(c.items||[]).filter(i=>String(i.name||'').trim()).map(i=>({...i,name:String(i.name).trim(),price:Number(i.price)||0,details:String(i.details||'').trim()}))})).filter(c=>c.name&&c.items.length);
-            const flat=[];categories.forEach(c=>c.items.forEach(i=>flat.push({id:Date.now()+Math.random(),name:i.name,category:c.name,price:i.price,discount:0,img:'',details:i.details||'',currency:i.currency||'',imageSource:'none'})));
-            if(!flat.length)return showCustomAlert('لا توجد أصناف صالحة للحفظ.');
-            const oldItems=restaurantDataCache.items||[],oldCats=restaurantDataCache.categories||[];
-            try{restaurantDataCache.items=aiMenuPendingReplace?flat:[...oldItems,...flat];const extractedCats=categories.map(c=>c.name);restaurantDataCache.categories=aiMenuPendingReplace?extractedCats:[...new Set([...oldCats,...extractedCats])];await saveRestaurantDataToCloud();updateCategoryDropdown();renderCategoriesManagement();renderItems();document.getElementById('aiMenuSavedStatus').innerText='تم اعتماد المنيو وحفظها بعد المراجعة.';closeAiMenuReview();showCustomAlert(`تم حفظ ${flat.length} صنف في ${categories.length} تصنيف.`);}catch(e){restaurantDataCache.items=oldItems;restaurantDataCache.categories=oldCats;renderCategoriesManagement();renderItems();showCustomAlert('تعذر حفظ المنيو: '+(e?.message||'خطأ غير معروف'));}
+                const rows=await runLocalMenuOCR(aiMenuImageFile,stat);
+                const candidates=buildMenuCandidates(rows);
+                stat.innerText='تمت القراءة — راجع النتيجة قبل الحفظ.';
+                showOCRReview(candidates,restaurantDataCache.categories||[],replace);
+            }catch(e){
+                console.error('Local OCR import error:',e);
+                showCustomAlert('تعذر قراءة المنيو. جرّب صورة أوضح وبإضاءة أفضل.');
+            }finally{
+                btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';
+                stat.innerText='';
+            }
         }
 
         function buildOrdersUrl(tableNum=null) {
@@ -1788,7 +1682,7 @@
                     <h4 style="margin-bottom:5px;color:var(--primary);">طاولة ${i}</h4>
                     <div id="${id}" class="qr-img-container"></div>
                     <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-                        <button class="btn btn-secondary qr-single-print-btn" style="padding:10px 12px;font-size:13px;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;" onclick="printSingleTableQR(${i})"><i class="fa-solid fa-print"></i> طباعة QR للطاولة ${i}</button>
+                        <button class="btn btn-secondary" style="padding:8px 12px;font-size:12px;width:100%;" onclick="printSingleTableQR(${i})"><i class="fa-solid fa-print"></i> طباعة هذه البطاقة (Print One)</button>
                         <a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:var(--text-muted);font-size:11px;text-decoration:none;"><i class="fa-solid fa-arrow-up-right-from-square"></i> عرض صفحة العميل</a>
                     </div>`;
                 container.appendChild(box);
@@ -1851,28 +1745,6 @@
             }
         }
 
-
     </script>
-    <!-- AI MENU REVIEW MODAL -->
-    <div id="aiMenuReviewModal" class="hidden" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);padding:20px;overflow:auto;">
-      <div style="max-width:1100px;margin:20px auto;background:var(--dark-card,#191414);border:1px solid var(--panel-border,#333);border-radius:22px;box-shadow:0 25px 80px rgba(0,0,0,.5);overflow:hidden;">
-        <div style="padding:20px;border-bottom:1px solid var(--panel-border,#333);display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;background:var(--dark-card,#191414);z-index:2;">
-          <div>
-            <h2 style="margin:0 0 6px;font-size:22px;"><i class="fa-solid fa-clipboard-check"></i> مراجعة المنيو قبل الحفظ</h2>
-            <div id="aiReviewSummary" style="font-size:13px;color:var(--text-muted,#aaa);"></div>
-          </div>
-          <button class="btn btn-danger" onclick="closeAiMenuReview()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="aiReviewWarnings" style="padding:12px 20px 0;"></div>
-        <div id="aiReviewBody" style="padding:20px;"></div>
-        <div style="padding:16px 20px;border-top:1px solid var(--panel-border,#333);display:flex;gap:12px;justify-content:flex-end;position:sticky;bottom:0;background:var(--dark-card,#191414);z-index:2;">
-          <button class="btn btn-secondary" onclick="closeAiMenuReview()">إلغاء</button>
-          <button class="btn btn-ai" onclick="reanalyzeAiMenu()"><i class="fa-solid fa-rotate"></i> إعادة التحليل</button>
-          <button class="btn" onclick="confirmAiMenuImport()"><i class="fa-solid fa-check"></i> اعتماد وحفظ المنيو</button>
-        </div>
-      </div>
-    </div>
-
-
 </body>
 </html>
