@@ -192,6 +192,66 @@ th,td{
     grid-template-columns:1fr 1fr
   }
 }
+
+
+/* DIGITAL MENU — Modern platform owner panel */
+body {
+    font-family: 'Cairo', Arial, sans-serif !important;
+    background:
+        radial-gradient(800px 500px at 90% -10%, rgba(181,31,42,.12), transparent 65%),
+        radial-gradient(650px 450px at 0% 80%, rgba(22,131,77,.06), transparent 70%),
+        #0b0e13 !important;
+}
+
+.wrap {
+    max-width: 1180px;
+    padding: 28px 20px;
+}
+
+.card {
+    background: rgba(20,24,31,.78);
+    border: 1px solid rgba(255,255,255,.075);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 18px 55px rgba(0,0,0,.16);
+    backdrop-filter: blur(18px);
+}
+
+input, select, button {
+    min-height: 48px;
+    border-radius: 14px;
+    border-color: rgba(255,255,255,.09);
+}
+
+button {
+    background: linear-gradient(135deg,#c52b38,#a81927);
+    box-shadow: 0 10px 25px rgba(181,31,42,.16);
+}
+
+button.secondary {
+    background: rgba(255,255,255,.055);
+}
+
+.status-box {
+    border-radius: 16px;
+    background: rgba(255,255,255,.025);
+    border-color: rgba(255,255,255,.08);
+}
+
+table {
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+th {
+    background: rgba(255,255,255,.035);
+}
+
+@media (max-width: 600px) {
+    .wrap { padding: 14px 10px; }
+    .card { padding: 17px; border-radius: 20px; }
+}
+
 </style></head><body><div class="wrap">  <!-- ================= LOGIN ================= -->  <div id="login" class="card"><h1>👑 لوحة مالك المنصة</h1>
 
 <p class="muted">

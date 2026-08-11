@@ -151,7 +151,174 @@
         .live-order-banner{position:sticky;top:77px;z-index:90;max-width:800px;margin:10px auto 0;padding:14px 16px;background:var(--surface-color);border:1px solid var(--primary);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(14px);}
         .live-order-banner.hidden{display:none!important}.live-order-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.live-order-status{font-size:15px;font-weight:900;color:var(--accent)}.live-order-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}.live-order-step{height:6px;border-radius:99px;background:var(--border-color);transition:.3s}.live-order-step.active{background:var(--primary)}.account-actions{display:flex;align-items:center;gap:8px}.header-action-btn{background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);border-radius:12px;padding:8px 11px;cursor:pointer;font-weight:800;font-size:12px}.header-action-btn:hover{border-color:var(--primary);color:var(--primary)}.history-list{display:flex;flex-direction:column;gap:12px}.history-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:16px;padding:14px}.history-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.history-status{font-weight:800;color:var(--secondary)}.saved-customer-box{background:var(--input-bg);border:1px dashed var(--border-color);border-radius:12px;padding:12px;margin-bottom:15px;color:var(--text-muted);font-size:12px}.account-modal-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.account-modal-title button{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer}.account-note{font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:14px}.account-submit{background:var(--primary);color:#fff;border:none;width:100%;padding:13px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;margin-top:6px}.empty-cart { text-align: center; padding: 40px 0; color: var(--text-muted); }
         .hidden{display:none!important}
-    </style>
+    
+
+/* DIGITAL MENU — Modern customer ordering UI */
+:root {
+    --modern-line: color-mix(in srgb, var(--text-color) 9%, transparent);
+    --modern-soft: color-mix(in srgb, var(--text-color) 4%, transparent);
+}
+
+body {
+    background:
+        radial-gradient(700px 420px at 90% -10%, color-mix(in srgb, var(--primary) 11%, transparent), transparent 65%),
+        radial-gradient(600px 400px at 0% 50%, color-mix(in srgb, var(--secondary) 5%, transparent), transparent 70%),
+        var(--bg-color);
+}
+
+header {
+    padding: 12px 18px;
+    background: color-mix(in srgb, var(--bg-color) 78%, transparent);
+    border-bottom: 1px solid var(--modern-line);
+    backdrop-filter: blur(24px) saturate(130%);
+}
+
+.brand-box {
+    gap: 10px;
+}
+
+.brand-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
+    box-shadow: 0 8px 25px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.brand-title {
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.table-badge {
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+    color: var(--primary);
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.container {
+    max-width: 920px;
+    padding: 24px 16px 110px;
+}
+
+.search-box {
+    margin-bottom: 15px;
+}
+
+.search-box input {
+    min-height: 50px;
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--surface-color) 70%, transparent);
+    border-color: var(--modern-line);
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+.categories-scroll {
+    gap: 8px;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+}
+
+.cat-chip {
+    padding: 10px 17px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--surface-color) 78%, transparent);
+    border-color: var(--modern-line);
+}
+
+.cat-chip.active {
+    background: var(--primary);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 14px;
+}
+
+.item-card {
+    border-radius: 22px;
+    border-color: var(--modern-line);
+    background: color-mix(in srgb, var(--surface-color) 86%, transparent);
+    box-shadow: 0 14px 45px rgba(0,0,0,.08);
+}
+
+.item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 55px rgba(0,0,0,.16);
+}
+
+.item-img {
+    height: 165px;
+}
+
+.item-details {
+    padding: 17px;
+}
+
+.item-title {
+    font-size: 15px;
+}
+
+.item-price {
+    font-size: 17px;
+}
+
+.add-btn {
+    min-height: 44px;
+    border-radius: 14px;
+}
+
+.cart-bar {
+    bottom: 16px;
+    padding: 13px 18px;
+    border-radius: 20px;
+    box-shadow: 0 18px 45px rgba(0,0,0,.32);
+    background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 72%, #000));
+}
+
+.modal-overlay {
+    background: rgba(0,0,0,.68);
+    backdrop-filter: blur(14px);
+}
+
+.cart-modal {
+    border-radius: 28px 28px 0 0;
+    border-color: var(--modern-line);
+    box-shadow: 0 -20px 70px rgba(0,0,0,.28);
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+    min-height: 48px;
+    border-radius: 14px;
+    border-color: var(--modern-line);
+}
+
+.btn-submit {
+    min-height: 50px;
+    border-radius: 15px;
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--secondary) 18%, transparent);
+}
+
+.live-order-banner {
+    border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+    background: color-mix(in srgb, var(--surface-color) 92%, transparent);
+    box-shadow: 0 15px 45px rgba(0,0,0,.15);
+}
+
+@media (max-width: 600px) {
+    .container { padding-inline: 11px; }
+    .items-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .item-img { height: 120px; }
+    .item-details { padding: 12px; }
+    .item-title { font-size: 13px; }
+    .item-price { font-size: 15px; margin-bottom: 9px; }
+    .add-btn { min-height: 40px; font-size: 12px; }
+}
+
+</style>
 </head>
 <body>
 
