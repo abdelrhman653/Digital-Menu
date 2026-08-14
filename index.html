@@ -881,6 +881,15 @@ td {
                 <label>كود الترخيص <span style="color:var(--text-muted);font-size:11px;">(مطلوب عند إنشاء الحساب فقط)</span></label>
                 <input type="text" id="authLicenseCode" placeholder="مثال: DM-2026-XXXX" autocomplete="off">
             </div>
+            <div style="margin:-2px 0 18px;padding:14px;border:1px solid var(--panel-border);border-radius:14px;background:linear-gradient(135deg,rgba(255,71,87,.08),rgba(46,213,115,.06));">
+                <div style="font-weight:800;margin-bottom:5px;">ليس لديك اشتراك أو تريد التجديد؟</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">اختر خطة جاهزة أو مدة مخصصة، وسيتم تجهيز رسالة واتساب تلقائياً.</div>
+                <select id="waSubscriptionPlan" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;">
+                    <option value="month">شهر</option><option value="3months">3 أشهر</option><option value="6months">6 أشهر</option><option value="year">سنة</option><option value="lifetime">مدى الحياة</option><option value="custom">مدة مخصصة</option>
+                </select>
+                <input id="waCustomDays" type="number" min="1" placeholder="عدد الأيام إذا اخترت مدة مخصصة" style="display:none;width:100%;margin-bottom:8px;">
+                <button class="btn btn-secondary" style="width:100%;" type="button" onclick="openWhatsAppSubscription('new')"><i class="fa-brands fa-whatsapp"></i> اشتراك الآن</button>
+            </div>
             <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 15px;line-height:1.7;">الحساب الإداري مربوط بالمطعم والترخيص، ومشاركة رابط لوحة الإدارة وحدها لا تمنح أي شخص صلاحية الدخول.</div>
 
             <button class="btn" style="width: 100%; margin-bottom: 12px;" onclick="handleLogin()">
@@ -948,6 +957,7 @@ td {
                 
                 <!-- Dashboard Section -->
                 <section id="tab-dashboard" class="section active">
+                    <div id="subscriptionStatusBanner" style="margin-bottom:18px;"></div>
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-info">
@@ -1122,6 +1132,10 @@ td {
                                     <label data-i18n="label_discount">قيمة الخصم (اختياري)</label>
                                     <input type="number" id="newItemDiscount" placeholder="0">
                                 </div>
+                            </div>
+                            <div class="input-group">
+                                <label data-i18n="label_item_description">تفاصيل الصنف</label>
+                                <textarea id="newItemDescription" rows="3" placeholder="مثال: لحم بقري، جبنة شيدر، خس، طماطم، صوص خاص..." style="width:100%;resize:vertical;"></textarea>
                             </div>
                             
                             <div class="input-group">
@@ -1326,7 +1340,7 @@ td {
                 stat_delivery_total: "إجمالي الدليفري", stat_dinein_total: "إجمالي الصالة", stat_customers: "عدد العملاء", stat_canceled: "الطلبات الملغية",
                 section_identity: "إعدادات الهوية واللوجو", label_logo: "لوجو المكان", choose_logo: "اضغط لاختيار صورة اللوجو", label_color: "اللون الأساسي", btn_save_settings: "حفظ الإعدادات",
                 section_smart_menu: "استيراد المنيو الذكي", smart_menu_desc: "ارفع صورة المنيو، وسيقوم النظام بالتعرف على التصنيفات والأصناف بدقة.", choose_menu_img: "اضغط لاختيار صورة المنيو", btn_import_ocr: "قراءة واستيراد المنيو ➕", btn_replace_ocr: "استبدال 🔄",
-                section_add_item: "إضافة صنف جديد", label_item_name: "اسم الصنف", label_category: "التصنيف", btn_add: "إضافة", label_price: "السعر", label_discount: "الخصم (اختياري)", label_item_img: "صورة الصنف", choose_item_img: "اضغط لاختيار صورة", btn_save_item: "حفظ الصنف", btn_cancel: "إلغاء",
+                section_add_item: "إضافة صنف جديد", label_item_name: "اسم الصنف", label_item_description: "تفاصيل الصنف", label_category: "التصنيف", btn_add: "إضافة", label_price: "السعر", label_discount: "الخصم (اختياري)", label_item_img: "صورة الصنف", choose_item_img: "اضغط لاختيار صورة", btn_save_item: "حفظ الصنف", btn_cancel: "إلغاء",
                 section_manage_cats: "إدارة التصنيفات", section_manage_items: "الأصناف الحالية", section_qr_generator: "مولد QR للطاولات", label_tables_count: "عدد الطاولات", btn_print_qr: "طباعة الأكواد", alert_title: "تنبيه", btn_ok: "حسناً", edit: "تعديل", delete: "حذف"
             },
             en: {
@@ -1338,7 +1352,7 @@ td {
                 stat_delivery_total: "Delivery Total", stat_dinein_total: "Dine-in Total", stat_customers: "Customers", stat_canceled: "Canceled",
                 section_identity: "Brand Identity", label_logo: "Store Logo", choose_logo: "Choose Logo", label_color: "Primary Color", btn_save_settings: "Save Settings",
                 section_smart_menu: "Smart Menu Import", smart_menu_desc: "Upload menu image, AI will extract items.", choose_menu_img: "Choose Image", btn_import_ocr: "Import Menu ➕", btn_replace_ocr: "Replace 🔄",
-                section_add_item: "Add New Item", label_item_name: "Item Name", label_category: "Category", btn_add: "Add", label_price: "Price", label_discount: "Discount", label_item_img: "Item Image", choose_item_img: "Choose Image", btn_save_item: "Save Item", btn_cancel: "Cancel",
+                section_add_item: "Add New Item", label_item_name: "Item Name", label_item_description: "Item Description", label_category: "Category", btn_add: "Add", label_price: "Price", label_discount: "Discount", label_item_img: "Item Image", choose_item_img: "Choose Image", btn_save_item: "Save Item", btn_cancel: "Cancel",
                 section_manage_cats: "Categories", section_manage_items: "Current Items", section_qr_generator: "QR Generator", label_tables_count: "Tables Count", btn_print_qr: "Print QRs", alert_title: "Alert", btn_ok: "OK", edit: "Edit", delete: "Delete"
             }
         };
@@ -1495,6 +1509,27 @@ td {
                 showCustomAlert('تعذر التحقق من صلاحية الحساب حالياً.');
             }
         }
+        function openWhatsAppSubscription(type='new') {
+            const phone='2015555889862';
+            const restaurant=(document.getElementById('authRestaurantName')?.value||currentRestaurant||'غير محدد').trim();
+            const planEl=document.getElementById('waSubscriptionPlan');
+            const plan=planEl?.value||'month';
+            const names={month:'شهر', '3months':'3 أشهر', '6months':'6 أشهر', year:'سنة', lifetime:'مدى الحياة', custom:'مدة مخصصة'};
+            const customDays=Number(document.getElementById('waCustomDays')?.value||0);
+            const duration=plan==='custom' ? (customDays>0 ? `${customDays} يوم` : 'مدة مخصصة - لم يتم تحديد الأيام') : names[plan];
+            const msg=`السلام عليكم، أريد ${type==='renew'?'تجديد':'اشتراك'} خدمة الديجيتال منيو.%0Aكود/اسم المطعم: ${restaurant}%0Aالخطة المطلوبة: ${duration}%0Aنوع الطلب: ${type==='renew'?'تجديد الاشتراك':'اشتراك جديد'}`;
+            window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
+        }
+        document.addEventListener('change',function(e){if(e.target.id==='waSubscriptionPlan'){const c=document.getElementById('waCustomDays');if(c)c.style.display=e.target.value==='custom'?'block':'none';}});
+        function renderSubscriptionStatus(data){
+            const el=document.getElementById('subscriptionStatusBanner'); if(!el) return;
+            if(!data || data.plan==='lifetime'){el.innerHTML='<div style="padding:15px 18px;border-radius:16px;background:rgba(46,213,115,.10);border:1px solid rgba(46,213,115,.25);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>اشتراكك مدى الحياة</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">حسابك مفعل ولا يوجد تاريخ انتهاء.</div></div><button class="btn btn-secondary" onclick="openWhatsAppSubscription(\'renew\')"><i class="fa-brands fa-whatsapp"></i> تجديد / ترقية</button></div>';return;}
+            const expiry=parseLicenseDate(data.licenseExpiresAt); if(!expiry){el.innerHTML='';return;}
+            const days=Math.ceil((expiry.getTime()-Date.now())/86400000); if(days>7){el.innerHTML=`<div style="padding:15px 18px;border-radius:16px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>اشتراكك مفعل</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">متبقي ${days} يوم — ينتهي في ${expiry.toLocaleDateString('ar-EG')}</div></div><button class="btn btn-secondary" onclick="openWhatsAppSubscription(\'renew\')"><i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك</button></div>`;return;}
+            const danger=days<=3;
+            el.innerHTML=`<div style="padding:16px 18px;border-radius:16px;background:${danger?'rgba(255,71,87,.12)':'rgba(245,158,11,.10)'};border:1px solid ${danger?'rgba(255,71,87,.3)':'rgba(245,158,11,.3)'};display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>${days<=0?'اشتراكك انتهى':'⚠️ اشتراكك سينتهي قريبًا'}</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${days<=0?'يرجى التواصل للتجديد.':'متبقي '+days+' يوم — تاريخ الانتهاء '+expiry.toLocaleDateString('ar-EG')}</div></div><button class="btn ${danger?'btn-danger':'btn-secondary'}" onclick="openWhatsAppSubscription('renew')"><i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك</button></div>`;
+        }
+
         async function handleRegister(){
             const nameInput=document.getElementById('authRestaurantName').value.trim().toLowerCase();
             const phoneInput=document.getElementById('authPhoneNumber').value.trim();
@@ -1596,6 +1631,7 @@ td {
                     }
                     restaurantDataCache = snapshotData;
                     restaurantSnapshotRevision = restaurantLocalRevision;
+                    renderSubscriptionStatus(restaurantDataCache);
 
                     // Live subscription check: if the owner expires or is suspended while
                     // the dashboard is open, immediately lock the dashboard.
@@ -2106,6 +2142,7 @@ td {
             let category = document.getElementById('newItemCategory').value;
             let price = Number(document.getElementById('newItemPrice').value);
             let discount = Number(document.getElementById('newItemDiscount').value) || 0;
+            let description = document.getElementById('newItemDescription').value.trim();
 
             if (!name || !price) return showCustomAlert('الرجاء إدخال الاسم والسعر');
             let img = uploadedImageFile ? await uploadFileToStorage(uploadedImageFile, "items") : "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=500";
@@ -2113,9 +2150,9 @@ td {
             const previousItems = restaurantDataCache.items.map(i => ({...i}));
             if (editId) {
                 let item = restaurantDataCache.items.find(i => i.id == editId);
-                if (item) { item.name=name; item.category=category; item.price=price; item.discount=discount; if(uploadedImageFile && img) item.img=img; }
+                if (item) { item.name=name; item.category=category; item.price=price; item.discount=discount; item.description=description; if(uploadedImageFile && img) item.img=img; }
             } else {
-                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, img });
+                restaurantDataCache.items.push({ id: Date.now(), name, category, price, discount, description, img });
             }
             renderItems();
             try {
@@ -2136,12 +2173,14 @@ td {
             document.getElementById('newItemCategory').value = item.category;
             document.getElementById('newItemPrice').value = item.price;
             document.getElementById('newItemDiscount').value = item.discount || 0;
+            document.getElementById('newItemDescription').value = item.description || '';
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             window.scrollTo({top:0, behavior:'smooth'});
         }
         function resetItemForm() {
             document.getElementById('editItemId').value=''; document.getElementById('newItemName').value='';
             document.getElementById('newItemPrice').value=''; document.getElementById('newItemDiscount').value='';
+            document.getElementById('newItemDescription').value='';
             uploadedImageFile=null; document.getElementById('fileNameDisplay').innerText='اضغط لاختيار صورة';
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
@@ -2169,6 +2208,8 @@ td {
                         <div>
                             <div style="font-weight:700;">${escapeHtml(item.name)} <span style="font-size:11px; color:var(--primary);">(${escapeHtml(item.category)})</span></div>
                             <div style="color:var(--secondary); font-size:14px; font-weight:700;">${item.price - (item.discount||0)} ج.م</div>
+                            ${item.description ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.6;">${escapeHtml(item.description)}</div>` : ''}
+                            ${item.description ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.6;">${escapeHtml(item.description)}</div>` : ''}
                         </div>
                     </div>
                     <div class="action-btns">
@@ -2196,54 +2237,75 @@ td {
                 status.innerText='';
             }
         }
-        async function importBilingualMenuOCR(replace) {
-            if(!aiMenuImageFile) return showCustomAlert('اختر صورة أولاً');
-            let btn = document.getElementById('parseAiBtn'); let stat = document.getElementById('aiProgressStatus');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...'; stat.innerText = 'تحليل النصوص...';
-            try {
-                let res = await Tesseract.recognize(aiMenuImageFile, 'ara+eng', { logger: m => { if(m.status==='recognizing text') stat.innerText = `قراءة... ${Math.round(m.progress*100)}%`; } });
-                let lines = res.data.text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-                let items = replace ? [] : restaurantDataCache.items; let cats = restaurantDataCache.categories;
-                let curCat = "أكلات"; let added = 0;
-                lines.forEach((line, i) => {
-                    let hasNum = /\d/.test(line);
-                    if(!hasNum && line.length>2 && line.length<30) { curCat = line; if(!cats.includes(curCat)) cats.push(curCat); return; }
-                    let pm = line.match(/(\d+)/g);
-                    if(pm && pm.length>0) {
-                        let price = parseInt(pm[pm.length-1]);
-                        let name = line.replace(/(\d+)/g, '').replace(/ريال|ج.م|جنيه|usd|\$|egp|SAR/gi, '').replace(/[\~\-\.\,\*\+\/]/g, '').trim();
-                        if(name.length>=2 && price>0) {
-                            items.push({ id: Date.now()+i+Math.random(), name, category: curCat, price, discount: 0, img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500' });
-                            added++;
-                        }
-                    }
-                });
-                restaurantDataCache.categories = cats;
-                restaurantDataCache.items = items;
-                updateCategoryDropdown();
-                renderCategoriesManagement();
-                renderItems();
-                try {
-                    const menuImageUrl = await uploadFileToStorage(aiMenuImageFile, "menu-source");
-                    if (menuImageUrl) restaurantDataCache.menuImageUrl = menuImageUrl;
-                    const status=document.getElementById('aiMenuSavedStatus');
-                    if(status) status.innerText='تم حفظ صورة المنيو ونتيجة القراءة.';
-                } catch(uploadErr) {
-                    console.warn('Menu source upload failed; OCR result will still be saved.', uploadErr);
-                    const status=document.getElementById('aiMenuSavedStatus');
-                    if(status) status.innerText='تم حفظ الأصناف والتصنيفات، وتعذر تجهيز الصورة الأصلية.';
-                }
-                await saveRestaurantDataToCloud();
-                stat.innerText = '';
-                btn.innerHTML = '<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';
-                showCustomAlert(`تم استيراد ${added} صنف بنجاح!`);
-            } catch(e) {
-                console.error('OCR import error:', e);
-                stat.innerText = '';
-                btn.innerHTML = '<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';
-                showCustomAlert('تعذر تحليل أو حفظ المنيو: ' + (e.message || 'خطأ غير معروف'));
-            }
+        function normalizeOcrDigits(value) {
+            return String(value || '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/٫/g,'.').replace(/٬/g,',');
         }
+        function cleanOcrLine(value) {
+            return String(value || '').replace(/[|¦]/g,' ').replace(/\s+/g,' ').replace(/^[-–—•·*]+\s*/,'').trim();
+        }
+        function extractOcrPrice(line) {
+            const normalized=normalizeOcrDigits(line);
+            const matches=[...normalized.matchAll(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)?\s*(\d+(?:[.,]\d{1,2})?)(?:\s*(?:ج\.م|جنيه|ريال|sar|egp|usd|\$))?/gi)];
+            if(!matches.length) return null;
+            const m=matches[matches.length-1];
+            const raw=m[1].replace(',','.');
+            const value=Number(raw);
+            if(!Number.isFinite(value) || value<=0 || value>1000000) return null;
+            return { value, index:m.index, raw:m[0] };
+        }
+        function likelyOcrCategory(line,nextLine='') {
+            const l=cleanOcrLine(line), n=cleanOcrLine(nextLine);
+            if(!l || extractOcrPrice(l)) return false;
+            if(extractOcrPrice(n) && l.length<=45) return true;
+            if(l.length>34) return false;
+            return /^(برجر|بيتزا|باستا|مكرونة|مشروبات|مشروب|عصائر|حلويات|حلو|سلطات|سلطة|مقبلات|ساندوتش|ساندوتشات|وجبات|فطور|إفطار|غداء|عشاء|دجاج|فراخ|لحوم|أسماك|سي فود|seafood|drinks|desserts|burgers|pizza|pasta|appetizers|salads|breakfast|lunch|dinner|main courses?)$/i.test(l)
+                || /^[A-Z][A-Z\s&/-]{2,30}$/.test(l);
+        }
+        function parseMenuOcrLines(rawText) {
+            const raw=String(rawText||'').split(/\r?\n/).map(cleanOcrLine).filter(Boolean);
+            const lines=[];
+            raw.forEach(line=>{
+                if(!line) return;
+                if(lines.length && !extractOcrPrice(line) && line.length<90 && /[\u0600-\u06FFa-zA-Z]/.test(line) && !likelyOcrCategory(line, lines[lines.length-1])) {
+                    // Keep separate OCR lines; merging is intentionally conservative to avoid corrupting names/details.
+                }
+                lines.push(line);
+            });
+            const result=[]; let category='غير مصنف'; let pendingDescription=[];
+            for(let i=0;i<lines.length;i++){
+                const line=lines[i], next=lines[i+1]||'';
+                const price=extractOcrPrice(line);
+                if(!price){
+                    if(likelyOcrCategory(line,next)){
+                        category=line;
+                        pendingDescription=[];
+                    } else if(result.length){
+                        const prev=result[result.length-1];
+                        if(prev && pendingDescription.length<4 && line.length>=2 && line.length<=180) pendingDescription.push(line);
+                    }
+                    continue;
+                }
+                const normalized=normalizeOcrDigits(line);
+                let before=normalized.slice(0,price.index).trim();
+                let after=normalized.slice(price.index+price.raw.length).trim();
+                before=before.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/[|¦•·]+/g,' ').replace(/\s+/g,' ').trim();
+                after=after.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/^[\-–—:|]+/,'').trim();
+                let name=before;
+                let inlineDescription=after;
+                if(!name && i>0 && !extractOcrPrice(lines[i-1]) && !likelyOcrCategory(lines[i-1],line)) name=lines[i-1];
+                name=name.replace(/^[-–—:|]+|[-–—:|]+$/g,'').trim();
+                if(name.length<2) continue;
+                const item={name,category:category||'غير مصنف',price:price.value,description:[inlineDescription,...pendingDescription].filter(Boolean).join(' ').trim()};
+                result.push(item); pendingDescription=[];
+            }
+            return result;
+        }
+        function normalizeOcrDigits(value){return String(value||'').replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/٫/g,'.').replace(/٬/g,',');}
+        function cleanOcrLine(value){return String(value||'').replace(/[|¦]/g,' ').replace(/\s+/g,' ').replace(/^[-–—•·*]+\s*/,'').trim();}
+        function extractOcrPrice(line){const normalized=normalizeOcrDigits(line);const matches=[...normalized.matchAll(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)?\s*(\d+(?:[.,]\d{1,2})?)(?:\s*(?:ج\.م|جنيه|ريال|sar|egp|usd|\$))?/gi)];if(!matches.length)return null;const m=matches[matches.length-1],raw=m[1].replace(',','.');const value=Number(raw);return Number.isFinite(value)&&value>0&&value<1000000?{value,index:m.index,raw:m[0]}:null;}
+        function likelyOcrCategory(line,nextLine=''){const l=cleanOcrLine(line),n=cleanOcrLine(nextLine);if(!l||extractOcrPrice(l))return false;if(extractOcrPrice(n)&&l.length<=45)return true;if(l.length>34)return false;return /^(برجر|بيتزا|باستا|مكرونة|مشروبات|مشروب|عصائر|حلويات|حلو|سلطات|سلطة|مقبلات|ساندوتش|ساندوتشات|وجبات|فطور|إفطار|غداء|عشاء|دجاج|فراخ|لحوم|أسماك|سي فود|seafood|drinks|desserts|burgers|pizza|pasta|appetizers|salads|breakfast|lunch|dinner|main courses?)$/i.test(l)||/^[A-Z][A-Z\s&/-]{2,30}$/.test(l);}
+        function parseMenuOcrLines(rawText){const lines=String(rawText||'').split(/\r?\n/).map(cleanOcrLine).filter(Boolean),result=[];let category='غير مصنف',pending=[];for(let i=0;i<lines.length;i++){const line=lines[i],next=lines[i+1]||'',price=extractOcrPrice(line);if(!price){if(likelyOcrCategory(line,next)){category=line;pending=[];}else if(result.length&&pending.length<4&&line.length<=180)pending.push(line);continue;}const normalized=normalizeOcrDigits(line);let before=normalized.slice(0,price.index).trim(),after=normalized.slice(price.index+price.raw.length).trim();before=before.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/[|¦•·]+/g,' ').replace(/\s+/g,' ').trim();after=after.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/^[\-–—:|]+/,'').trim();let name=before;if(!name&&i>0&&!extractOcrPrice(lines[i-1])&&!likelyOcrCategory(lines[i-1],line))name=lines[i-1];name=name.replace(/^[-–—:|]+|[-–—:|]+$/g,'').trim();if(name.length<2)continue;result.push({name,category,price:price.value,description:[after,...pending].filter(Boolean).join(' ').trim()});pending=[];}return result;}
+        async function importBilingualMenuOCR(replace){if(!aiMenuImageFile)return showCustomAlert('اختر صورة أولاً');const btn=document.getElementById('parseAiBtn'),stat=document.getElementById('aiProgressStatus');btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...';stat.innerText='قراءة النصوص بالعربي والإنجليزي...';try{const res=await Tesseract.recognize(aiMenuImageFile,'ara+eng',{logger:m=>{if(m.status==='recognizing text')stat.innerText=`قراءة... ${Math.round(m.progress*100)}%`;}});const parsed=parseMenuOcrLines(res.data.text);if(!parsed.length)throw new Error('لم يتم العثور على أصناف واضحة تحتوي على أسعار.');const preview=parsed.slice(0,20).map((x,i)=>`${i+1}. ${x.category} ← ${x.name} — ${x.price} ج.م${x.description?' — '+x.description:''}`).join('\n');if(!confirm(`تم العثور على ${parsed.length} صنف.\n\nمراجعة أولية:\n${preview}${parsed.length>20?'\n...':''}\n\nاضغط موافق لحفظ النتائج، أو إلغاء لإلغاء الاستيراد.`)){stat.innerText='تم إلغاء الاستيراد.';btn.innerHTML='<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';return;}let items=replace?[]:restaurantDataCache.items,cats=[...(restaurantDataCache.categories||defaultCategories)],added=0;parsed.forEach((x,i)=>{if(x.category!=='غير مصنف'&&!cats.includes(x.category))cats.push(x.category);items.push({id:Date.now()+i+Math.random(),name:x.name,category:x.category,price:x.price,discount:0,description:x.description||'',img:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'});added++;});restaurantDataCache.categories=cats;restaurantDataCache.items=items;updateCategoryDropdown();renderCategoriesManagement();renderItems();try{const menuImageUrl=await uploadFileToStorage(aiMenuImageFile,'menu-source');if(menuImageUrl)restaurantDataCache.menuImageUrl=menuImageUrl;}catch(uploadErr){console.warn(uploadErr);}await saveRestaurantDataToCloud();stat.innerText='';btn.innerHTML='<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';showCustomAlert(`تم استيراد ${added} صنف مع التصنيف والسعر والتفاصيل قدر الإمكان.`);}catch(e){console.error('OCR import error:',e);stat.innerText='';btn.innerHTML='<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';showCustomAlert('تعذر تحليل المنيو: '+(e.message||'خطأ غير معروف'));}}
 
         function buildOrdersUrl(tableNum=null) {
             const url=new URL('orders.html',document.baseURI);

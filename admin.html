@@ -327,8 +327,17 @@ th {
       <option value="lifetime">
         مدى الحياة
       </option>
+      <option value="custom">مدة مخصصة
+      </option>
 
     </select>
+    <input id="planPrice" type="number" min="0" placeholder="السعر (ج.م) للخطة" style="display:block;">
+
+    <div id="customPlanFields" style="display:none;grid-column:1/-1;gap:10px;">
+      <input id="customDays" type="number" min="1" placeholder="عدد الأيام (مثال: 45)">
+      <input id="customPrice" type="number" min="0" placeholder="السعر (ج.م)">
+      <input id="customPlanName" placeholder="اسم الخطة (مثال: عرض 45 يوم)">
+    </div>
 
   </div>
 
@@ -550,22 +559,9 @@ function randomCode(){
    PLAN
 ========================================================= */
 
-function planName(plan){
-
-  return {
-
-    month:"شهر",
-
-    "3months":"3 أشهر",
-
-    "6months":"6 أشهر",
-
-    year:"سنة",
-
-    lifetime:"مدى الحياة"
-
-  }[plan] || "غير محدد";
-
+function planName(plan, meta={}){
+  if(plan === "custom") return meta.planName || (meta.durationDays ? `${meta.durationDays} يوم` : "مدة مخصصة");
+  return {month:"شهر","3months":"3 أشهر","6months":"6 أشهر",year:"سنة",lifetime:"مدى الحياة"}[plan] || "غير محدد";
 }
 
 
@@ -600,10 +596,11 @@ function asDate(value){
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function calculateExpiry(plan,baseDate=new Date()){
+function calculateExpiry(plan,baseDate=new Date(),customDays=0){
   if(plan === "lifetime") return null;
-  const months=planMonths(plan);
   const date=asDate(baseDate) || new Date();
+  if(plan === "custom") { date.setDate(date.getDate()+Math.max(1,Number(customDays)||1)); return date; }
+  const months=planMonths(plan);
   date.setMonth(date.getMonth()+months);
   return date;
 }
@@ -1090,7 +1087,7 @@ async function displayRestaurant(
 
       <div class="info-line">
         <b>الخطة:</b>
-        ${planName(plan)}
+        ${planName(plan,{durationDays,planName:customPlanName})}
       </div>
 
       <div class="info-line">
@@ -1291,6 +1288,10 @@ $("lookupId").addEventListener(
 );
 
 
+document.getElementById("plan").addEventListener("change", function(){
+  document.getElementById("customPlanFields").style.display=this.value==="custom"?"grid":"none";
+});
+
 /* =========================================================
    CREATE LICENSE
 ========================================================= */
@@ -1317,7 +1318,13 @@ $("createBtn").addEventListener(
 
     const plan =
       $("plan").value;
+    const durationDays = plan === "custom" ? Math.max(1, Number($("customDays").value) || 0) : 0;
+    const price = Math.max(0, Number($("planPrice").value) || (plan === "custom" ? Number($("customPrice").value) || 0 : 0));
+    const customPlanName = plan === "custom" ? ($("customPlanName").value.trim() || `${durationDays} يوم`) : "";
 
+    if(plan === "custom" && !durationDays){
+      showMsg("اكتب عدد أيام صالح للمدة المخصصة.","error"); return;
+    }
 
     if(!restaurantId){
 
@@ -1336,7 +1343,7 @@ $("createBtn").addEventListener(
 
 
     const expiresAtDate =
-      calculateExpiry(plan);
+      calculateExpiry(plan, new Date(), durationDays);
     const expiresAt =
       expiresAtDate ? Timestamp.fromDate(expiresAtDate) : null;
 
@@ -1363,6 +1370,9 @@ $("createBtn").addEventListener(
           code,
           restaurantId,
           plan,
+          durationDays,
+          price,
+          planName: customPlanName,
           expiresAt,
           status:"available",
           used:false,
@@ -1397,7 +1407,7 @@ $("createBtn").addEventListener(
 
         <span class="muted">
           المدة:
-          ${planName(plan)}
+          ${planName(plan,{durationDays,planName:customPlanName})}
         </span>
 
       `;
@@ -1457,16 +1467,8 @@ async function renewRestaurant(
 
   const selected =
     prompt(
-      "اكتب مدة التجديد:\n\n" +
-      "month = شهر\n" +
-      "3months = 3 أشهر\n" +
-      "6months = 6 أشهر\n" +
-      "year = سنة\n" +
-      "lifetime = مدى الحياة\n\n" +
-      "مثال: 3months",
-      currentPlan !== "غير محدد"
-        ? currentPlan
-        : "month"
+      "اكتب مدة التجديد أو اختر: month / 3months / 6months / year / lifetime / custom\n\nمثال للمدة المخصصة: custom ثم سيطلب منك عدد الأيام.",
+      currentPlan !== "غير محدد" ? currentPlan : "month"
     );
 
 
@@ -1475,25 +1477,19 @@ async function renewRestaurant(
   }
 
 
-  const allowed = [
-    "month",
-    "3months",
-    "6months",
-    "year",
-    "lifetime"
-  ];
+  const allowed = ["month","3months","6months","year","lifetime","custom"];
 
 
   if(!allowed.includes(selected)){
-
-    alert(
-      "❌ الخطة غير صحيحة."
-    );
-
+    alert("❌ الخطة غير صحيحة.");
     return;
-
   }
 
+  let customDays=0;
+  if(selected === "custom") {
+    customDays=Math.max(1,Number(prompt("اكتب عدد أيام التجديد:","30"))||0);
+    if(!customDays){ alert("❌ عدد الأيام غير صحيح."); return; }
+  }
 
   const currentExpiry =
     restaurant.licenseExpiresAt ||
@@ -1543,6 +1539,7 @@ async function renewRestaurant(
         ),
         {
           plan:selected,
+          durationDays: selected === "custom" ? customDays : 0,
           expiresAt:(newExpiry ? Timestamp.fromDate(newExpiry) : null),
           status:"used",
           used:true
