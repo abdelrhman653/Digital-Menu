@@ -252,6 +252,12 @@ th {
     .card { padding: 17px; border-radius: 20px; }
 }
 
+
+.restaurant-list{display:grid;gap:10px;margin-top:12px}
+.restaurant-row{display:grid;grid-template-columns:1.4fr .8fr .8fr auto;gap:10px;align-items:center;padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)}
+.restaurant-row .name{font-weight:800}.restaurant-row .meta{color:#aab1bd;font-size:13px}.restaurant-row button{width:auto;min-width:95px;padding:10px 14px}
+.plan-edit-btn{background:#2b3039!important;box-shadow:none!important;min-height:40px!important;padding:8px 12px!important;width:auto!important}
+@media(max-width:700px){.restaurant-row{grid-template-columns:1fr 1fr}.restaurant-row button{grid-column:1/-1;width:100%}}
 </style></head><body><div class="wrap">  <!-- ================= LOGIN ================= -->  <div id="login" class="card"><h1>👑 لوحة مالك المنصة</h1>
 
 <p class="muted">
@@ -307,19 +313,40 @@ th {
     >
 
     <select id="plan">
-      <option value="">اختر خطة محفوظة</option>
-    </select>
 
-    <input
-      id="planPrice"
-      type="number"
-      min="0"
-      step="1"
-      placeholder="سعر الخطة (ج.م)"
-      readonly
-    >
+      <option value="month">
+        شهر
+      </option>
+
+      <option value="3months">
+        3 أشهر
+      </option>
+
+      <option value="6months">
+        6 أشهر
+      </option>
+
+      <option value="year">
+        سنة
+      </option>
+
+      <option value="lifetime">
+        مدى الحياة
+      </option>
+      <option value="custom">مدة مخصصة
+      </option>
+
+    </select>
+    <input id="planPrice" type="number" min="0" placeholder="السعر (ج.م) للخطة" style="display:block;">
+
+    <div id="customPlanFields" style="display:none;grid-column:1/-1;gap:10px;">
+      <input id="customDays" type="number" min="1" placeholder="عدد الأيام (مثال: 45)">
+      <input id="customPrice" type="number" min="0" placeholder="السعر (ج.م)">
+      <input id="customPlanName" placeholder="اسم الخطة (مثال: عرض 45 يوم)">
+    </div>
 
   </div>
+
   <button
     id="createBtn"
     style="margin-top:12px"
@@ -334,44 +361,19 @@ th {
 
 </div>
 
-<!-- SUBSCRIPTION PLANS -->
+<!-- PLAN PRICES -->
 <div class="card">
-  <h2>🧩 إدارة خطط الاشتراك</h2>
-  <p class="muted">أنشئ خططك بنفسك. اختر اسم الخطة والمدة والسعر، ثم احفظها. لن تظهر أي خطط جاهزة للعميل إلا الخطط التي تحفظها أنت.</p>
-
+  <h2>💰 أسعار الخطط التي تظهر للعميل</h2>
+  <p class="muted">حدد السعر الذي تريد ظهوره بجانب كل خطة في صفحة الاشتراك. يمكنك تغيير الأسعار في أي وقت.</p>
   <div class="grid">
-    <input id="newPlanName" placeholder="اسم الخطة (مثال: عرض شهرين)">
-    <input id="newPlanDuration" type="number" min="1" step="1" placeholder="المدة (مثال: 2)">
-    <select id="newPlanUnit">
-      <option value="day">يوم</option>
-      <option value="month" selected>شهر</option>
-      <option value="year">سنة</option>
-      <option value="lifetime">مدى الحياة</option>
-    </select>
-    <input id="newPlanPrice" type="number" min="0" step="1" placeholder="السعر قبل الخصم (ج.م)">
-    <input id="newPlanDiscount" type="number" min="0" step="1" placeholder="الخصم (ج.م) - اختياري">
+    <input id="priceMonth" type="number" min="0" step="1" placeholder="سعر الشهر (ج.م)">
+    <input id="price3months" type="number" min="0" step="1" placeholder="سعر 3 أشهر (ج.م)">
+    <input id="price6months" type="number" min="0" step="1" placeholder="سعر 6 أشهر (ج.م)">
+    <input id="priceYear" type="number" min="0" step="1" placeholder="سعر السنة (ج.م)">
+    <input id="priceLifetime" type="number" min="0" step="1" placeholder="سعر مدى الحياة (ج.م)">
   </div>
-
-  <button id="savePlanBtn" class="green" style="margin-top:12px;">💾 حفظ الخطة</button>
-  <div id="planMsg" class="msg hidden"></div>
-
-  <div style="margin-top:18px;overflow:auto;">
-    <table style="width:100%;min-width:560px;border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th style="padding:12px;text-align:right;">الخطة</th>
-          <th style="padding:12px;text-align:right;">المدة</th>
-          <th style="padding:12px;text-align:right;">السعر</th>
-          <th style="padding:12px;text-align:right;">الخصم</th>
-          <th style="padding:12px;text-align:right;">السعر النهائي</th>
-          <th style="padding:12px;text-align:right;">إجراء</th>
-        </tr>
-      </thead>
-      <tbody id="savedPlansBody">
-        <tr><td colspan="6" class="muted" style="padding:14px;text-align:center;">جارٍ تحميل الخطط...</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <button id="savePlanPricesBtn" class="green" style="margin-top:12px;">💾 حفظ أسعار الخطط</button>
+  <div id="planPricesMsg" class="msg hidden"></div>
 </div>
 
 <!-- SEARCH -->
@@ -404,13 +406,14 @@ th {
 
 </div>
 
-
 <!-- RESTAURANTS -->
 <div class="card">
   <h2>🍽️ المطاعم المسجلة</h2>
-  <p class="muted">كل المطاعم الموجودة في النظام. اضغط «عرض» لفتح بيانات المطعم وإدارته.</p>
-  <div id="restaurantsList">جارٍ تحميل المطاعم...</div>
+  <p class="muted">كل المطاعم الموجودة في قاعدة البيانات. اضغط «عرض» لإظهار بيانات المطعم والاشتراك.</p>
+  <button id="refreshRestaurantsBtn" class="secondary" style="margin-top:8px;">🔄 تحديث قائمة المطاعم</button>
+  <div id="restaurantsList" class="restaurant-list">جارٍ التحميل...</div>
 </div>
+
 
 <!-- LICENSES -->
 
@@ -585,70 +588,66 @@ function randomCode(){
 ========================================================= */
 
 function planName(plan, meta={}){
-  if(meta.planName) return meta.planName;
-  if(plan === "custom") return meta.durationDays ? `${meta.durationDays} يوم` : "مدة مخصصة";
-  return plan || "غير محدد";
+  if(plan === "custom") return meta.planName || (meta.durationDays ? `${meta.durationDays} يوم` : "مدة مخصصة");
+  return {month:"شهر","3months":"3 أشهر","6months":"6 أشهر",year:"سنة",lifetime:"مدى الحياة"}[plan] || "غير محدد";
 }
 
-function durationLabel(value, unit){
-  const n=Number(value)||0;
-  if(unit === "lifetime") return "مدى الحياة";
-  const labels={day:n===1?"يوم":"أيام",month:n===1?"شهر":"أشهر",year:n===1?"سنة":"سنوات"};
-  return `${n} ${labels[unit]||unit}`;
+
+function planMonths(plan){
+
+  return {
+
+    month:1,
+
+    "3months":3,
+
+    "6months":6,
+
+    year:12
+
+  }[plan] || 0;
+
 }
 
-function durationToDays(value, unit){
-  const n=Math.max(1,Number(value)||1);
-  if(unit === "day") return n;
-  if(unit === "month") return n * 30;
-  if(unit === "year") return n * 365;
-  return 0;
+
+/* =========================================================
+   EXPIRY
+========================================================= */
+
+function asDate(value){
+  if(!value) return null;
+  if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if(typeof value.toDate === 'function'){
+    try{ const d=value.toDate(); return Number.isNaN(d.getTime()) ? null : d; }catch(_){ return null; }
+  }
+  const d=new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function calculatePlanExpiry(planData,baseDate=new Date()){
-  if(!planData || planData.durationUnit === "lifetime") return null;
-  const date=asDate(baseDate) || new Date();
-  const n=Math.max(1,Number(planData.durationValue)||1);
-  if(planData.durationUnit === "day") date.setDate(date.getDate()+n);
-  else if(planData.durationUnit === "month") date.setMonth(date.getMonth()+n);
-  else if(planData.durationUnit === "year") date.setFullYear(date.getFullYear()+n);
-  else date.setDate(date.getDate()+n);
-  return date;
-}
+// Global-safe date parser. This prevents older cached scripts from breaking
+// the restaurant search/renewal flow with "asDate is not defined".
+window.safeAsDate = function(value){
+  if(!value) return null;
+  if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+  try{
+    if(typeof value.toDate === 'function'){
+      const d=value.toDate();
+      return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+    }
+  }catch(_){}
+  const d=new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
 
 function calculateExpiry(plan,baseDate=new Date(),customDays=0){
-  const date=asDate(baseDate) || new Date();
   if(plan === "lifetime") return null;
+  const date=window.safeAsDate(baseDate) || new Date();
   if(plan === "custom") { date.setDate(date.getDate()+Math.max(1,Number(customDays)||1)); return date; }
-  const months={month:1,"3months":3,"6months":6,year:12}[plan] || 0;
+  const months=planMonths(plan);
   date.setMonth(date.getMonth()+months);
   return date;
 }
 
-
-function asDate(value){
-  if(!value) return null;
-  try{
-    if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
-    if(typeof value.toDate === "function"){
-      const d=value.toDate();
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-    if(typeof value === "number"){
-      const d=new Date(value);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-    if(typeof value === "string"){
-      const d=new Date(value);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-    if(value && typeof value.seconds === "number"){
-      const d=new Date(value.seconds*1000);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-  }catch(e){ console.warn("asDate error",e); }
-  return null;
-}
 
 /* =========================================================
    DATE FORMAT
@@ -660,7 +659,7 @@ function formatDate(value){
     return "مدى الحياة";
   }
 
-  const date = asDate(value);
+  const date = window.safeAsDate(value);
 
   if(!date){
     return String(value);
@@ -897,111 +896,29 @@ $("logoutBtn").addEventListener(
 ========================================================= */
 
 async function findRestaurant(search){
+  const wanted = String(search || '').trim().toLowerCase();
+  if(!wanted) return null;
 
-  search =
-    search.trim();
+  // 1) Direct document id (the registration flow uses the restaurant name as the id).
+  const direct = await getDoc(doc(db, 'restaurants', String(search).trim()));
+  if(direct.exists()) return {id:direct.id, ...direct.data()};
 
-
-  if(!search){
-    return null;
-  }
-
-
-  /*
-   * أولًا نجرب الـ Document ID
-   */
-
-  const direct =
-    await getDoc(
-      doc(
-        db,
-        "restaurants",
-        search
-      )
-    );
-
-
-  if(direct.exists()){
-
-    return {
-      id:direct.id,
-      ...direct.data()
-    };
-
-  }
-
-
-  /*
-   * بعد ذلك نبحث بالاسم
-   */
-
-  const snapshot =
-    await getDocs(
-      collection(
-        db,
-        "restaurants"
-      )
-    );
-
-
-  const wanted =
-    search.toLowerCase();
-
-
+  // 2) Fallback: read the owner-visible restaurant collection and match all common name fields.
+  const snapshot = await getDocs(collection(db, 'restaurants'));
   let partial = null;
-
-
   for(const item of snapshot.docs){
-
-    const data =
-      item.data();
-
-
-    const name =
-      String(
-        data.name || ""
-      ).toLowerCase();
-
-
-    const id =
-      String(
-        item.id || ""
-      ).toLowerCase();
-
-
-    if(
-      name === wanted ||
-      id === wanted
-    ){
-
-      return {
-        id:item.id,
-        ...data
-      };
-
+    const data = item.data() || {};
+    const candidates = [
+      item.id, data.name, data.restaurantName, data.displayName, data.restaurantId, data.slug
+    ].filter(Boolean).map(v => String(v).trim().toLowerCase());
+    if(candidates.some(v => v === wanted)){
+      return {id:item.id, ...data};
     }
-
-
-    if(
-      !partial &&
-      (
-        name.includes(wanted) ||
-        id.includes(wanted)
-      )
-    ){
-
-      partial = {
-        id:item.id,
-        ...data
-      };
-
+    if(!partial && candidates.some(v => v.includes(wanted) || wanted.includes(v))){
+      partial = {id:item.id, ...data};
     }
-
   }
-
-
   return partial;
-
 }
 
 
@@ -1142,7 +1059,7 @@ async function displayRestaurant(
 
       <div class="info-line">
         <b>الخطة:</b>
-        ${escapeHtml(license?.planName || restaurant.planName || planName(plan,{durationDays,planName:customPlanName}))}
+        ${planName(plan,{durationDays,planName:customPlanName})}
       </div>
 
       <div class="info-line">
@@ -1237,6 +1154,55 @@ async function displayRestaurant(
     );
 
 }
+
+
+/* =========================================================
+   RESTAURANTS LIST
+========================================================= */
+
+async function refreshRestaurants(){
+  const box = $("restaurantsList");
+  if(!box) return;
+  if(!isOwner(auth.currentUser)){
+    box.innerHTML = '<span class="bad">غير مصرح لك.</span>';
+    return;
+  }
+  box.textContent = '🔄 جارٍ تحميل المطاعم...';
+  try{
+    const snapshot = await getDocs(collection(db, 'restaurants'));
+    if(snapshot.empty){
+      box.innerHTML = '<span class="muted">لا توجد مطاعم مسجلة حتى الآن.</span>';
+      return;
+    }
+    const rows = [];
+    snapshot.forEach(item => {
+      const d=item.data() || {};
+      const name=d.name || d.restaurantName || d.displayName || item.id;
+      const status=d.licenseStatus || 'غير معروف';
+      const expiry=d.licenseExpiresAt || null;
+      rows.push(`
+        <div class="restaurant-row">
+          <div><div class="name">${escapeHtml(name)}</div><div class="meta">المعرّف: ${escapeHtml(item.id)}</div></div>
+          <div class="meta">الحالة: <span class="${statusClass(status)}">${statusName(status)}</span></div>
+          <div class="meta">الانتهاء: ${escapeHtml(formatDate(expiry))}</div>
+          <button class="plan-edit-btn" data-restaurant-id="${escapeHtml(item.id)}">👁️ عرض</button>
+        </div>`);
+    });
+    box.innerHTML = rows.join('');
+    box.querySelectorAll('[data-restaurant-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const r = await findRestaurant(btn.dataset.restaurantId);
+        if(r) await displayRestaurant(r);
+      });
+    });
+  }catch(error){
+    console.error('Restaurants list error:', error);
+    box.innerHTML = '<span class="bad">❌ تعذر قراءة المطاعم: ' + escapeHtml(error.code || error.message) + '</span>';
+  }
+}
+
+const refreshRestaurantsBtn = $("refreshRestaurantsBtn");
+if(refreshRestaurantsBtn) refreshRestaurantsBtn.addEventListener('click', refreshRestaurants);
 
 
 /* =========================================================
@@ -1344,9 +1310,13 @@ $("lookupId").addEventListener(
 
 
 document.getElementById("plan").addEventListener("change", function(){
-  const selected=currentSubscriptionPlans.find(p=>p.id===this.value);
-  const finalPrice=selected ? Math.max(0,Number(selected.price||0)-Number(selected.discount||0)) : "";
-  document.getElementById("planPrice").value=selected ? finalPrice : "";
+  document.getElementById("customPlanFields").style.display=this.value==="custom"?"grid":"none";
+  if(this.value === 'custom'){
+    document.getElementById('planPrice').value = '';
+  }else if(Object.prototype.hasOwnProperty.call(currentPlanPrices, this.value)){
+    const configured = Number(currentPlanPrices[this.value]) || 0;
+    document.getElementById('planPrice').value = configured || '';
+  }
 });
 
 /* =========================================================
@@ -1356,43 +1326,154 @@ document.getElementById("plan").addEventListener("change", function(){
 $("createBtn").addEventListener(
   "click",
   async function(){
-    if(!isOwner(auth.currentUser)){ showMsg("❌ غير مصرح لك.","error"); return; }
 
-    const restaurantId=$("restaurantId").value.trim();
-    const planId=$("plan").value;
-    const selected=currentSubscriptionPlans.find(p=>p.id===planId);
+    if(!isOwner(auth.currentUser)){
 
-    if(!restaurantId){ showMsg("اكتب معرّف المطعم أولًا.","error"); return; }
-    if(!selected){ showMsg("اختر خطة محفوظة أولًا.","error"); return; }
+      showMsg(
+        "❌ غير مصرح لك.",
+        "error"
+      );
 
-    const code=randomCode();
-    const expiresAtDate=calculatePlanExpiry(selected,new Date());
-    const expiresAt=expiresAtDate ? Timestamp.fromDate(expiresAtDate) : null;
-    const button=$("createBtn");
-    button.disabled=true;
-    button.textContent="جارٍ إنشاء الكود...";
+      return;
+
+    }
+
+
+    const restaurantId =
+      $("restaurantId").value.trim();
+
+
+    const plan =
+      $("plan").value;
+    const durationDays = plan === "custom" ? Math.max(1, Number($("customDays").value) || 0) : 0;
+    const price = Math.max(0, Number($("planPrice").value) || (plan === "custom" ? Number($("customPrice").value) || 0 : 0));
+    const customPlanName = plan === "custom" ? ($("customPlanName").value.trim() || `${durationDays} يوم`) : "";
+
+    if(plan === "custom" && !durationDays){
+      showMsg("اكتب عدد أيام صالح للمدة المخصصة.","error"); return;
+    }
+
+    if(!restaurantId){
+
+      showMsg(
+        "اكتب معرّف المطعم أولًا.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    const code =
+      randomCode();
+
+
+    const expiresAtDate =
+      calculateExpiry(plan, new Date(), durationDays);
+    const expiresAt =
+      expiresAtDate ? Timestamp.fromDate(expiresAtDate) : null;
+
+
+    const button =
+      $("createBtn");
+
+
+    button.disabled = true;
+
+    button.textContent =
+      "جارٍ إنشاء الكود...";
+
 
     try{
-      await setDoc(doc(db,"licenses",code),{
-        code, restaurantId, plan:planId, planId, planName:selected.name,
-        durationValue:Number(selected.durationValue)||1, durationUnit:selected.durationUnit,
-        price:Math.max(0,Number(selected.price||0)-Number(selected.discount||0)), originalPrice:Number(selected.price)||0, discount:Number(selected.discount)||0, expiresAt, status:"available", used:false,
-        createdAt:new Date().toISOString(), createdBy:auth.currentUser.uid
-      });
 
-      $("newCode").classList.remove("hidden");
-      const finalPrice=Math.max(0,Number(selected.price||0)-Number(selected.discount||0));
-      $("newCode").innerHTML=`الكود: <span class="code">${escapeHtml(code)}</span><br><span class="muted">المطعم: ${escapeHtml(restaurantId)}</span><br><span class="muted">الخطة: ${escapeHtml(selected.name)} — ${escapeHtml(durationLabel(selected.durationValue,selected.durationUnit))} — ${finalPrice} ج.م${selected.discount>0 ? ` بدل ${Number(selected.price)||0} ج.م` : ""}</span>`;
-      showMsg("✅ تم إنشاء كود الاشتراك بنجاح.","success");
-      $("restaurantId").value="";
-      await loadLicenses();
+      await setDoc(
+        doc(
+          db,
+          "licenses",
+          code
+        ),
+        {
+          code,
+          restaurantId,
+          plan,
+          durationDays,
+          price,
+          planName: customPlanName,
+          expiresAt,
+          status:"available",
+          used:false,
+          createdAt:
+            new Date().toISOString(),
+          createdBy:
+            auth.currentUser.uid
+        }
+      );
+
+
+      $("newCode")
+        .classList
+        .remove("hidden");
+
+
+      $("newCode").innerHTML = `
+
+        الكود:
+        <span class="code">
+          ${escapeHtml(code)}
+        </span>
+
+        <br>
+
+        <span class="muted">
+          المطعم:
+          ${escapeHtml(restaurantId)}
+        </span>
+
+        <br>
+
+        <span class="muted">
+          المدة:
+          ${planName(plan,{durationDays,planName:customPlanName})}
+        </span>
+
+      `;
+
+
+      showMsg(
+        "✅ تم إنشاء كود الاشتراك بنجاح.",
+        "success"
+      );
+
+
+      $("restaurantId").value =
+        "";
+
+
+      await loadPlanPrices();
+    await loadLicenses();
+
+
     }catch(error){
+
       console.error(error);
-      showMsg("❌ فشل إنشاء الكود: "+(error.code||error.message),"error");
+
+      showMsg(
+        "❌ تعذر إنشاء الكود: " +
+        (error.code || error.message),
+        "error"
+      );
+
+
     }finally{
-      button.disabled=false;
-      button.textContent="إنشاء الكود";
+
+      button.disabled = false;
+
+      button.textContent =
+        "إنشاء الكود";
+
     }
+
   }
 );
 
@@ -1401,51 +1482,130 @@ $("createBtn").addEventListener(
    RENEW
 ========================================================= */
 
-async function renewRestaurant(restaurant,license,currentPlan){
-  if(!isOwner(auth.currentUser)) return;
+async function renewRestaurant(
+  restaurant,
+  license,
+  currentPlan
+){
 
-  if(!currentSubscriptionPlans.length){
-    await loadSubscriptionPlans();
-  }
-  if(!currentSubscriptionPlans.length){
-    showMsg("❌ لا توجد خطط محفوظة. أنشئ خطة أولًا.","error");
+  if(!isOwner(auth.currentUser)){
     return;
   }
 
-  const list=currentSubscriptionPlans.map((p,i)=>{const finalPrice=Math.max(0,Number(p.price||0)-Number(p.discount||0));return `${i+1}) ${p.name} — ${durationLabel(p.durationValue,p.durationUnit)} — ${finalPrice} ج.م${p.discount>0?` (بدل ${Number(p.price)||0} ج.م)`:""}`;}).join("\n");
-  const answer=prompt("اختر رقم خطة التجديد:\n\n"+list,"1");
-  if(!answer) return;
-  const selected=currentSubscriptionPlans[Number(answer)-1];
-  if(!selected){ alert("❌ اختيار غير صحيح."); return; }
 
-  const currentExpiry=restaurant.licenseExpiresAt || license?.expiresAt || null;
-  const parsedCurrentExpiry=asDate(currentExpiry);
-  const baseDate=parsedCurrentExpiry && parsedCurrentExpiry > new Date() ? parsedCurrentExpiry : new Date();
-  const newExpiry=calculatePlanExpiry(selected,baseDate);
+  const selected =
+    prompt(
+      "اختر مدة التجديد: month / 3months / 6months / year / lifetime / custom\n\nمثال للمدة المخصصة: custom ثم سيطلب منك عدد الأيام.",
+      ""
+    );
+
+
+  if(!selected){
+    return;
+  }
+
+
+  const allowed = ["month","3months","6months","year","lifetime","custom"];
+
+
+  if(!allowed.includes(selected)){
+    alert("❌ الخطة غير صحيحة.");
+    return;
+  }
+
+  let customDays=0;
+  if(selected === "custom") {
+    customDays=Math.max(1,Number(prompt("اكتب عدد أيام التجديد:","30"))||0);
+    if(!customDays){ alert("❌ عدد الأيام غير صحيح."); return; }
+  }
+
+  const currentExpiry =
+    restaurant.licenseExpiresAt ||
+    license?.expiresAt ||
+    null;
+
+
+  let baseDate =
+    new Date();
+
+
+  const parsedCurrentExpiry=window.safeAsDate(currentExpiry);
+  if(parsedCurrentExpiry && parsedCurrentExpiry > new Date()){
+    baseDate=parsedCurrentExpiry;
+  }
+
+
+  const newExpiry =
+    calculateExpiry(
+      selected,
+      baseDate,
+      customDays
+    );
+
 
   try{
-    await updateDoc(doc(db,"restaurants",restaurant.id),{
-      licenseStatus:"active", licenseExpiresAt:(newExpiry ? Timestamp.fromDate(newExpiry) : null),
-      plan:selected.id, planName:selected.name, durationValue:Number(selected.durationValue)||1,
-      durationUnit:selected.durationUnit, price:Math.max(0,Number(selected.price||0)-Number(selected.discount||0)), originalPrice:Number(selected.price)||0, discount:Number(selected.discount)||0
-    });
+
+    await updateDoc(
+      doc(
+        db,
+        "restaurants",
+        restaurant.id
+      ),
+      {
+        licenseStatus:"active",
+        licenseExpiresAt:(newExpiry ? Timestamp.fromDate(newExpiry) : null)
+      }
+    );
+
 
     if(license){
-      await updateDoc(doc(db,"licenses",license.id),{
-        plan:selected.id, planId:selected.id, planName:selected.name,
-        durationValue:Number(selected.durationValue)||1, durationUnit:selected.durationUnit,
-        price:Math.max(0,Number(selected.price||0)-Number(selected.discount||0)), originalPrice:Number(selected.price)||0, discount:Number(selected.discount)||0, expiresAt:(newExpiry ? Timestamp.fromDate(newExpiry) : null),
-        status:"used", used:true
-      });
+
+      await updateDoc(
+        doc(
+          db,
+          "licenses",
+          license.id
+        ),
+        {
+          plan:selected,
+          durationDays: selected === "custom" ? customDays : 0,
+          expiresAt:(newExpiry ? Timestamp.fromDate(newExpiry) : null),
+          status:"used",
+          used:true
+        }
+      );
+
     }
 
-    showMsg("✅ تم تجديد الاشتراك وإضافة المدة فوق المدة المتبقية.","success");
-    await displayRestaurant({...restaurant,licenseStatus:"active",licenseExpiresAt:newExpiry,plan:selected.id,planName:selected.name,durationValue:selected.durationValue,durationUnit:selected.durationUnit});
+
+    showMsg(
+      "✅ تم تجديد الاشتراك بنجاح.",
+      "success"
+    );
+
+
+    await displayRestaurant({
+      ...restaurant,
+      licenseStatus:"active",
+      licenseExpiresAt:newExpiry
+    });
+
+
     await loadLicenses();
+
+
   }catch(error){
+
     console.error(error);
-    showMsg("❌ فشل التجديد: "+(error.code||error.message),"error");
+
+    showMsg(
+      "❌ فشل التجديد: " +
+      (error.code || error.message),
+      "error"
+    );
+
   }
+
 }
 
 
@@ -1554,7 +1714,7 @@ async function activateRestaurant(
     null;
 
 
-  const parsedExpiry=asDate(expiresAt);
+  const parsedExpiry=window.safeAsDate(expiresAt);
   if(parsedExpiry && parsedExpiry <= new Date()){
 
     alert(
@@ -1723,37 +1883,6 @@ async function cancelRestaurant(
 
 }
 
-
-async function loadRestaurants(){
-  const box=$("restaurantsList");
-  if(!box || !isOwner(auth.currentUser)) return;
-  box.textContent="جارٍ تحميل المطاعم...";
-  try{
-    const snap=await getDocs(collection(db,"restaurants"));
-    if(snap.empty){
-      box.innerHTML='<div class="muted" style="padding:12px">لا توجد مطاعم مسجلة حتى الآن.</div>';
-      return;
-    }
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    rows.sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),"ar"));
-    box.innerHTML=rows.map(r=>{
-      const status=r.licenseStatus||"غير معروف";
-      const exp=r.licenseExpiresAt||null;
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;border-top:1px solid var(--border);">
-        <div style="min-width:0"><div style="font-weight:900">${escapeHtml(r.name||r.id)}</div><div class="muted">${escapeHtml(r.id)} · ${escapeHtml(statusName(status))}${exp?` · ينتهي ${escapeHtml(formatDate(exp))}`:""}</div></div>
-        <button class="secondary" style="padding:9px 14px;white-space:nowrap" onclick="openRestaurantFromList('${escapeHtml(r.id)}')">عرض</button>
-      </div>`;
-    }).join("");
-  }catch(error){
-    console.error("loadRestaurants",error);
-    box.innerHTML=`<span class="bad">لا يمكن قراءة المطاعم: ${escapeHtml(error.code||error.message)}</span>`;
-  }
-}
-
-window.openRestaurantFromList=async function(id){
-  $("lookupId").value=id;
-  $("lookupBtn").click();
-};
 
 /* =========================================================
    LOAD LICENSES
@@ -1948,153 +2077,77 @@ async function loadLicenses(){
 
 
 /* =========================================================
-   SUBSCRIPTION PLANS
+   PLAN PRICES
 ========================================================= */
 
-let currentSubscriptionPlans=[];
+const DEFAULT_PLAN_PRICES = {
+  month: 0,
+  '3months': 0,
+  '6months': 0,
+  year: 0,
+  lifetime: 0
+};
+let currentPlanPrices = {...DEFAULT_PLAN_PRICES};
 
-function normalizePlan(plan,index=0){
-  return {
-    id:String(plan.id || `plan_${Date.now()}_${index}`),
-    name:String(plan.name || plan.planName || "خطة بدون اسم"),
-    durationValue:Math.max(1,Number(plan.durationValue ?? plan.days ?? 1)||1),
-    durationUnit:plan.durationUnit || (plan.durationDays ? "day" : "month"),
-    price:Math.max(0,Math.round(Number(plan.price)||0)),
-    discount:Math.max(0,Math.round(Number(plan.discount)||0))
-  };
+function normalizePlanPrice(value){
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
 }
 
-function renderPlanSelect(){
-  const select=$("plan");
-  if(!select) return;
-  const current=select.value;
-  select.innerHTML='<option value="">اختر خطة محفوظة</option>';
-  currentSubscriptionPlans.forEach(plan=>{
-    const option=document.createElement("option");
-    option.value=plan.id;
-    const finalPrice=Math.max(0,plan.price-plan.discount);
-    option.textContent=`${plan.name} — ${durationLabel(plan.durationValue,plan.durationUnit)} — ${finalPrice} ج.م${plan.discount>0 ? ` (بدل ${plan.price} ج.م)` : ""}`;
-    select.appendChild(option);
-  });
-  if(currentSubscriptionPlans.some(p=>p.id===current)) select.value=current;
+function setPlanPriceInputs(prices){
+  const p = {...DEFAULT_PLAN_PRICES, ...(prices || {})};
+  currentPlanPrices = {...p};
+  $('priceMonth').value = p.month || '';
+  $('price3months').value = p['3months'] || '';
+  $('price6months').value = p['6months'] || '';
+  $('priceYear').value = p.year || '';
+  $('priceLifetime').value = p.lifetime || '';
 }
 
-function renderSavedPlans(){
-  const body=$("savedPlansBody");
-  if(!body) return;
-  if(!currentSubscriptionPlans.length){
-    body.innerHTML='<tr><td colspan="6" class="muted" style="padding:14px;text-align:center;">لا توجد خطط محفوظة حتى الآن.</td></tr>';
+async function loadPlanPrices(){
+  try{
+    const snap = await getDoc(doc(db, 'platformSettings', 'planPricing'));
+    setPlanPriceInputs(snap.exists() ? snap.data() : DEFAULT_PLAN_PRICES);
+  }catch(error){
+    console.error('Load plan prices error:', error);
+    showMsg('⚠️ تعذر تحميل أسعار الخطط: ' + (error.code || error.message), 'error');
+  }
+}
+
+$('savePlanPricesBtn').addEventListener('click', async function(){
+  if(!isOwner(auth.currentUser)){
+    showMsg('❌ غير مصرح لك.', 'error');
     return;
   }
-  body.innerHTML=currentSubscriptionPlans.map(plan=>{
-    const finalPrice=Math.max(0,plan.price-plan.discount);
-    return `<tr>
-    <td style="padding:12px;border-top:1px solid var(--border);font-weight:800;">${escapeHtml(plan.name)}</td>
-    <td style="padding:12px;border-top:1px solid var(--border);">${escapeHtml(durationLabel(plan.durationValue,plan.durationUnit))}</td>
-    <td style="padding:12px;border-top:1px solid var(--border);">${plan.price} ج.م</td>
-    <td style="padding:12px;border-top:1px solid var(--border);">${plan.discount>0 ? plan.discount+" ج.م" : "—"}</td>
-    <td style="padding:12px;border-top:1px solid var(--border);font-weight:900;color:var(--secondary);">${finalPrice} ج.م</td>
-    <td style="padding:12px;border-top:1px solid var(--border);white-space:nowrap;">
-      <button class="secondary" style="padding:8px 12px;margin-left:6px;" onclick="editSubscriptionPlan('${escapeHtml(plan.id)}')">✏️ تعديل</button>
-      <button class="danger" style="padding:8px 12px;" onclick="deleteSubscriptionPlan('${escapeHtml(plan.id)}')">🗑️ حذف</button>
-    </td>
-  </tr>`;
-  }).join("");
-}
 
-async function loadSubscriptionPlans(){
+  const prices = {
+    month: normalizePlanPrice($('priceMonth').value),
+    '3months': normalizePlanPrice($('price3months').value),
+    '6months': normalizePlanPrice($('price6months').value),
+    year: normalizePlanPrice($('priceYear').value),
+    lifetime: normalizePlanPrice($('priceLifetime').value),
+    updatedAt: new Date().toISOString(),
+    updatedBy: auth.currentUser.uid
+  };
+
+  const btn = $('savePlanPricesBtn');
+  btn.disabled = true;
+  btn.textContent = 'جارٍ الحفظ...';
   try{
-    const snap=await getDoc(doc(db,"platformSettings","subscriptionPlans"));
-    const data=snap.exists()?snap.data():{};
-    currentSubscriptionPlans=Array.isArray(data.plans)?data.plans.map(normalizePlan):[];
+    await setDoc(doc(db, 'platformSettings', 'planPricing'), prices, {merge:true});
+    currentPlanPrices = {...currentPlanPrices, ...prices};
+    $('planPricesMsg').classList.remove('hidden');
+    $('planPricesMsg').className = 'msg ok';
+    $('planPricesMsg').textContent = '✅ تم حفظ أسعار الخطط، وستظهر للعميل في صفحة الاشتراك.';
+    showMsg('✅ تم حفظ أسعار الخطط بنجاح.', 'success');
   }catch(error){
-    console.error("Load subscription plans error:",error);
-    currentSubscriptionPlans=[];
-    showMsg("⚠️ تعذر تحميل الخطط: "+(error.code||error.message),"error");
-  }
-  renderPlanSelect();
-  renderSavedPlans();
-}
-
-async function saveSubscriptionPlans(){
-  await setDoc(doc(db,"platformSettings","subscriptionPlans"),{
-    plans:currentSubscriptionPlans, updatedAt:new Date().toISOString(), updatedBy:auth.currentUser.uid
-  },{merge:true});
-}
-
-$("savePlanBtn").addEventListener("click",async function(){
-  if(!isOwner(auth.currentUser)){showMsg("❌ غير مصرح لك.","error");return;}
-  const name=$("newPlanName").value.trim();
-  const unit=$("newPlanUnit").value;
-  const value=unit==="lifetime"?1:Math.max(1,Number($("newPlanDuration").value)||0);
-  const price=Math.max(0,Math.round(Number($("newPlanPrice").value)||0));
-  const discount=Math.min(price,Math.max(0,Math.round(Number($("newPlanDiscount").value)||0)));
-  if(!name){showMsg("اكتب اسم الخطة.","error");return;}
-  if(unit!=="lifetime" && !value){showMsg("اكتب مدة صحيحة.","error");return;}
-
-  const editingId=window.editingSubscriptionPlanId || null;
-  const btn=$("savePlanBtn");
-  btn.disabled=true;
-  btn.textContent=editingId ? "جارٍ حفظ التعديل..." : "جارٍ حفظ الخطة...";
-  const old=[...currentSubscriptionPlans];
-  try{
-    if(editingId){
-      const index=currentSubscriptionPlans.findIndex(p=>p.id===editingId);
-      if(index===-1) throw new Error("الخطة غير موجودة");
-      currentSubscriptionPlans[index]={...currentSubscriptionPlans[index],name,durationValue:value,durationUnit:unit,price,discount};
-      await saveSubscriptionPlans();
-      window.editingSubscriptionPlanId=null;
-      btn.textContent="💾 حفظ الخطة";
-      const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg ok";msg.textContent="✅ تم تعديل الخطة بنجاح.";
-    }else{
-      const plan={id:`plan_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,name,durationValue:value,durationUnit:unit,price,discount};
-      currentSubscriptionPlans.push(plan);
-      await saveSubscriptionPlans();
-      const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg ok";msg.textContent="✅ تم حفظ الخطة.";
-    }
-    $("newPlanName").value="";$("newPlanDuration").value="";$("newPlanPrice").value="";$("newPlanDiscount").value="";
-    renderPlanSelect();renderSavedPlans();
-  }catch(error){
-    currentSubscriptionPlans=old;
-    renderPlanSelect();renderSavedPlans();
-    showMsg("❌ تعذر حفظ الخطة: "+(error.code||error.message),"error");
+    console.error('Save plan prices error:', error);
+    showMsg('❌ تعذر حفظ الأسعار: ' + (error.code || error.message), 'error');
   }finally{
-    btn.disabled=false;
-    btn.textContent="💾 حفظ الخطة";
+    btn.disabled = false;
+    btn.textContent = '💾 حفظ أسعار الخطط';
   }
 });
-
-window.editSubscriptionPlan=function(id){
-  if(!isOwner(auth.currentUser)) return;
-  const plan=currentSubscriptionPlans.find(p=>p.id===id);
-  if(!plan) return;
-  window.editingSubscriptionPlanId=id;
-  $("newPlanName").value=plan.name||"";
-  $("newPlanDuration").value=plan.durationValue||1;
-  $("newPlanUnit").value=plan.durationUnit||"month";
-  $("newPlanPrice").value=plan.price??0;
-  $("newPlanDiscount").value=plan.discount??0;
-  $("savePlanBtn").textContent="💾 حفظ التعديل";
-  const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg";msg.textContent=`✏️ تعديل الخطة: ${plan.name}`;
-  $("newPlanName").scrollIntoView({behavior:"smooth",block:"center"});
-};
-
-window.cancelEditSubscriptionPlan=function(){
-  window.editingSubscriptionPlanId=null;
-  $("newPlanName").value="";$("newPlanDuration").value="";$("newPlanPrice").value="";$("newPlanDiscount").value="";
-  $("savePlanBtn").textContent="💾 حفظ الخطة";
-};
-
-window.deleteSubscriptionPlan=async function(id){
-  if(!isOwner(auth.currentUser)) return;
-  const plan=currentSubscriptionPlans.find(p=>p.id===id);
-  if(!plan) return;
-  if(!confirm(`حذف خطة «${plan.name}»؟\nالأكواد القديمة المرتبطة بها لن تُحذف، لكن لن تظهر الخطة كخيار جديد.`)) return;
-  const old=[...currentSubscriptionPlans];
-  currentSubscriptionPlans=currentSubscriptionPlans.filter(p=>p.id!==id);
-  try{await saveSubscriptionPlans();renderPlanSelect();renderSavedPlans();showMsg("✅ تم حذف الخطة.","success");}
-  catch(error){currentSubscriptionPlans=old;renderPlanSelect();renderSavedPlans();showMsg("❌ تعذر حذف الخطة: "+(error.code||error.message),"error");}
-};
 
 
 /* =========================================================
@@ -2179,9 +2232,9 @@ onAuthStateChanged(
     );
 
 
-    await loadSubscriptionPlans();
-    await loadRestaurants();
+    await loadPlanPrices();
     await loadLicenses();
+    await refreshRestaurants();
 
   }
 );
@@ -2197,6 +2250,3 @@ console.log(
 
 </script></body>
 </html>
-
-
-
