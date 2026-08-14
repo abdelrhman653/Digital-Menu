@@ -405,6 +405,13 @@ th {
 </div>
 
 
+<!-- RESTAURANTS -->
+<div class="card">
+  <h2>🍽️ المطاعم المسجلة</h2>
+  <p class="muted">كل المطاعم الموجودة في النظام. اضغط «عرض» لفتح بيانات المطعم وإدارته.</p>
+  <div id="restaurantsList">جارٍ تحميل المطاعم...</div>
+</div>
+
 <!-- LICENSES -->
 
 <div class="card">
@@ -618,6 +625,30 @@ function calculateExpiry(plan,baseDate=new Date(),customDays=0){
   return date;
 }
 
+
+function asDate(value){
+  if(!value) return null;
+  try{
+    if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+    if(typeof value.toDate === "function"){
+      const d=value.toDate();
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    if(typeof value === "number"){
+      const d=new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    if(typeof value === "string"){
+      const d=new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    if(value && typeof value.seconds === "number"){
+      const d=new Date(value.seconds*1000);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  }catch(e){ console.warn("asDate error",e); }
+  return null;
+}
 
 /* =========================================================
    DATE FORMAT
@@ -1693,6 +1724,37 @@ async function cancelRestaurant(
 }
 
 
+async function loadRestaurants(){
+  const box=$("restaurantsList");
+  if(!box || !isOwner(auth.currentUser)) return;
+  box.textContent="جارٍ تحميل المطاعم...";
+  try{
+    const snap=await getDocs(collection(db,"restaurants"));
+    if(snap.empty){
+      box.innerHTML='<div class="muted" style="padding:12px">لا توجد مطاعم مسجلة حتى الآن.</div>';
+      return;
+    }
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    rows.sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),"ar"));
+    box.innerHTML=rows.map(r=>{
+      const status=r.licenseStatus||"غير معروف";
+      const exp=r.licenseExpiresAt||null;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;border-top:1px solid var(--border);">
+        <div style="min-width:0"><div style="font-weight:900">${escapeHtml(r.name||r.id)}</div><div class="muted">${escapeHtml(r.id)} · ${escapeHtml(statusName(status))}${exp?` · ينتهي ${escapeHtml(formatDate(exp))}`:""}</div></div>
+        <button class="secondary" style="padding:9px 14px;white-space:nowrap" onclick="openRestaurantFromList('${escapeHtml(r.id)}')">عرض</button>
+      </div>`;
+    }).join("");
+  }catch(error){
+    console.error("loadRestaurants",error);
+    box.innerHTML=`<span class="bad">لا يمكن قراءة المطاعم: ${escapeHtml(error.code||error.message)}</span>`;
+  }
+}
+
+window.openRestaurantFromList=async function(id){
+  $("lookupId").value=id;
+  $("lookupBtn").click();
+};
+
 /* =========================================================
    LOAD LICENSES
 ========================================================= */
@@ -1932,7 +1994,10 @@ function renderSavedPlans(){
     <td style="padding:12px;border-top:1px solid var(--border);">${plan.price} ج.م</td>
     <td style="padding:12px;border-top:1px solid var(--border);">${plan.discount>0 ? plan.discount+" ج.م" : "—"}</td>
     <td style="padding:12px;border-top:1px solid var(--border);font-weight:900;color:var(--secondary);">${finalPrice} ج.م</td>
-    <td style="padding:12px;border-top:1px solid var(--border);"><button class="danger" style="padding:8px 12px;" onclick="deleteSubscriptionPlan('${escapeHtml(plan.id)}')">حذف</button></td>
+    <td style="padding:12px;border-top:1px solid var(--border);white-space:nowrap;">
+      <button class="secondary" style="padding:8px 12px;margin-left:6px;" onclick="editSubscriptionPlan('${escapeHtml(plan.id)}')">✏️ تعديل</button>
+      <button class="danger" style="padding:8px 12px;" onclick="deleteSubscriptionPlan('${escapeHtml(plan.id)}')">🗑️ حذف</button>
+    </td>
   </tr>`;
   }).join("");
 }
@@ -1966,19 +2031,59 @@ $("savePlanBtn").addEventListener("click",async function(){
   const discount=Math.min(price,Math.max(0,Math.round(Number($("newPlanDiscount").value)||0)));
   if(!name){showMsg("اكتب اسم الخطة.","error");return;}
   if(unit!=="lifetime" && !value){showMsg("اكتب مدة صحيحة.","error");return;}
-  const plan={id:`plan_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,name,durationValue:value,durationUnit:unit,price,discount};
-  const btn=$("savePlanBtn");btn.disabled=true;btn.textContent="جارٍ حفظ الخطة...";
+
+  const editingId=window.editingSubscriptionPlanId || null;
+  const btn=$("savePlanBtn");
+  btn.disabled=true;
+  btn.textContent=editingId ? "جارٍ حفظ التعديل..." : "جارٍ حفظ الخطة...";
+  const old=[...currentSubscriptionPlans];
   try{
-    currentSubscriptionPlans.push(plan);
-    await saveSubscriptionPlans();
+    if(editingId){
+      const index=currentSubscriptionPlans.findIndex(p=>p.id===editingId);
+      if(index===-1) throw new Error("الخطة غير موجودة");
+      currentSubscriptionPlans[index]={...currentSubscriptionPlans[index],name,durationValue:value,durationUnit:unit,price,discount};
+      await saveSubscriptionPlans();
+      window.editingSubscriptionPlanId=null;
+      btn.textContent="💾 حفظ الخطة";
+      const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg ok";msg.textContent="✅ تم تعديل الخطة بنجاح.";
+    }else{
+      const plan={id:`plan_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,name,durationValue:value,durationUnit:unit,price,discount};
+      currentSubscriptionPlans.push(plan);
+      await saveSubscriptionPlans();
+      const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg ok";msg.textContent="✅ تم حفظ الخطة.";
+    }
     $("newPlanName").value="";$("newPlanDuration").value="";$("newPlanPrice").value="";$("newPlanDiscount").value="";
-    const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg ok";msg.textContent="✅ تم حفظ الخطة.";
     renderPlanSelect();renderSavedPlans();
   }catch(error){
-    currentSubscriptionPlans=currentSubscriptionPlans.filter(p=>p.id!==plan.id);
+    currentSubscriptionPlans=old;
+    renderPlanSelect();renderSavedPlans();
     showMsg("❌ تعذر حفظ الخطة: "+(error.code||error.message),"error");
-  }finally{btn.disabled=false;btn.textContent="💾 حفظ الخطة";}
+  }finally{
+    btn.disabled=false;
+    btn.textContent="💾 حفظ الخطة";
+  }
 });
+
+window.editSubscriptionPlan=function(id){
+  if(!isOwner(auth.currentUser)) return;
+  const plan=currentSubscriptionPlans.find(p=>p.id===id);
+  if(!plan) return;
+  window.editingSubscriptionPlanId=id;
+  $("newPlanName").value=plan.name||"";
+  $("newPlanDuration").value=plan.durationValue||1;
+  $("newPlanUnit").value=plan.durationUnit||"month";
+  $("newPlanPrice").value=plan.price??0;
+  $("newPlanDiscount").value=plan.discount??0;
+  $("savePlanBtn").textContent="💾 حفظ التعديل";
+  const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg";msg.textContent=`✏️ تعديل الخطة: ${plan.name}`;
+  $("newPlanName").scrollIntoView({behavior:"smooth",block:"center"});
+};
+
+window.cancelEditSubscriptionPlan=function(){
+  window.editingSubscriptionPlanId=null;
+  $("newPlanName").value="";$("newPlanDuration").value="";$("newPlanPrice").value="";$("newPlanDiscount").value="";
+  $("savePlanBtn").textContent="💾 حفظ الخطة";
+};
 
 window.deleteSubscriptionPlan=async function(id){
   if(!isOwner(auth.currentUser)) return;
@@ -2075,6 +2180,7 @@ onAuthStateChanged(
 
 
     await loadSubscriptionPlans();
+    await loadRestaurants();
     await loadLicenses();
 
   }
@@ -2093,30 +2199,4 @@ console.log(
 </html>
 
 
-<script>
-/* Custom plan edit support: preserves existing plans and edits them in place. */
-(function () {
-  window.editCustomPlan = window.editCustomPlan || function (planId) {
-    const plans = window.customPlans || window.savedPlans || window.subscriptionPlans || [];
-    const plan = plans.find(p => String(p.id || p.planId || p.key) === String(planId));
-    if (!plan) return;
-    const set = (ids, value) => {
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) { el.value = value ?? ""; break; }
-      }
-    };
-    set(["planName","customPlanName","offerName"], plan.name || plan.title);
-    set(["planDuration","durationValue","customDuration"], plan.duration || plan.durationValue);
-    set(["planUnit","durationUnit"], plan.unit || plan.durationUnit);
-    set(["planOriginalPrice","originalPrice"], plan.originalPrice ?? plan.priceBeforeDiscount ?? plan.price);
-    set(["planDiscount","discount"], plan.discount ?? plan.discountAmount ?? 0);
 
-    window.editingCustomPlanId = planId;
-    const save = document.querySelector("#savePlanBtn,[data-save-plan]");
-    if (save) save.textContent = "حفظ التعديل";
-    const form = document.querySelector("#planForm,[data-plan-form]");
-    if (form) form.scrollIntoView({behavior:"smooth", block:"center"});
-  };
-})();
-</script>
