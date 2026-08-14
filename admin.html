@@ -1059,6 +1059,17 @@ async function displayRestaurant(
     license?.code ||
     "غير موجود";
 
+  // بيانات المدة المخصصة: يجب تعريفها قبل عرض تفاصيل الاشتراك
+  // حتى لا يظهر خطأ durationDays is not defined.
+  const durationDays = Math.max(
+    0,
+    Number(license?.durationDays ?? restaurant.durationDays ?? 0) || 0
+  );
+  const customPlanName =
+    license?.planName ||
+    restaurant.planName ||
+    "";
+
 
   box.innerHTML = `
 
@@ -1510,7 +1521,8 @@ async function renewRestaurant(
   const newExpiry =
     calculateExpiry(
       selected,
-      baseDate
+      baseDate,
+      customDays
     );
 
 
