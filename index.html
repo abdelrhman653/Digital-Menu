@@ -885,7 +885,7 @@ td {
                 <div style="font-weight:800;margin-bottom:5px;">ليس لديك اشتراك أو تريد التجديد؟</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">اختر خطة جاهزة أو مدة مخصصة، وسيتم تجهيز رسالة واتساب تلقائياً.</div>
                 <select id="waSubscriptionPlan" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;">
-                    <option value="month">شهر</option><option value="3months">3 أشهر</option><option value="6months">6 أشهر</option><option value="year">سنة</option><option value="lifetime">مدى الحياة</option><option value="custom">مدة مخصصة</option>
+                    <option value="" selected disabled>اختر مدة الاشتراك</option><option value="month">شهر</option><option value="3months">3 أشهر</option><option value="6months">6 أشهر</option><option value="year">سنة</option><option value="lifetime">مدى الحياة</option><option value="custom">مدة مخصصة</option>
                 </select>
                 <input id="waCustomDays" type="number" min="1" placeholder="عدد الأيام إذا اخترت مدة مخصصة" style="display:none;width:100%;margin-bottom:8px;">
                 <button class="btn btn-secondary" style="width:100%;" type="button" onclick="openWhatsAppSubscription('new')"><i class="fa-brands fa-whatsapp"></i> اشتراك الآن</button>
@@ -1513,7 +1513,9 @@ td {
             const phone='201555889862';
             const restaurant=(document.getElementById('authRestaurantName')?.value||currentRestaurant||'غير محدد').trim();
             const planEl=document.getElementById('waSubscriptionPlan');
-            const plan=planEl?.value||'month';
+            const plan=planEl?.value||'';
+            if(type==='renew' && !plan){ showCustomAlert('من فضلك اختر مدة التجديد أولاً.'); return; }
+            if(type==='new' && !plan){ showCustomAlert('من فضلك اختر مدة الاشتراك أولاً.'); return; }
             const names={month:'شهر', '3months':'3 أشهر', '6months':'6 أشهر', year:'سنة', lifetime:'مدى الحياة', custom:'مدة مخصصة'};
             const customDays=Number(document.getElementById('waCustomDays')?.value||0);
             const duration=plan==='custom' ? (customDays>0 ? `${customDays} يوم` : 'مدة مخصصة - لم يتم تحديد الأيام') : names[plan];
