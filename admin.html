@@ -355,6 +355,20 @@ th {
 
 </div>
 
+<!-- PLAN PRICES -->
+<div class="card">
+  <h2>💰 أسعار الخطط التي تظهر للعميل</h2>
+  <p class="muted">حدد السعر الذي تريد ظهوره بجانب كل خطة في صفحة الاشتراك. يمكنك تغيير الأسعار في أي وقت.</p>
+  <div class="grid">
+    <input id="priceMonth" type="number" min="0" step="1" placeholder="سعر الشهر (ج.م)">
+    <input id="price3months" type="number" min="0" step="1" placeholder="سعر 3 أشهر (ج.م)">
+    <input id="price6months" type="number" min="0" step="1" placeholder="سعر 6 أشهر (ج.م)">
+    <input id="priceYear" type="number" min="0" step="1" placeholder="سعر السنة (ج.م)">
+    <input id="priceLifetime" type="number" min="0" step="1" placeholder="سعر مدى الحياة (ج.م)">
+  </div>
+  <button id="savePlanPricesBtn" class="green" style="margin-top:12px;">💾 حفظ أسعار الخطط</button>
+  <div id="planPricesMsg" class="msg hidden"></div>
+</div>
 
 <!-- SEARCH -->
 
@@ -1301,6 +1315,12 @@ $("lookupId").addEventListener(
 
 document.getElementById("plan").addEventListener("change", function(){
   document.getElementById("customPlanFields").style.display=this.value==="custom"?"grid":"none";
+  if(this.value === 'custom'){
+    document.getElementById('planPrice').value = '';
+  }else if(Object.prototype.hasOwnProperty.call(currentPlanPrices, this.value)){
+    const configured = Number(currentPlanPrices[this.value]) || 0;
+    document.getElementById('planPrice').value = configured || '';
+  }
 });
 
 /* =========================================================
@@ -1434,7 +1454,8 @@ $("createBtn").addEventListener(
         "";
 
 
-      await loadLicenses();
+      await loadPlanPrices();
+    await loadLicenses();
 
 
     }catch(error){
@@ -2057,6 +2078,80 @@ async function loadLicenses(){
   }
 
 }
+
+
+/* =========================================================
+   PLAN PRICES
+========================================================= */
+
+const DEFAULT_PLAN_PRICES = {
+  month: 0,
+  '3months': 0,
+  '6months': 0,
+  year: 0,
+  lifetime: 0
+};
+let currentPlanPrices = {...DEFAULT_PLAN_PRICES};
+
+function normalizePlanPrice(value){
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+}
+
+function setPlanPriceInputs(prices){
+  const p = {...DEFAULT_PLAN_PRICES, ...(prices || {})};
+  currentPlanPrices = {...p};
+  $('priceMonth').value = p.month || '';
+  $('price3months').value = p['3months'] || '';
+  $('price6months').value = p['6months'] || '';
+  $('priceYear').value = p.year || '';
+  $('priceLifetime').value = p.lifetime || '';
+}
+
+async function loadPlanPrices(){
+  try{
+    const snap = await getDoc(doc(db, 'platformSettings', 'planPricing'));
+    setPlanPriceInputs(snap.exists() ? snap.data() : DEFAULT_PLAN_PRICES);
+  }catch(error){
+    console.error('Load plan prices error:', error);
+    showMsg('⚠️ تعذر تحميل أسعار الخطط: ' + (error.code || error.message), 'error');
+  }
+}
+
+$('savePlanPricesBtn').addEventListener('click', async function(){
+  if(!isOwner(auth.currentUser)){
+    showMsg('❌ غير مصرح لك.', 'error');
+    return;
+  }
+
+  const prices = {
+    month: normalizePlanPrice($('priceMonth').value),
+    '3months': normalizePlanPrice($('price3months').value),
+    '6months': normalizePlanPrice($('price6months').value),
+    year: normalizePlanPrice($('priceYear').value),
+    lifetime: normalizePlanPrice($('priceLifetime').value),
+    updatedAt: new Date().toISOString(),
+    updatedBy: auth.currentUser.uid
+  };
+
+  const btn = $('savePlanPricesBtn');
+  btn.disabled = true;
+  btn.textContent = 'جارٍ الحفظ...';
+  try{
+    await setDoc(doc(db, 'platformSettings', 'planPricing'), prices, {merge:true});
+    currentPlanPrices = {...currentPlanPrices, ...prices};
+    $('planPricesMsg').classList.remove('hidden');
+    $('planPricesMsg').className = 'msg ok';
+    $('planPricesMsg').textContent = '✅ تم حفظ أسعار الخطط، وستظهر للعميل في صفحة الاشتراك.';
+    showMsg('✅ تم حفظ أسعار الخطط بنجاح.', 'success');
+  }catch(error){
+    console.error('Save plan prices error:', error);
+    showMsg('❌ تعذر حفظ الأسعار: ' + (error.code || error.message), 'error');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '💾 حفظ أسعار الخطط';
+  }
+});
 
 
 /* =========================================================

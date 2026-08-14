@@ -89,6 +89,16 @@ service cloud.firestore {
     }
 
     /* ================================
+       PLATFORM PLAN PRICES
+       ================================ */
+    match /platformSettings/planPricing {
+      // The public subscription selector needs to read the prices.
+      allow read: if true;
+      // Only the platform owner can change the displayed plan prices.
+      allow write: if isOwner();
+    }
+
+    /* ================================
        LICENSES
        ================================ */
     match /licenses/{code} {

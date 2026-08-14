@@ -885,7 +885,13 @@ td {
                 <div style="font-weight:800;margin-bottom:5px;">ليس لديك اشتراك أو تريد التجديد؟</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">اختر خطة جاهزة أو مدة مخصصة، وسيتم تجهيز رسالة واتساب تلقائياً.</div>
                 <select id="waSubscriptionPlan" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;">
-                    <option value="" selected disabled>اختر مدة الاشتراك</option><option value="month">شهر</option><option value="3months">3 أشهر</option><option value="6months">6 أشهر</option><option value="year">سنة</option><option value="lifetime">مدى الحياة</option><option value="custom">مدة مخصصة</option>
+                    <option value="" selected disabled>اختر مدة الاشتراك</option>
+                    <option value="month">شهر</option>
+                    <option value="3months">3 أشهر</option>
+                    <option value="6months">6 أشهر</option>
+                    <option value="year">سنة</option>
+                    <option value="lifetime">مدى الحياة</option>
+                    <option value="custom">مدة مخصصة — السعر حسب الاتفاق</option>
                 </select>
                 <input id="waCustomDays" type="number" min="1" placeholder="عدد الأيام إذا اخترت مدة مخصصة" style="display:none;width:100%;margin-bottom:8px;">
                 <button class="btn btn-secondary" style="width:100%;" type="button" onclick="openWhatsAppSubscription('new')"><i class="fa-brands fa-whatsapp"></i> اشتراك الآن</button>
@@ -1299,6 +1305,7 @@ td {
         let ownerAccessAllowed = false;
         let currentLang = localStorage.getItem('app_lang') || 'ar';
         let appTheme = localStorage.getItem('app_theme') || 'dark-red';
+        let publicPlanPrices = { month: 0, '3months': 0, '6months': 0, year: 0, lifetime: 0 };
         
         let uploadedImageFile = null;
         let uploadedLogoFile = null;
@@ -1427,6 +1434,7 @@ td {
         // Init
         window.addEventListener('firebase-ready', () => {
             setAppTheme(appTheme);
+            loadPublicPlanPrices();
             changeLanguage(currentLang);
             if (window.FB && window.FB.auth) {
                 window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
@@ -1509,6 +1517,40 @@ td {
                 showCustomAlert('تعذر التحقق من صلاحية الحساب حالياً.');
             }
         }
+        const PLAN_PRICE_LABELS = {
+            month: 'شهر',
+            '3months': '3 أشهر',
+            '6months': '6 أشهر',
+            year: 'سنة',
+            lifetime: 'مدى الحياة'
+        };
+
+        function formatPlanPrice(value){
+            const n = Number(value);
+            return Number.isFinite(n) && n > 0 ? `${n} ج.م` : 'السعر حسب الاتفاق';
+        }
+
+        function renderPublicPlanPrices(){
+            const select = document.getElementById('waSubscriptionPlan');
+            if(!select) return;
+            Array.from(select.options).forEach(option => {
+                const key = option.value;
+                if(!PLAN_PRICE_LABELS[key]) return;
+                option.textContent = `${PLAN_PRICE_LABELS[key]} — ${formatPlanPrice(publicPlanPrices[key])}`;
+            });
+        }
+
+        async function loadPublicPlanPrices(){
+            try{
+                const snap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'platformSettings', 'planPricing'));
+                if(snap.exists()) publicPlanPrices = {...publicPlanPrices, ...snap.data()};
+                renderPublicPlanPrices();
+            }catch(error){
+                console.warn('تعذر تحميل أسعار الخطط:', error);
+                renderPublicPlanPrices();
+            }
+        }
+
         function openWhatsAppSubscription(type='new') {
             const phone='201555889862';
             const restaurant=(document.getElementById('authRestaurantName')?.value||currentRestaurant||'غير محدد').trim();
@@ -1519,7 +1561,8 @@ td {
             const names={month:'شهر', '3months':'3 أشهر', '6months':'6 أشهر', year:'سنة', lifetime:'مدى الحياة', custom:'مدة مخصصة'};
             const customDays=Number(document.getElementById('waCustomDays')?.value||0);
             const duration=plan==='custom' ? (customDays>0 ? `${customDays} يوم` : 'مدة مخصصة - لم يتم تحديد الأيام') : names[plan];
-            const msg=`السلام عليكم، أريد ${type==='renew'?'تجديد':'اشتراك'} خدمة الديجيتال منيو.%0Aكود/اسم المطعم: ${restaurant}%0Aالخطة المطلوبة: ${duration}%0Aنوع الطلب: ${type==='renew'?'تجديد الاشتراك':'اشتراك جديد'}`;
+            const price = plan === 'custom' ? 'حسب الاتفاق' : formatPlanPrice(publicPlanPrices[plan]);
+            const msg=`السلام عليكم، أريد ${type==='renew'?'تجديد':'اشتراك'} خدمة الديجيتال منيو.%0Aكود/اسم المطعم: ${restaurant}%0Aالخطة المطلوبة: ${duration}%0Aالسعر الظاهر: ${price}%0Aنوع الطلب: ${type==='renew'?'تجديد الاشتراك':'اشتراك جديد'}`;
             window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
         }
         document.addEventListener('change',function(e){if(e.target.id==='waSubscriptionPlan'){const c=document.getElementById('waCustomDays');if(c)c.style.display=e.target.value==='custom'?'block':'none';}});
