@@ -2091,3 +2091,32 @@ console.log(
 
 </script></body>
 </html>
+
+
+<script>
+/* Custom plan edit support: preserves existing plans and edits them in place. */
+(function () {
+  window.editCustomPlan = window.editCustomPlan || function (planId) {
+    const plans = window.customPlans || window.savedPlans || window.subscriptionPlans || [];
+    const plan = plans.find(p => String(p.id || p.planId || p.key) === String(planId));
+    if (!plan) return;
+    const set = (ids, value) => {
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) { el.value = value ?? ""; break; }
+      }
+    };
+    set(["planName","customPlanName","offerName"], plan.name || plan.title);
+    set(["planDuration","durationValue","customDuration"], plan.duration || plan.durationValue);
+    set(["planUnit","durationUnit"], plan.unit || plan.durationUnit);
+    set(["planOriginalPrice","originalPrice"], plan.originalPrice ?? plan.priceBeforeDiscount ?? plan.price);
+    set(["planDiscount","discount"], plan.discount ?? plan.discountAmount ?? 0);
+
+    window.editingCustomPlanId = planId;
+    const save = document.querySelector("#savePlanBtn,[data-save-plan]");
+    if (save) save.textContent = "حفظ التعديل";
+    const form = document.querySelector("#planForm,[data-plan-form]");
+    if (form) form.scrollIntoView({behavior:"smooth", block:"center"});
+  };
+})();
+</script>
