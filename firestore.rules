@@ -88,18 +88,24 @@ service cloud.firestore {
         && activeRestaurant(restaurantId);
     }
 
+    /* ================================
+       PLATFORM PLAN PRICES
+       ================================ */
+    match /platformSettings/planPricing {
+      // The public subscription selector needs to read the prices.
+      allow read: if true;
+      // Only the platform owner can change the displayed plan prices.
+      allow write: if isOwner();
+    }
 
     /* ================================
-       PLATFORM SETTINGS
-       Subscription plans are public for
-       the customer registration/renewal
-       selector, but only the platform owner
-       can create or edit them.
+       SUBSCRIPTION PLANS
        ================================ */
-    match /platformSettings/{docId} {
-      allow get: if docId == 'subscriptionPlans';
-      allow list: if false;
-      allow create, update, delete: if isOwner();
+    match /platformSettings/subscriptionPlans {
+      // Customers only need to read the plans you publish.
+      allow read: if true;
+      // Only the platform owner can create, edit, or delete plans.
+      allow write: if isOwner();
     }
 
     /* ================================

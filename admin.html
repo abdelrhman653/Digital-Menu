@@ -551,31 +551,6 @@ function escapeHtml(value){
 
 
 /* =========================================================
-   DATE NORMALIZER
-========================================================= */
-
-function asDate(value){
-  if(!value) return null;
-  try{
-    if(value instanceof Date) return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
-    if(typeof value.toDate === "function"){
-      const d=value.toDate();
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-    if(typeof value === "number") {
-      const d=new Date(value);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-    if(typeof value === "string") {
-      const d=new Date(value);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-  }catch(_){}
-  return null;
-}
-
-
-/* =========================================================
    RANDOM LICENSE CODE
 ========================================================= */
 
@@ -1915,7 +1890,6 @@ async function loadLicenses(){
 ========================================================= */
 
 let currentSubscriptionPlans=[];
-let editingSubscriptionPlanId=null;
 
 function normalizePlan(plan,index=0){
   return {
@@ -1958,10 +1932,7 @@ function renderSavedPlans(){
     <td style="padding:12px;border-top:1px solid var(--border);">${plan.price} ج.م</td>
     <td style="padding:12px;border-top:1px solid var(--border);">${plan.discount>0 ? plan.discount+" ج.م" : "—"}</td>
     <td style="padding:12px;border-top:1px solid var(--border);font-weight:900;color:var(--secondary);">${finalPrice} ج.م</td>
-    <td style="padding:12px;border-top:1px solid var(--border);white-space:nowrap;">
-      <button class="green" style="padding:8px 12px;margin-left:6px;" onclick="editSubscriptionPlan('${escapeHtml(plan.id)}')">تعديل</button>
-      <button class="danger" style="padding:8px 12px;" onclick="deleteSubscriptionPlan('${escapeHtml(plan.id)}')">حذف</button>
-    </td>
+    <td style="padding:12px;border-top:1px solid var(--border);"><button class="danger" style="padding:8px 12px;" onclick="deleteSubscriptionPlan('${escapeHtml(plan.id)}')">حذف</button></td>
   </tr>`;
   }).join("");
 }
@@ -1988,93 +1959,26 @@ async function saveSubscriptionPlans(){
 
 $("savePlanBtn").addEventListener("click",async function(){
   if(!isOwner(auth.currentUser)){showMsg("❌ غير مصرح لك.","error");return;}
-
   const name=$("newPlanName").value.trim();
   const unit=$("newPlanUnit").value;
-  const rawDuration=Number($("newPlanDuration").value)||0;
-  const value=unit==="lifetime" ? 1 : Math.max(1,rawDuration);
+  const value=unit==="lifetime"?1:Math.max(1,Number($("newPlanDuration").value)||0);
   const price=Math.max(0,Math.round(Number($("newPlanPrice").value)||0));
   const discount=Math.min(price,Math.max(0,Math.round(Number($("newPlanDiscount").value)||0)));
-
   if(!name){showMsg("اكتب اسم الخطة.","error");return;}
-  if(unit!=="lifetime" && rawDuration<1){showMsg("اكتب مدة صحيحة.","error");return;}
-
-  const btn=$("savePlanBtn");
-  btn.disabled=true;
-  btn.textContent=editingSubscriptionPlanId ? "جارٍ حفظ التعديل..." : "جارٍ حفظ الخطة...";
-
-  const oldPlans=currentSubscriptionPlans.map(p=>({...p}));
+  if(unit!=="lifetime" && !value){showMsg("اكتب مدة صحيحة.","error");return;}
+  const plan={id:`plan_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,name,durationValue:value,durationUnit:unit,price,discount};
+  const btn=$("savePlanBtn");btn.disabled=true;btn.textContent="جارٍ حفظ الخطة...";
   try{
-    if(editingSubscriptionPlanId){
-      const index=currentSubscriptionPlans.findIndex(p=>p.id===editingSubscriptionPlanId);
-      if(index<0) throw new Error("الخطة غير موجودة");
-      currentSubscriptionPlans[index]={
-        ...currentSubscriptionPlans[index],
-        name, durationValue:value, durationUnit:unit, price, discount
-      };
-    }else{
-      currentSubscriptionPlans.push({
-        id:`plan_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-        name, durationValue:value, durationUnit:unit, price, discount
-      });
-    }
-
+    currentSubscriptionPlans.push(plan);
     await saveSubscriptionPlans();
-    resetPlanForm();
-    renderPlanSelect();
-    renderSavedPlans();
-    const msg=$("planMsg");
-    msg.className="msg ok";
-    msg.classList.remove("hidden");
-    msg.textContent=editingSubscriptionPlanId ? "✅ تم تعديل الخطة بنجاح." : "✅ تم حفظ الخطة بنجاح.";
-    showMsg(editingSubscriptionPlanId ? "✅ تم تعديل الخطة." : "✅ تم حفظ الخطة.","success");
+    $("newPlanName").value="";$("newPlanDuration").value="";$("newPlanPrice").value="";$("newPlanDiscount").value="";
+    const msg=$("planMsg");msg.classList.remove("hidden");msg.className="msg ok";msg.textContent="✅ تم حفظ الخطة.";
+    renderPlanSelect();renderSavedPlans();
   }catch(error){
-    currentSubscriptionPlans=oldPlans;
-    renderPlanSelect();
-    renderSavedPlans();
+    currentSubscriptionPlans=currentSubscriptionPlans.filter(p=>p.id!==plan.id);
     showMsg("❌ تعذر حفظ الخطة: "+(error.code||error.message),"error");
-  }finally{
-    btn.disabled=false;
-    btn.textContent="💾 حفظ الخطة";
-  }
+  }finally{btn.disabled=false;btn.textContent="💾 حفظ الخطة";}
 });
-
-function resetPlanForm(){
-  editingSubscriptionPlanId=null;
-  $("newPlanName").value="";
-  $("newPlanDuration").value="";
-  $("newPlanUnit").value="month";
-  $("newPlanPrice").value="";
-  $("newPlanDiscount").value="";
-  $("savePlanBtn").textContent="💾 حفظ الخطة";
-  const cancel=$("cancelPlanEditBtn");
-  if(cancel) cancel.remove();
-}
-
-window.editSubscriptionPlan=function(id){
-  if(!isOwner(auth.currentUser)) return;
-  const plan=currentSubscriptionPlans.find(p=>p.id===id);
-  if(!plan) return;
-  editingSubscriptionPlanId=id;
-  $("newPlanName").value=plan.name||"";
-  $("newPlanDuration").value=plan.durationUnit==="lifetime" ? "" : (plan.durationValue||1);
-  $("newPlanUnit").value=plan.durationUnit||"month";
-  $("newPlanPrice").value=plan.price??0;
-  $("newPlanDiscount").value=plan.discount??0;
-  $("savePlanBtn").textContent="💾 حفظ التعديل";
-  if(!$("cancelPlanEditBtn")){
-    const btn=document.createElement("button");
-    btn.id="cancelPlanEditBtn";
-    btn.type="button";
-    btn.className="secondary";
-    btn.style="margin-top:8px;width:100%;";
-    btn.textContent="إلغاء التعديل";
-    btn.onclick=resetPlanForm;
-    $("savePlanBtn").insertAdjacentElement("afterend",btn);
-  }
-  document.getElementById("newPlanName").scrollIntoView({behavior:"smooth",block:"center"});
-};
-
 
 window.deleteSubscriptionPlan=async function(id){
   if(!isOwner(auth.currentUser)) return;
@@ -2187,3 +2091,32 @@ console.log(
 
 </script></body>
 </html>
+
+
+<script>
+/* Custom plan edit support: preserves existing plans and edits them in place. */
+(function () {
+  window.editCustomPlan = window.editCustomPlan || function (planId) {
+    const plans = window.customPlans || window.savedPlans || window.subscriptionPlans || [];
+    const plan = plans.find(p => String(p.id || p.planId || p.key) === String(planId));
+    if (!plan) return;
+    const set = (ids, value) => {
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) { el.value = value ?? ""; break; }
+      }
+    };
+    set(["planName","customPlanName","offerName"], plan.name || plan.title);
+    set(["planDuration","durationValue","customDuration"], plan.duration || plan.durationValue);
+    set(["planUnit","durationUnit"], plan.unit || plan.durationUnit);
+    set(["planOriginalPrice","originalPrice"], plan.originalPrice ?? plan.priceBeforeDiscount ?? plan.price);
+    set(["planDiscount","discount"], plan.discount ?? plan.discountAmount ?? 0);
+
+    window.editingCustomPlanId = planId;
+    const save = document.querySelector("#savePlanBtn,[data-save-plan]");
+    if (save) save.textContent = "حفظ التعديل";
+    const form = document.querySelector("#planForm,[data-plan-form]");
+    if (form) form.scrollIntoView({behavior:"smooth", block:"center"});
+  };
+})();
+</script>
