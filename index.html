@@ -1338,6 +1338,7 @@ td {
         let publicPlanPrices = { plans: [] };
         let selectedPublicPlanId = '';
         let selectedPublicPlanType = 'new';
+        let selectedSignupTrial = false;
         
         let uploadedImageFile = null;
         let uploadedLogoFile = null;
@@ -1534,7 +1535,8 @@ td {
                     currentRestaurant=null;
                     localStorage.removeItem('current_restaurant');
                     await window.FB.signOut(window.FB.auth);
-                    showCustomAlert(result ? 'انتهى ترخيص هذا المطعم أو تم إيقافه. يرجى التجديد.' : 'هذا الحساب غير مرتبط بمطعم مرخّص.');
+                    showCustomAlert(result ? 'انتهى الاشتراك أو التجربة. اختر عرضًا للاشتراك أو التجديد للمتابعة.' : 'هذا الحساب غير مرتبط بمطعم مرخّص.');
+                    if(result){ setTimeout(()=>{ closeCustomAlert(); openPlanPicker('renew'); }, 700); }
                     return;
                 }
                 currentRestaurant=result.restaurantId;
@@ -1572,28 +1574,20 @@ td {
             return `${value} ${value === 1 ? 'يوم' : 'أيام'}`;
         }
 
-        // خطة التجربة (7 أيام) تظهر فقط عند الاشتراك لأول مرة، ولا تظهر أبدًا في التجديد.
-        function isTrialPublicPlan(plan){
+        function isTrialPlan(plan){
             if(!plan) return false;
-            if(plan.isTrial === true) return true;
-            const name = String(plan.name || '').toLowerCase();
-            if(name.includes('تجرب') || name.includes('trial')) return true;
-            const value = Number(plan.durationValue) || 0;
-            const unit = plan.durationUnit || 'days';
-            return unit === 'days' && value === 7;
-        }
-
-        function getVisiblePublicPlans(){
-            const plans = Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
-            // عند التجديد: كل العروض تظهر ما عدا عرض التجربة.
-            // عند الاشتراك لأول مرة: تظهر الخطط كلها، ومنها التجربة.
-            return selectedPublicPlanType === 'renew'
-                ? plans.filter(p => !isTrialPublicPlan(p))
-                : plans;
+            const name=String(plan.name||'').toLowerCase();
+            const unit=String(plan.durationUnit||'days').toLowerCase();
+            const value=Number(plan.durationValue)||0;
+            const price=Number(plan.finalPrice);
+            return plan.isTrial===true || plan.trial===true || /تجرب|trial/.test(name) ||
+                (unit==='days' && value===7 && Number.isFinite(price) && price===0);
         }
 
         function renderPublicPlanPrices(){
-            const plans = getVisiblePublicPlans();
+            let plans = Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
+            // التجربة المجانية تظهر عند الاشتراك لأول مرة فقط، ولا تظهر في التجديد.
+            if(selectedPublicPlanType==='renew') plans = plans.filter(p=>!isTrialPlan(p));
             const cards = document.getElementById('publicPlansCards');
             if(!cards) return;
             if(!plans.length){
@@ -1613,7 +1607,13 @@ td {
                     ${discount>0?`<span class="public-plan-discount">خصم ${discount} ج.م</span>`:''}
                 </div>`;
             }).join('');
-            const btn=document.getElementById('planPickerWhatsAppBtn'); if(btn) btn.disabled=!selectedPublicPlanId;
+            const btn=document.getElementById('planPickerWhatsAppBtn');
+            if(btn){
+                btn.disabled=!selectedPublicPlanId;
+                btn.innerHTML = (selectedPublicPlanType==='new' && selectedSignupTrial)
+                    ? '<i class="fa-solid fa-gift"></i> إنشاء الحساب بالتجربة المجانية'
+                    : '<i class="fa-brands fa-whatsapp"></i> متابعة عبر واتساب';
+            }
         }
 
         async function loadPublicPlanPrices(){
@@ -1640,12 +1640,11 @@ td {
         function openPlanPicker(type='new'){
             selectedPublicPlanType = type;
             selectedPublicPlanId = '';
+            selectedSignupTrial = false;
             const title=document.getElementById('planPickerTitle');
             const sub=document.getElementById('planPickerSubtitle');
             if(title) title.textContent = type==='renew' ? 'اختار عرض التجديد' : 'اختار عرض الاشتراك';
-            if(sub) sub.textContent = type==='renew'
-                ? 'اختار أي عرض للتجديد — مدة التجديد ستُضاف على المدة المتبقية. عرض التجربة 7 أيام غير متاح للتجديد.'
-                : 'اختار العرض المناسب. عرض التجربة 7 أيام متاح للاشتراك لأول مرة فقط.';
+            if(sub) sub.textContent = type==='renew' ? 'المدة الجديدة ستُضاف على المدة المتبقية من اشتراكك.' : 'اختار العرض المناسب ثم أرسل الطلب عبر واتساب.';
             renderPublicPlanPrices();
             document.getElementById('subscriptionPlansModal')?.classList.add('active');
         }
@@ -1656,13 +1655,25 @@ td {
 
         function selectPublicPlan(planId){
             selectedPublicPlanId = String(planId);
+            const picked = (Array.isArray(publicPlanPrices.plans)?publicPlanPrices.plans:[]).find(p=>String(p.id)===String(planId));
+            selectedSignupTrial = selectedPublicPlanType==='new' && isTrialPlan(picked);
             renderPublicPlanPrices();
         }
 
         function sendSelectedPlanWhatsApp(){
-            const plans=getVisiblePublicPlans();
+            const plans=Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
             const selected=plans.find(p=>String(p.id)===String(selectedPublicPlanId));
             if(!selected) return showCustomAlert('من فضلك اختر عرضًا أولاً.');
+            if(selectedPublicPlanType==='renew' && isTrialPlan(selected)) return showCustomAlert('عرض التجربة متاح للاشتراك لأول مرة فقط.');
+            if(selectedPublicPlanType==='new' && selectedSignupTrial && isTrialPlan(selected)){
+                closePlanPicker();
+                const codeGroup=document.getElementById('licenseCodeGroup');
+                if(codeGroup) codeGroup.style.display='none';
+                window.__digitalMenuTrialSignup = true;
+                showCustomAlert('تمام 🎁 التجربة المجانية 7 أيام بدون كود ترخيص. اكتب بيانات الحساب ثم اضغط «إنشاء حساب جديد».');
+                setTimeout(()=>document.getElementById('authRestaurantName')?.focus(),250);
+                return;
+            }
             const phone='201555889862';
             const restaurant=(document.getElementById('authRestaurantName')?.value||currentRestaurant||'غير محدد').trim();
             const duration=formatPublicPlanDuration(selected);
@@ -1690,18 +1701,12 @@ td {
             const nameInput=document.getElementById('authRestaurantName').value.trim().toLowerCase();
             const phoneInput=document.getElementById('authPhoneNumber').value.trim();
             const passwordInput=document.getElementById('authPassword').value;
-            const licenseCode=document.getElementById('authLicenseCode').value.trim().toUpperCase();
-            if(!nameInput||!phoneInput||!passwordInput||!licenseCode) return showCustomAlert('اكتب اسم/كود المطعم، رقم الهاتف، كلمة المرور، وكود الترخيص.');
+            const licenseCode=(document.getElementById('authLicenseCode')?.value||'').trim().toUpperCase();
+            const trialSignup = window.__digitalMenuTrialSignup === true;
+            if(!nameInput||!phoneInput||!passwordInput) return showCustomAlert('اكتب اسم/كود المطعم ورقم الهاتف وكلمة المرور.');
+            if(!trialSignup && !licenseCode) return showCustomAlert('للاشتراك المدفوع اكتب كود الترخيص أو اختر عرضًا أولًا.');
             if(passwordInput.length<6) return showCustomAlert('كلمة المرور يجب أن تكون 6 أحرف أو أرقام على الأقل.');
             try{
-                const licenseRef=window.FB.doc(window.FB.db,'licenses',licenseCode);
-                const licenseSnap=await window.FB.getDoc(licenseRef);
-                if(!licenseSnap.exists()) return showCustomAlert('كود الترخيص غير صحيح.');
-                const license=licenseSnap.data();
-                const expiry=parseLicenseDate(license.expiresAt);
-                const licenseActive = license.status==='available' && !license.used &&
-                    (license.plan === 'lifetime' || (!!expiry && expiry.getTime() > Date.now()));
-                if(!licenseActive) return showCustomAlert('كود الترخيص مستخدم أو منتهي الصلاحية.');
                 const ownerEmail=makeOwnerEmail(nameInput,phoneInput);
                 const cred=await window.FB.createUserWithEmailAndPassword(window.FB.auth,ownerEmail,passwordInput);
                 const uid=cred.user.uid;
@@ -1709,19 +1714,41 @@ td {
                 const restSnap=await window.FB.getDoc(restRef);
                 if(restSnap.exists() && restSnap.data().ownerUid) { await window.FB.signOut(window.FB.auth); return showCustomAlert('اسم/كود المطعم مستخدم بالفعل.'); }
                 const baseData=restSnap.exists()?restSnap.data():{};
-                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? (typeof license.expiresAt.toDate === 'function' ? license.expiresAt : window.FB.Timestamp.fromDate(parseLicenseDate(license.expiresAt))) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+
+                let restaurantData;
+                if(trialSignup){
+                    const trialExpiry=new Date(Date.now()+7*24*60*60*1000);
+                    restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode:`TRIAL-${uid}`, licenseStatus:'active', plan:'trial', isTrial:true, trialUsed:true, licenseExpiresAt:window.FB.Timestamp.fromDate(trialExpiry), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                }else{
+                    const licenseRef=window.FB.doc(window.FB.db,'licenses',licenseCode);
+                    const licenseSnap=await window.FB.getDoc(licenseRef);
+                    if(!licenseSnap.exists()) { await window.FB.signOut(window.FB.auth); return showCustomAlert('كود الترخيص غير صحيح.'); }
+                    const license=licenseSnap.data();
+                    const expiry=parseLicenseDate(license.expiresAt);
+                    const licenseActive = license.status==='available' && !license.used &&
+                        (license.plan === 'lifetime' || (!!expiry && expiry.getTime() > Date.now()));
+                    if(!licenseActive) { await window.FB.signOut(window.FB.auth); return showCustomAlert('كود الترخيص مستخدم أو منتهي الصلاحية.'); }
+                    restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, isTrial:false, licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? (typeof license.expiresAt.toDate === 'function' ? license.expiresAt : window.FB.Timestamp.fromDate(parseLicenseDate(license.expiresAt))) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                }
+
                 const batch=window.FB.writeBatch(window.FB.db);
                 batch.set(restRef,restaurantData,{merge:true});
-                batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString()});
-                batch.update(licenseRef,{status:'used',used:true,usedBy:uid,restaurantId:nameInput,usedAt:new Date().toISOString()});
+                batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString(),isTrial:trialSignup});
+                if(!trialSignup){
+                    const licenseRef=window.FB.doc(window.FB.db,'licenses',licenseCode);
+                    batch.update(licenseRef,{status:'used',used:true,usedBy:uid,restaurantId:nameInput,usedAt:new Date().toISOString()});
+                }
                 await batch.commit();
-                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.plan === 'lifetime' ? null : parseLicenseDate(license.expiresAt); ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
+                window.__digitalMenuTrialSignup=false;
+                const trialExpiry=trialSignup ? new Date(Date.now()+7*24*60*60*1000) : null;
+                currentRestaurant=nameInput; ownerLicenseExpiresAt=trialSignup ? trialExpiry : (restaurantData.plan === 'lifetime' ? null : parseLicenseDate(restaurantData.licenseExpiresAt)); ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
                 startDataListeners(); showDashboard(); switchTab('dashboard');
             }catch(e){
                 console.error('Registration error:',e);
                 const code=e?.code||'';
                 if(code==='auth/email-already-in-use') showCustomAlert('الحساب موجود بالفعل. استخدم تسجيل الدخول.');
-                else showCustomAlert('تعذر إنشاء الحساب. تأكد من البيانات وكود الترخيص.');
+                else if(code==='permission-denied') showCustomAlert('تعذر إنشاء الحساب بسبب صلاحيات Firebase. تأكد من رفع firestore.rules الجديدة.');
+                else showCustomAlert('تعذر إنشاء الحساب. تأكد من البيانات ثم حاول مرة أخرى.');
             }
         }
         async function handleLogin(){
@@ -1744,6 +1771,7 @@ td {
             try{await window.FB.signOut(window.FB.auth);}catch(e){}
             document.getElementById('authSection').classList.remove('hidden');
             document.getElementById('app').classList.add('hidden');
+            const licenseGroup=document.getElementById('licenseCodeGroup'); if(licenseGroup) licenseGroup.style.display='block';
             window.scrollTo(0,0);
         }
 
@@ -1802,7 +1830,8 @@ td {
                         localStorage.removeItem('current_restaurant');
                         document.getElementById('app').classList.add('hidden');
                         document.getElementById('authSection').classList.remove('hidden');
-                        showCustomAlert('انتهى اشتراك المطعم أو تم إيقافه. يرجى تجديد الاشتراك للمتابعة.');
+                        showCustomAlert('انتهى اشتراك المطعم أو التجربة. اختر عرضًا للتجديد والاشتراك للمتابعة.');
+                        setTimeout(()=>{ closeCustomAlert(); openPlanPicker('renew'); }, 700);
                         try { await window.FB.signOut(window.FB.auth); } catch (_) {}
                         return;
                     }
