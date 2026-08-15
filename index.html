@@ -1572,8 +1572,28 @@ td {
             return `${value} ${value === 1 ? 'يوم' : 'أيام'}`;
         }
 
-        function renderPublicPlanPrices(){
+        // خطة التجربة (7 أيام) تظهر فقط عند الاشتراك لأول مرة، ولا تظهر أبدًا في التجديد.
+        function isTrialPublicPlan(plan){
+            if(!plan) return false;
+            if(plan.isTrial === true) return true;
+            const name = String(plan.name || '').toLowerCase();
+            if(name.includes('تجرب') || name.includes('trial')) return true;
+            const value = Number(plan.durationValue) || 0;
+            const unit = plan.durationUnit || 'days';
+            return unit === 'days' && value === 7;
+        }
+
+        function getVisiblePublicPlans(){
             const plans = Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
+            // عند التجديد: كل العروض تظهر ما عدا عرض التجربة.
+            // عند الاشتراك لأول مرة: تظهر الخطط كلها، ومنها التجربة.
+            return selectedPublicPlanType === 'renew'
+                ? plans.filter(p => !isTrialPublicPlan(p))
+                : plans;
+        }
+
+        function renderPublicPlanPrices(){
+            const plans = getVisiblePublicPlans();
             const cards = document.getElementById('publicPlansCards');
             if(!cards) return;
             if(!plans.length){
@@ -1623,7 +1643,9 @@ td {
             const title=document.getElementById('planPickerTitle');
             const sub=document.getElementById('planPickerSubtitle');
             if(title) title.textContent = type==='renew' ? 'اختار عرض التجديد' : 'اختار عرض الاشتراك';
-            if(sub) sub.textContent = type==='renew' ? 'المدة الجديدة ستُضاف على المدة المتبقية من اشتراكك.' : 'اختار العرض المناسب ثم أرسل الطلب عبر واتساب.';
+            if(sub) sub.textContent = type==='renew'
+                ? 'اختار أي عرض للتجديد — مدة التجديد ستُضاف على المدة المتبقية. عرض التجربة 7 أيام غير متاح للتجديد.'
+                : 'اختار العرض المناسب. عرض التجربة 7 أيام متاح للاشتراك لأول مرة فقط.';
             renderPublicPlanPrices();
             document.getElementById('subscriptionPlansModal')?.classList.add('active');
         }
@@ -1638,7 +1660,7 @@ td {
         }
 
         function sendSelectedPlanWhatsApp(){
-            const plans=Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
+            const plans=getVisiblePublicPlans();
             const selected=plans.find(p=>String(p.id)===String(selectedPublicPlanId));
             if(!selected) return showCustomAlert('من فضلك اختر عرضًا أولاً.');
             const phone='201555889862';
