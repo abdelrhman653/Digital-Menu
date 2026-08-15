@@ -885,8 +885,15 @@ td {
                 <div style="font-weight:800;margin-bottom:5px;">ليس لديك اشتراك أو تريد التجديد؟</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">اختر خطة جاهزة أو مدة مخصصة، وسيتم تجهيز رسالة واتساب تلقائياً.</div>
                 <select id="waSubscriptionPlan" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;">
-                    <option value="" selected disabled>جارٍ تحميل الخطط...</option>
+                    <option value="" selected disabled>اختر مدة الاشتراك</option>
+                    <option value="month">شهر</option>
+                    <option value="3months">3 أشهر</option>
+                    <option value="6months">6 أشهر</option>
+                    <option value="year">سنة</option>
+                    <option value="lifetime">مدى الحياة</option>
+                    <option value="custom">مدة مخصصة — السعر حسب الاتفاق</option>
                 </select>
+                
                 <button class="btn btn-secondary" style="width:100%;" type="button" onclick="openWhatsAppSubscription('new')"><i class="fa-brands fa-whatsapp"></i> اشتراك الآن</button>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 15px;line-height:1.7;">الحساب الإداري مربوط بالمطعم والترخيص، ومشاركة رابط لوحة الإدارة وحدها لا تمنح أي شخص صلاحية الدخول.</div>
@@ -1298,7 +1305,7 @@ td {
         let ownerAccessAllowed = false;
         let currentLang = localStorage.getItem('app_lang') || 'ar';
         let appTheme = localStorage.getItem('app_theme') || 'dark-red';
-        let publicSubscriptionPlans = [];
+        let publicPlanPrices = { month: 0, '3months': 0, '6months': 0, year: 0, lifetime: 0, plans: [] };
         
         let uploadedImageFile = null;
         let uploadedLogoFile = null;
@@ -1469,7 +1476,7 @@ td {
         }
         function licenseIsActive(data){
             if(!data || data.licenseStatus !== 'active') return false;
-            if(data.licenseExpiresAt == null || data.plan === 'lifetime') return true;
+            if(data.plan === 'lifetime') return true;
             const expiry = parseLicenseDate(data.licenseExpiresAt);
             return !!expiry && expiry.getTime() > Date.now();
         }
@@ -1510,82 +1517,84 @@ td {
                 showCustomAlert('تعذر التحقق من صلاحية الحساب حالياً.');
             }
         }
-        function formatPublicPlanDuration(plan){
-            const n=Number(plan.durationValue)||1;
-            if(plan.durationUnit==='lifetime') return 'مدى الحياة';
-            const labels={day:n===1?'يوم':'أيام',month:n===1?'شهر':'أشهر',year:n===1?'سنة':'سنوات'};
-            return `${n} ${labels[plan.durationUnit]||plan.durationUnit}`;
+        const PLAN_PRICE_LABELS = {
+            month: 'شهر',
+            '3months': '3 أشهر',
+            '6months': '6 أشهر',
+            year: 'سنة',
+            lifetime: 'مدى الحياة'
+        };
+
+        function formatPlanPrice(value){
+            const n = Number(value);
+            return Number.isFinite(n) && n >= 0 ? `${n} ج.م` : 'السعر حسب الاتفاق';
         }
 
-        function renderPublicSubscriptionPlans(){
-            const select=document.getElementById('waSubscriptionPlan');
+        function formatPublicPlanDuration(plan){
+            const value = Number(plan.durationValue) || 0;
+            const unit = plan.durationUnit || 'days';
+            if(unit === 'years') return `${value} ${value === 1 ? 'سنة' : 'سنوات'}`;
+            if(unit === 'months') return `${value} ${value === 1 ? 'شهر' : 'أشهر'}`;
+            return `${value} ${value === 1 ? 'يوم' : 'أيام'}`;
+        }
+
+        function renderPublicPlanPrices(){
+            const select = document.getElementById('waSubscriptionPlan');
             if(!select) return;
-            select.innerHTML='';
-            if(!publicSubscriptionPlans.length){
-                const empty=document.createElement('option');
-                empty.value=''; empty.disabled=true; empty.selected=true;
-                empty.textContent='لا توجد خطط متاحة حاليًا — تواصل معنا';
-                select.appendChild(empty);
+
+            const plans = Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
+
+            if(plans.length){
+                select.innerHTML = '<option value="" selected disabled>اختر الخطة</option>' +
+                    plans.map(p => {
+                        const oldPrice = Number(p.originalPrice) || 0;
+                        const finalPrice = Number(p.finalPrice) || 0;
+                        const priceText = oldPrice > finalPrice
+                            ? `بدل ${oldPrice} ج.م — ${finalPrice} ج.م`
+                            : `${finalPrice} ج.م`;
+                        return `<option value="${escapeHtml(String(p.id))}" data-plan-name="${escapeHtml(p.name || '')}" data-price="${finalPrice}">${escapeHtml(p.name || 'خطة')} — ${escapeHtml(formatPublicPlanDuration(p))} — ${priceText}</option>`;
+                    }).join('');
                 return;
             }
-            const first=document.createElement('option');
-            first.value=''; first.disabled=true; first.selected=true; first.textContent='اختر خطة الاشتراك';
-            select.appendChild(first);
-            publicSubscriptionPlans.forEach(plan=>{
-                const option=document.createElement('option');
-                option.value=plan.id;
-                const originalPrice=Number(plan.price)||0;
-                const discount=Math.min(originalPrice,Math.max(0,Number(plan.discount)||0));
-                const finalPrice=Math.max(0,originalPrice-discount);
-                option.textContent=`${plan.name} — ${formatPublicPlanDuration(plan)} — ${finalPrice} ج.م${discount>0 ? ` بدل ${originalPrice} ج.م` : ""}`;
-                select.appendChild(option);
-            });
+
+            select.innerHTML = '<option value="" selected disabled>لا توجد خطط متاحة حاليًا</option>';
         }
 
-        async function loadPublicSubscriptionPlans(){
+        async function loadPublicPlanPrices(){
             try{
-                const snap=await window.FB.getDoc(window.FB.doc(window.FB.db,'platformSettings','subscriptionPlans'));
-                const data=snap.exists()?snap.data():{};
-                publicSubscriptionPlans=Array.isArray(data.plans)?data.plans:[];
+                const snap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'platformSettings', 'planPricing'));
+                if(snap.exists()) publicPlanPrices = {...publicPlanPrices, ...snap.data()};
             }catch(error){
-                console.warn('تعذر تحميل خطط الاشتراك:',error);
-                publicSubscriptionPlans=[];
+                console.warn('تعذر تحميل الخطط:', error);
             }
-            renderPublicSubscriptionPlans();
+            renderPublicPlanPrices();
         }
-
-        loadPublicSubscriptionPlans();
 
         function openWhatsAppSubscription(type='new') {
             const phone='201555889862';
             const restaurant=(document.getElementById('authRestaurantName')?.value||currentRestaurant||'غير محدد').trim();
-            let selected=null;
+            const planEl=document.getElementById('waSubscriptionPlan');
+            const planId=planEl?.value||'';
+            const plans=Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
+            const selected=plans.find(p=>String(p.id)===String(planId));
 
-            if(type==='renew'){
-                if(!publicSubscriptionPlans.length){ showCustomAlert('لا توجد خطط محفوظة حاليًا.'); return; }
-                const list=publicSubscriptionPlans.map((p,i)=>`${i+1}) ${p.name} — ${formatPublicPlanDuration(p)} — ${Number(p.price)||0} ج.م`).join('\n');
-                const answer=prompt('اختر رقم خطة التجديد:\n\n'+list,'1');
-                if(!answer) return;
-                selected=publicSubscriptionPlans[Number(answer)-1];
-                if(!selected){ showCustomAlert('اختيار الخطة غير صحيح.'); return; }
-            }else{
-                const planEl=document.getElementById('waSubscriptionPlan');
-                const planId=planEl?.value||'';
-                selected=publicSubscriptionPlans.find(p=>p.id===planId);
-                if(!selected){ showCustomAlert('من فضلك اختر خطة أولاً.'); return; }
+            if(!selected){
+                showCustomAlert('من فضلك اختر خطة أولاً.');
+                return;
             }
 
             const duration=formatPublicPlanDuration(selected);
-            const originalPrice=Number(selected.price)||0;
-            const discount=Math.min(originalPrice,Math.max(0,Number(selected.discount)||0));
-            const price=Math.max(0,originalPrice-discount);
-            const msg=`السلام عليكم، أريد ${type==='renew'?'تجديد':'اشتراك'} خدمة الديجيتال منيو.%0Aكود/اسم المطعم: ${restaurant}%0Aالخطة المطلوبة: ${selected.name}%0Aالمدة: ${duration}%0Aالسعر بعد الخصم: ${price} ج.م${discount>0?`%0Aالسعر قبل الخصم: ${originalPrice} ج.م%0Aالخصم: ${discount} ج.م`:''}%0Aنوع الطلب: ${type==='renew'?'تجديد الاشتراك':'اشتراك جديد'}`;
+            const oldPrice=Number(selected.originalPrice)||0;
+            const finalPrice=Number(selected.finalPrice)||0;
+            const priceText=oldPrice>finalPrice ? `بدل ${oldPrice} ج.م — ${finalPrice} ج.م` : `${finalPrice} ج.م`;
+            const msg=`السلام عليكم، أريد ${type==='renew'?'تجديد':'اشتراك'} خدمة الديجيتال منيو.%0Aكود/اسم المطعم: ${restaurant}%0Aالخطة المطلوبة: ${selected.name}%0Aالمدة: ${duration}%0Aالسعر: ${priceText}%0Aنوع الطلب: ${type==='renew'?'تجديد الاشتراك':'اشتراك جديد'}`;
             window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
         }
-        async function renderSubscriptionStatus(data){
 
+
+        function renderSubscriptionStatus(data){
             const el=document.getElementById('subscriptionStatusBanner'); if(!el) return;
-            if(!data || data.licenseExpiresAt == null || data.plan==='lifetime'){el.innerHTML='<div style="padding:15px 18px;border-radius:16px;background:rgba(46,213,115,.10);border:1px solid rgba(46,213,115,.25);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>اشتراكك مدى الحياة</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">حسابك مفعل ولا يوجد تاريخ انتهاء.</div></div><button class="btn btn-secondary" onclick="openWhatsAppSubscription(\'renew\')"><i class="fa-brands fa-whatsapp"></i> تجديد / ترقية</button></div>';return;}
+            if(!data || data.plan==='lifetime'){el.innerHTML='<div style="padding:15px 18px;border-radius:16px;background:rgba(46,213,115,.10);border:1px solid rgba(46,213,115,.25);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>اشتراكك مدى الحياة</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">حسابك مفعل ولا يوجد تاريخ انتهاء.</div></div><button class="btn btn-secondary" onclick="openWhatsAppSubscription(\'renew\')"><i class="fa-brands fa-whatsapp"></i> تجديد / ترقية</button></div>';return;}
             const expiry=parseLicenseDate(data.licenseExpiresAt); if(!expiry){el.innerHTML='';return;}
             const days=Math.ceil((expiry.getTime()-Date.now())/86400000); if(days>7){el.innerHTML=`<div style="padding:15px 18px;border-radius:16px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>اشتراكك مفعل</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">متبقي ${days} يوم — ينتهي في ${expiry.toLocaleDateString('ar-EG')}</div></div><button class="btn btn-secondary" onclick="openWhatsAppSubscription(\'renew\')"><i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك</button></div>`;return;}
             const danger=days<=3;
@@ -1606,7 +1615,7 @@ td {
                 const license=licenseSnap.data();
                 const expiry=parseLicenseDate(license.expiresAt);
                 const licenseActive = license.status==='available' && !license.used &&
-                    (license.expiresAt == null || license.plan === 'lifetime' || (!!expiry && expiry.getTime() > Date.now()));
+                    (license.plan === 'lifetime' || (!!expiry && expiry.getTime() > Date.now()));
                 if(!licenseActive) return showCustomAlert('كود الترخيص مستخدم أو منتهي الصلاحية.');
                 const ownerEmail=makeOwnerEmail(nameInput,phoneInput);
                 const cred=await window.FB.createUserWithEmailAndPassword(window.FB.auth,ownerEmail,passwordInput);
@@ -1615,13 +1624,13 @@ td {
                 const restSnap=await window.FB.getDoc(restRef);
                 if(restSnap.exists() && restSnap.data().ownerUid) { await window.FB.signOut(window.FB.auth); return showCustomAlert('اسم/كود المطعم مستخدم بالفعل.'); }
                 const baseData=restSnap.exists()?restSnap.data():{};
-                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, planId:license.planId||license.plan, planName:license.planName||'', durationValue:license.durationValue||null, durationUnit:license.durationUnit||'', price:license.price||0, licenseExpiresAt:(license.expiresAt == null ? null : (typeof license.expiresAt.toDate === 'function' ? license.expiresAt : window.FB.Timestamp.fromDate(parseLicenseDate(license.expiresAt)))), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
+                const restaurantData={...baseData, ownerUid:uid, ownerEmail, licenseCode, licenseStatus:'active', plan:license.plan, licenseExpiresAt:(license.plan === 'lifetime' ? null : (license.expiresAt ? (typeof license.expiresAt.toDate === 'function' ? license.expiresAt : window.FB.Timestamp.fromDate(parseLicenseDate(license.expiresAt))) : null)), createdAt:baseData.createdAt||new Date().toISOString(), phone:phoneInput, primaryColor:baseData.primaryColor||'#FF4757', secondaryColor:baseData.secondaryColor||'#2ED573', accentColor:baseData.accentColor||'#FFA502', bgColor:baseData.bgColor||'#0c090a', surfaceColor:baseData.surfaceColor||'#191414', textColor:baseData.textColor||'#ffffff', logo:baseData.logo||'', categories:baseData.categories||[...defaultCategories], items:baseData.items||[]};
                 const batch=window.FB.writeBatch(window.FB.db);
                 batch.set(restRef,restaurantData,{merge:true});
                 batch.set(window.FB.doc(window.FB.db,'ownerProfiles',uid),{restaurantId:nameInput,phone:phoneInput,createdAt:new Date().toISOString()});
                 batch.update(licenseRef,{status:'used',used:true,usedBy:uid,restaurantId:nameInput,usedAt:new Date().toISOString()});
                 await batch.commit();
-                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.expiresAt == null ? null : parseLicenseDate(license.expiresAt); ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
+                currentRestaurant=nameInput; ownerLicenseExpiresAt=license.plan === 'lifetime' ? null : parseLicenseDate(license.expiresAt); ownerAccessAllowed=true; localStorage.setItem('current_restaurant',currentRestaurant);
                 startDataListeners(); showDashboard(); switchTab('dashboard');
             }catch(e){
                 console.error('Registration error:',e);
@@ -1683,11 +1692,7 @@ td {
                             if (licenseSnap.exists()) {
                                 const lic = licenseSnap.data() || {};
                                 snapshotData.plan = lic.plan || snapshotData.plan;
-                                snapshotData.planName = lic.planName || snapshotData.planName || '';
-                                snapshotData.durationValue = lic.durationValue || snapshotData.durationValue || null;
-                                snapshotData.durationUnit = lic.durationUnit || snapshotData.durationUnit || '';
-                                snapshotData.price = lic.price ?? snapshotData.price ?? 0;
-                                if (snapshotData.licenseExpiresAt == null && lic.expiresAt) {
+                                if (snapshotData.licenseExpiresAt == null && lic.plan !== 'lifetime' && lic.expiresAt) {
                                     snapshotData.licenseExpiresAt = lic.expiresAt;
                                 }
                             }
