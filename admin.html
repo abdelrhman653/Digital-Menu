@@ -627,11 +627,17 @@ function calculateExpiry(plan,baseDate=new Date()){
   return date;
 }
 
+const PLANS_DOC_ID = '__admin_custom_plans__';
+
 async function loadPlans(){
   if(!isOwner(auth.currentUser)) return;
   try{
-    const snap=await getDocs(query(collection(db,'plans'),orderBy('createdAt','desc')));
-    savedPlans=snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Store the plans inside the already-authorized `licenses` collection.
+    // This avoids requiring a new Firestore `plans` collection/rule.
+    const ref = doc(db,'licenses',PLANS_DOC_ID);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    savedPlans = Array.isArray(data.plans) ? data.plans.map(p=>({ ...p })) : [];
     renderPlanSelect();
     renderPlansList();
   }catch(error){
@@ -640,7 +646,7 @@ async function loadPlans(){
     renderPlanSelect();
     renderPlansList();
     const list=$('plansList');
-    if(list) list.innerHTML='<div class="msg bad">تعذر قراءة الخطط. تأكد من صلاحيات Firestore.</div>';
+    if(list) list.innerHTML='<div class="msg bad">❌ تعذر قراءة الخطط: '+escapeHtml(error.code||error.message)+'</div>';
   }
 }
 
@@ -648,7 +654,7 @@ function renderPlanSelect(){
   const select=$('plan');
   if(!select) return;
   const current=select.value;
-  select.innerHTML='<option value="">اختر خطة محفوظة</option>' + savedPlans.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} — ${escapeHtml(planDurationText(p))} — ${Number(p.originalPrice||0)-Number(p.discount||0)} ج.م</option>`).join('');
+  select.innerHTML='<option value="">اختر خطة محفوظة</option>' + savedPlans.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} — ${escapeHtml(planDurationText(p))} — ${Math.max(0,Number(p.originalPrice||0)-Number(p.discount||0))} ج.م</option>`).join('');
   if(savedPlans.some(p=>p.id===current)) select.value=current;
 }
 
@@ -669,6 +675,7 @@ function resetPlanForm(){
   $('planId').value=''; $('planNameInput').value=''; $('planDurationValue').value=''; $('planDurationUnit').value='days'; $('planOriginalPrice').value=''; $('planDiscount').value='';
   $('cancelPlanEditBtn').classList.add('hidden');
   $('savePlanBtn').textContent='💾 حفظ الخطة';
+  $('planPreview').classList.add('hidden');
 }
 
 window.editPlan=function(id){
@@ -681,8 +688,26 @@ window.editPlan=function(id){
 window.deletePlan=async function(id){
   const p=savedPlans.find(x=>x.id===id); if(!p) return;
   if(!confirm(`هل تريد حذف الخطة «${p.name}»؟\nالحذف لن يلغي اشتراكات المطاعم الحالية.`)) return;
-  try{ await deleteDoc(doc(db,'plans',id)); showMsg('✅ تم حذف الخطة.','success'); await loadPlans(); }
-  catch(error){ console.error(error); showMsg('❌ تعذر حذف الخطة: '+(error.code||error.message),'error'); }
+  try{
+    const next=savedPlans.filter(x=>x.id!==id);
+    await setDoc(doc(db,'licenses',PLANS_DOC_ID),{
+      code: PLANS_DOC_ID,
+      restaurantId: '__system__',
+      plan: '__custom_plans__',
+      planName: 'خطط الإدارة',
+      status: 'available',
+      used: false,
+      expiresAt: null,
+      createdAt: new Date().toISOString(),
+      plans: next,
+      updatedAt:new Date().toISOString(),
+      createdBy:auth.currentUser.uid,
+      __systemType:'customPlans'
+    },{merge:true});
+    savedPlans=next;
+    renderPlanSelect(); renderPlansList();
+    showMsg('✅ تم حذف الخطة.','success');
+  }catch(error){ console.error(error); showMsg('❌ تعذر حذف الخطة: '+(error.code||error.message),'error'); }
 };
 
 $('savePlanBtn').addEventListener('click',async()=>{
@@ -697,11 +722,20 @@ $('savePlanBtn').addEventListener('click',async()=>{
     return showMsg('اكتب اسم الخطة والمدة والسعر بشكل صحيح.','error');
   }
   if(discount>originalPrice) return showMsg('الخصم لا يمكن أن يكون أكبر من السعر الأساسي.','error');
-  const payload={name,durationValue,durationUnit,originalPrice,discount,finalPrice:Math.max(0,originalPrice-discount),updatedAt:new Date().toISOString(),createdBy:auth.currentUser.uid};
+  const finalPrice=Math.max(0,originalPrice-discount);
+  const planId=id || ('plan_'+crypto.randomUUID().replaceAll('-','').slice(0,16));
+  const payload={id:planId,name,durationValue,durationUnit,originalPrice,discount,finalPrice,updatedAt:new Date().toISOString(),createdBy:auth.currentUser.uid};
   try{
-    if(id) await updateDoc(doc(db,'plans',id),payload);
-    else { const newId='plan_'+crypto.randomUUID().replaceAll('-','').slice(0,16); await setDoc(doc(db,'plans',newId),{...payload,createdAt:new Date().toISOString()}); }
-    showMsg(id?'✅ تم تعديل الخطة وحفظها.':'✅ تم حفظ الخطة.','success'); resetPlanForm(); await loadPlans();
+    const next=id ? savedPlans.map(p=>p.id===id ? {...p,...payload} : p) : [...savedPlans,{...payload,createdAt:new Date().toISOString()}];
+    await setDoc(doc(db,'licenses',PLANS_DOC_ID),{
+      plans:next,
+      updatedAt:new Date().toISOString(),
+      createdBy:auth.currentUser.uid,
+      __systemType:'customPlans'
+    },{merge:true});
+    savedPlans=next;
+    showMsg(id?'✅ تم تعديل الخطة وحفظها.':'✅ تم حفظ الخطة.','success');
+    resetPlanForm(); renderPlanSelect(); renderPlansList();
   }catch(error){ console.error(error); showMsg('❌ تعذر حفظ الخطة: '+(error.code||error.message),'error'); }
 });
 
@@ -1921,7 +1955,7 @@ async function loadLicenses(){
 
   try{
 
-    const snapshot =
+    const rawSnapshot =
       await getDocs(
         query(
           collection(
@@ -1935,6 +1969,10 @@ async function loadLicenses(){
           limit(100)
         )
       );
+
+    // Hide the internal custom-plans document from the issued-codes table.
+    const licenseDocs = rawSnapshot.docs.filter(d => d.id !== PLANS_DOC_ID);
+    const snapshot = { empty: licenseDocs.length === 0, docs: licenseDocs, forEach: fn => licenseDocs.forEach(fn) };
 
 
     if(snapshot.empty){
