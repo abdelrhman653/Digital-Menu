@@ -821,6 +821,29 @@ td {
     }
 }
 
+
+/* Subscription plan picker */
+.plan-picker-modal{background:linear-gradient(145deg,rgba(22,24,30,.98),rgba(12,14,18,.98));}
+.plan-picker-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.plan-close-btn{width:42px!important;height:42px;padding:0!important;border-radius:12px!important;background:rgba(255,255,255,.06)!important;color:var(--text-main)!important;flex:0 0 42px;}
+.public-plans-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.public-plan-card{position:relative;border:1px solid var(--panel-border);background:rgba(255,255,255,.035);border-radius:18px;padding:16px;cursor:pointer;transition:.2s;min-height:132px;}
+.public-plan-card:hover{transform:translateY(-2px);border-color:var(--primary);}
+.public-plan-card.selected{border:2px solid var(--primary);background:linear-gradient(145deg,rgba(255,71,87,.16),rgba(255,255,255,.04));box-shadow:0 10px 30px rgba(0,0,0,.22);}
+.public-plan-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.public-plan-emoji{font-size:30px;line-height:1;}
+.public-plan-name{font-weight:900;font-size:17px;}
+.public-plan-duration{font-size:13px;color:var(--text-muted);margin-bottom:10px;}
+.public-plan-price{font-weight:900;font-size:18px;}
+.public-plan-old{font-size:12px;color:#ff8b8b;text-decoration:line-through;margin-left:6px;}
+.public-plan-discount{display:inline-block;margin-top:7px;padding:4px 8px;border-radius:999px;background:rgba(46,213,115,.12);color:#55d98b;font-size:11px;font-weight:800;}
+.public-plan-check{position:absolute;top:12px;left:12px;width:24px;height:24px;border-radius:50%;border:1px solid var(--panel-border);display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;}
+.public-plan-card.selected .public-plan-check{background:var(--primary);border-color:var(--primary);color:#fff;}
+@media(max-width:600px){.public-plans-grid{grid-template-columns:1fr;}.public-plan-card{min-height:112px;}}
+
+/* Keep the login page starting at the top even when its card is taller than the screen. */
+#authSection{height:100dvh;min-height:100dvh;overflow-y:auto;align-items:flex-start;padding:22px 14px 30px;}
+#authSection .auth-card{margin:auto;flex:0 0 auto;}
 </style>
 </head>
 <body>
@@ -832,6 +855,23 @@ td {
             <h3 style="justify-content: center;" data-i18n="alert_title">تنبيه</h3>
             <p id="customAlertMessage" style="margin-bottom: 24px; font-size: 16px;">رسالة التنبيه</p>
             <button class="btn" style="width: 100%;" onclick="closeCustomAlert()" data-i18n="btn_ok">حسناً</button>
+        </div>
+    </div>
+
+    <!-- Subscription Plans Modal -->
+    <div id="subscriptionPlansModal" class="modal-overlay" onclick="if(event.target===this) closePlanPicker()">
+        <div class="modal-content glass plan-picker-modal" style="max-width:620px;max-height:88vh;overflow-y:auto;">
+            <div class="plan-picker-head">
+                <div>
+                    <h3 id="planPickerTitle" style="margin:0 0 6px;">اختار العرض</h3>
+                    <div id="planPickerSubtitle" style="font-size:12px;color:var(--text-muted);">كل الخطط المتاحة</div>
+                </div>
+                <button type="button" onclick="closePlanPicker()" class="plan-close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="publicPlansCards" class="public-plans-grid"></div>
+            <button id="planPickerWhatsAppBtn" class="btn" type="button" style="width:100%;margin-top:14px;" onclick="sendSelectedPlanWhatsApp()" disabled>
+                <i class="fa-brands fa-whatsapp"></i> متابعة عبر واتساب
+            </button>
         </div>
     </div>
 
@@ -883,18 +923,8 @@ td {
             </div>
             <div style="margin:-2px 0 18px;padding:14px;border:1px solid var(--panel-border);border-radius:14px;background:linear-gradient(135deg,rgba(255,71,87,.08),rgba(46,213,115,.06));">
                 <div style="font-weight:800;margin-bottom:5px;">ليس لديك اشتراك أو تريد التجديد؟</div>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">اختر خطة جاهزة أو مدة مخصصة، وسيتم تجهيز رسالة واتساب تلقائياً.</div>
-                <select id="waSubscriptionPlan" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;">
-                    <option value="" selected disabled>اختر مدة الاشتراك</option>
-                    <option value="month">شهر</option>
-                    <option value="3months">3 أشهر</option>
-                    <option value="6months">6 أشهر</option>
-                    <option value="year">سنة</option>
-                    <option value="lifetime">مدى الحياة</option>
-                    <option value="custom">مدة مخصصة — السعر حسب الاتفاق</option>
-                </select>
-                
-                <button class="btn btn-secondary" style="width:100%;" type="button" onclick="openWhatsAppSubscription('new')"><i class="fa-brands fa-whatsapp"></i> اشتراك الآن</button>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">اختار العرض بنفسك، وستظهر لك كل الخطط المحفوظة بالمدة والسعر والخصم.</div>
+                <button class="btn btn-secondary" style="width:100%;" type="button" onclick="openPlanPicker('new')"><i class="fa-solid fa-tags"></i> عرض الخطط والأسعار</button>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 15px;line-height:1.7;">الحساب الإداري مربوط بالمطعم والترخيص، ومشاركة رابط لوحة الإدارة وحدها لا تمنح أي شخص صلاحية الدخول.</div>
 
@@ -1305,7 +1335,9 @@ td {
         let ownerAccessAllowed = false;
         let currentLang = localStorage.getItem('app_lang') || 'ar';
         let appTheme = localStorage.getItem('app_theme') || 'dark-red';
-        let publicPlanPrices = { month: 0, '3months': 0, '6months': 0, year: 0, lifetime: 0, plans: [] };
+        let publicPlanPrices = { plans: [] };
+        let selectedPublicPlanId = '';
+        let selectedPublicPlanType = 'new';
         
         let uploadedImageFile = null;
         let uploadedLogoFile = null;
@@ -1433,6 +1465,8 @@ td {
 
         // Init
         window.addEventListener('firebase-ready', () => {
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+            window.scrollTo(0,0);
             setAppTheme(appTheme);
             loadPublicPlanPrices();
             changeLanguage(currentLang);
@@ -1539,58 +1573,87 @@ td {
         }
 
         function renderPublicPlanPrices(){
-            const select = document.getElementById('waSubscriptionPlan');
-            if(!select) return;
-
             const plans = Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
-
-            if(plans.length){
-                select.innerHTML = '<option value="" selected disabled>اختر الخطة</option>' +
-                    plans.map(p => {
-                        const oldPrice = Number(p.originalPrice) || 0;
-                        const finalPrice = Number(p.finalPrice) || 0;
-                        const priceText = oldPrice > finalPrice
-                            ? `بدل ${oldPrice} ج.م — ${finalPrice} ج.م`
-                            : `${finalPrice} ج.م`;
-                        return `<option value="${escapeHtml(String(p.id))}" data-plan-name="${escapeHtml(p.name || '')}" data-price="${finalPrice}">${escapeHtml(p.name || 'خطة')} — ${escapeHtml(formatPublicPlanDuration(p))} — ${priceText}</option>`;
-                    }).join('');
+            const cards = document.getElementById('publicPlansCards');
+            if(!cards) return;
+            if(!plans.length){
+                cards.innerHTML = `<div style="grid-column:1/-1;padding:22px;border:1px dashed var(--panel-border);border-radius:16px;text-align:center;color:var(--text-muted);">لا توجد خطط محفوظة حاليًا. أنشئ الخطط من لوحة المالك أولًا.</div>`;
+                const btn=document.getElementById('planPickerWhatsAppBtn'); if(btn) btn.disabled=true;
                 return;
             }
-
-            select.innerHTML = '<option value="" selected disabled>لا توجد خطط متاحة حاليًا</option>';
+            cards.innerHTML = plans.map(p => {
+                const oldPrice = Number(p.originalPrice) || 0;
+                const finalPrice = Number(p.finalPrice) || 0;
+                const discount = Number(p.discount) || Math.max(0, oldPrice-finalPrice);
+                return `<div class="public-plan-card ${String(p.id)===String(selectedPublicPlanId)?'selected':''}" onclick="selectPublicPlan('${escapeHtml(String(p.id))}')">
+                    <div class="public-plan-check"><i class="fa-solid fa-check"></i></div>
+                    <div class="public-plan-top"><span class="public-plan-emoji">${escapeHtml(p.emoji || '📦')}</span><span class="public-plan-name">${escapeHtml(p.name || 'خطة')}</span></div>
+                    <div class="public-plan-duration">${escapeHtml(formatPublicPlanDuration(p))}</div>
+                    <div class="public-plan-price">${oldPrice>finalPrice?`<span class="public-plan-old">${oldPrice} ج.م</span>`:''}${finalPrice} ج.م</div>
+                    ${discount>0?`<span class="public-plan-discount">خصم ${discount} ج.م</span>`:''}
+                </div>`;
+            }).join('');
+            const btn=document.getElementById('planPickerWhatsAppBtn'); if(btn) btn.disabled=!selectedPublicPlanId;
         }
 
         async function loadPublicPlanPrices(){
+            let loaded = false;
             try{
                 const snap = await window.FB.getDoc(window.FB.doc(window.FB.db, 'platformSettings', 'planPricing'));
-                if(snap.exists()) publicPlanPrices = {...publicPlanPrices, ...snap.data()};
+                if(snap.exists() && Array.isArray(snap.data().plans)){
+                    publicPlanPrices = {plans:snap.data().plans};
+                    localStorage.setItem('digitalmenu_public_plans', JSON.stringify(publicPlanPrices.plans));
+                    loaded = true;
+                }
             }catch(error){
-                console.warn('تعذر تحميل الخطط:', error);
+                console.warn('تعذر تحميل الخطط من Firestore:', error);
+            }
+            if(!loaded){
+                try{
+                    const cached=JSON.parse(localStorage.getItem('digitalmenu_public_plans')||'[]');
+                    if(Array.isArray(cached)) publicPlanPrices={plans:cached};
+                }catch(_){}
             }
             renderPublicPlanPrices();
         }
 
-        function openWhatsAppSubscription(type='new') {
+        function openPlanPicker(type='new'){
+            selectedPublicPlanType = type;
+            selectedPublicPlanId = '';
+            const title=document.getElementById('planPickerTitle');
+            const sub=document.getElementById('planPickerSubtitle');
+            if(title) title.textContent = type==='renew' ? 'اختار عرض التجديد' : 'اختار عرض الاشتراك';
+            if(sub) sub.textContent = type==='renew' ? 'المدة الجديدة ستُضاف على المدة المتبقية من اشتراكك.' : 'اختار العرض المناسب ثم أرسل الطلب عبر واتساب.';
+            renderPublicPlanPrices();
+            document.getElementById('subscriptionPlansModal')?.classList.add('active');
+        }
+
+        function closePlanPicker(){
+            document.getElementById('subscriptionPlansModal')?.classList.remove('active');
+        }
+
+        function selectPublicPlan(planId){
+            selectedPublicPlanId = String(planId);
+            renderPublicPlanPrices();
+        }
+
+        function sendSelectedPlanWhatsApp(){
+            const plans=Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
+            const selected=plans.find(p=>String(p.id)===String(selectedPublicPlanId));
+            if(!selected) return showCustomAlert('من فضلك اختر عرضًا أولاً.');
             const phone='201555889862';
             const restaurant=(document.getElementById('authRestaurantName')?.value||currentRestaurant||'غير محدد').trim();
-            const planEl=document.getElementById('waSubscriptionPlan');
-            const planId=planEl?.value||'';
-            const plans=Array.isArray(publicPlanPrices.plans) ? publicPlanPrices.plans : [];
-            const selected=plans.find(p=>String(p.id)===String(planId));
-
-            if(!selected){
-                showCustomAlert('من فضلك اختر خطة أولاً.');
-                return;
-            }
-
             const duration=formatPublicPlanDuration(selected);
             const oldPrice=Number(selected.originalPrice)||0;
             const finalPrice=Number(selected.finalPrice)||0;
             const priceText=oldPrice>finalPrice ? `بدل ${oldPrice} ج.م — ${finalPrice} ج.م` : `${finalPrice} ج.م`;
-            const msg=`السلام عليكم، أريد ${type==='renew'?'تجديد':'اشتراك'} خدمة الديجيتال منيو.%0Aكود/اسم المطعم: ${restaurant}%0Aالخطة المطلوبة: ${selected.name}%0Aالمدة: ${duration}%0Aالسعر: ${priceText}%0Aنوع الطلب: ${type==='renew'?'تجديد الاشتراك':'اشتراك جديد'}`;
+            const msg=`السلام عليكم، أريد ${selectedPublicPlanType==='renew'?'تجديد':'اشتراك'} خدمة الديجيتال منيو.%0Aكود/اسم المطعم: ${restaurant}%0Aالخطة المطلوبة: ${selected.name}%0Aالمدة: ${duration}%0Aالسعر: ${priceText}%0Aنوع الطلب: ${selectedPublicPlanType==='renew'?'تجديد الاشتراك':'اشتراك جديد'}`;
+            closePlanPicker();
             window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
         }
 
+        // Backward-compatible name used by older buttons.
+        function openWhatsAppSubscription(type='new'){ openPlanPicker(type); }
 
         function renderSubscriptionStatus(data){
             const el=document.getElementById('subscriptionStatusBanner'); if(!el) return;
@@ -1598,7 +1661,7 @@ td {
             const expiry=parseLicenseDate(data.licenseExpiresAt); if(!expiry){el.innerHTML='';return;}
             const days=Math.ceil((expiry.getTime()-Date.now())/86400000); if(days>7){el.innerHTML=`<div style="padding:15px 18px;border-radius:16px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>اشتراكك مفعل</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">متبقي ${days} يوم — ينتهي في ${expiry.toLocaleDateString('ar-EG')}</div></div><button class="btn btn-secondary" onclick="openWhatsAppSubscription(\'renew\')"><i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك</button></div>`;return;}
             const danger=days<=3;
-            el.innerHTML=`<div style="padding:16px 18px;border-radius:16px;background:${danger?'rgba(255,71,87,.12)':'rgba(245,158,11,.10)'};border:1px solid ${danger?'rgba(255,71,87,.3)':'rgba(245,158,11,.3)'};display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>${days<=0?'اشتراكك انتهى':'⚠️ اشتراكك سينتهي قريبًا'}</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${days<=0?'يرجى التواصل للتجديد.':'متبقي '+days+' يوم — تاريخ الانتهاء '+expiry.toLocaleDateString('ar-EG')}</div></div><button class="btn ${danger?'btn-danger':'btn-secondary'}" onclick="openWhatsAppSubscription('renew')"><i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك</button></div>`;
+            el.innerHTML=`<div style="padding:16px 18px;border-radius:16px;background:${danger?'rgba(255,71,87,.12)':'rgba(245,158,11,.10)'};border:1px solid ${danger?'rgba(255,71,87,.3)':'rgba(245,158,11,.3)'};display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;"><div><b>${days<=0?'اشتراكك انتهى':'⚠️ اشتراكك سينتهي قريبًا'}</b><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${days<=0?'يرجى التواصل للتجديد.':'متبقي '+days+' يوم — تاريخ الانتهاء '+expiry.toLocaleDateString('ar-EG')}</div></div><button class="btn ${danger?'btn-danger':'btn-secondary'}" onclick="openPlanPicker('renew')"><i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك</button></div>`;
         }
 
         async function handleRegister(){
@@ -1659,9 +1722,12 @@ td {
             try{await window.FB.signOut(window.FB.auth);}catch(e){}
             document.getElementById('authSection').classList.remove('hidden');
             document.getElementById('app').classList.add('hidden');
+            window.scrollTo(0,0);
         }
 
         function showDashboard() {
+            window.scrollTo(0,0);
+            document.querySelector('.content-scroll')?.scrollTo(0,0);
             document.getElementById('authSection').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('headerRestaurantTitle').innerText = currentRestaurant.toUpperCase();
