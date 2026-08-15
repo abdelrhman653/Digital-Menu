@@ -1563,7 +1563,7 @@ td {
 
             if(type==='renew'){
                 if(!publicSubscriptionPlans.length){ showCustomAlert('لا توجد خطط محفوظة حاليًا.'); return; }
-                const list=publicSubscriptionPlans.map((p,i)=>`${i+1}) ${p.name} — ${formatPublicPlanDuration(p)} — ${Number(p.price)||0} ج.م`).join('\n');
+                const list=publicSubscriptionPlans.map((p,i)=>{const original=Number(p.price)||0;const discount=Math.min(original,Math.max(0,Number(p.discount)||0));const finalPrice=Math.max(0,original-discount);return `${i+1}) ${p.name} — ${formatPublicPlanDuration(p)} — ${finalPrice} ج.م${discount>0?` (بدل ${original} ج.م)`:''}`;}).join('\n');
                 const answer=prompt('اختر رقم خطة التجديد:\n\n'+list,'1');
                 if(!answer) return;
                 selected=publicSubscriptionPlans[Number(answer)-1];
