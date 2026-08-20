@@ -1232,7 +1232,13 @@ td {
                 <!-- QR & Tables Section -->
                 <section id="tab-qr" class="section">
                     <div class="card glass">
-                        <h3><i class="fa-solid fa-qrcode"></i> <span data-i18n="section_qr_generator">مولد QR كود للطاولات</span></h3>
+                        <h3><i class="fa-solid fa-qrcode"></i> QR Code للطلبات أونلاين</h3>
+                        <p class="muted" style="margin:-8px 0 16px;">كود واحد للطلبات المباشرة بدون رقم طاولة — مناسب للمشاركة على السوشيال ميديا أو الطباعة أو وضعه على الكاشير.</p>
+                        <div id="onlineQrResultsContainer" class="qr-grid" style="margin-top:0;"></div>
+
+                        <div style="height:1px;background:var(--panel-border);margin:28px 0;"></div>
+
+                        <h3><i class="fa-solid fa-table-cells"></i> <span data-i18n="section_qr_generator">مولد QR كود للطاولات</span></h3>
                         <div class="input-group" style="max-width: 300px;">
                             <label data-i18n="label_tables_count">عدد الطاولات</label>
                             <input type="number" id="tablesCountInput" value="4" min="1" oninput="generateTablesQR()">
@@ -1843,6 +1849,7 @@ td {
             let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             document.getElementById('onlineMenuBtn').href = `${baseUrl}orders.html?restaurant=${currentRestaurant}`;
             document.getElementById('kitchenBtn').href = `${baseUrl}kitchen.html?restaurant=${currentRestaurant}`;
+            generateOnlineOrderQR();
             generateTablesQR();
         }
 
@@ -2560,6 +2567,62 @@ td {
         }
 
         // QR Generate & Printing Fixes - UTF-8 safe for Arabic restaurant names
+        function generateOnlineOrderQR() {
+            const container=document.getElementById('onlineQrResultsContainer');
+            if(!container) return;
+            const url=buildOrdersUrl();
+            container.innerHTML='';
+            const box=document.createElement('div'); box.className='qr-box';
+            box.innerHTML=`
+                <h4 style="margin-bottom:5px;color:var(--primary);">طلبات أونلاين</h4>
+                <div id="online-order-qr" class="qr-img-container"></div>
+                <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+                    <button class="btn btn-secondary" style="padding:10px 12px;font-size:13px;" onclick="copyOnlineOrderQRLink()"><i class="fa-solid fa-copy"></i> نسخ الرابط</button>
+                    <button class="btn btn-secondary" style="padding:10px 12px;font-size:13px;" onclick="downloadOnlineOrderQR()"><i class="fa-solid fa-download"></i> تحميل QR</button>
+                    <button class="btn btn-secondary" style="padding:10px 12px;font-size:13px;" onclick="printOnlineOrderQR()"><i class="fa-solid fa-print"></i> طباعة QR</button>
+                    <a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:var(--text-muted);font-size:11px;text-decoration:none;"><i class="fa-solid fa-arrow-up-right-from-square"></i> عرض صفحة الطلبات أونلاين</a>
+                </div>`;
+            container.appendChild(box);
+            try { new QRCode(document.getElementById('online-order-qr'),{text:url,width:140,height:140,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H}); }
+            catch(e){ console.error('Online QR generation error:',e); document.getElementById('online-order-qr').innerHTML='<span style="color:#d00;font-size:12px;">تعذر إنشاء QR</span>'; }
+        }
+
+        async function copyOnlineOrderQRLink() {
+            const url=buildOrdersUrl();
+            try {
+                await navigator.clipboard.writeText(url);
+                showCustomAlert('تم نسخ رابط الطلبات أونلاين.');
+            } catch (_) {
+                const ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+                showCustomAlert('تم نسخ رابط الطلبات أونلاين.');
+            }
+        }
+
+        function downloadOnlineOrderQR() {
+            const target=document.querySelector('#online-order-qr canvas, #online-order-qr img');
+            if(!target) return showCustomAlert('جاري تجهيز QR، حاول بعد لحظة.');
+            const link=document.createElement('a');
+            link.download=`${String(currentRestaurant||'restaurant').replace(/[^a-z0-9_-]/gi,'-')}-online-order-qr.png`;
+            link.href=target.tagName==='CANVAS' ? target.toDataURL('image/png') : target.src;
+            link.click();
+        }
+
+        function printOnlineOrderQR() {
+            const printArea=document.getElementById('printArea');
+            const url=buildOrdersUrl();
+            const logoImgHtml=restaurantDataCache.logo?`<img src="${restaurantDataCache.logo}" class="print-logo" alt="Logo">`:'';
+            printArea.innerHTML=`
+                <div class="print-card">
+                    ${logoImgHtml}
+                    <div class="print-title">${escapeHtml(currentRestaurant||'المطعم')}</div>
+                    <div class="print-table">Online Order - طلب أونلاين</div>
+                    <div><div id="online-print-qr-target" class="print-qr-wrapper"></div></div>
+                    <div class="print-footer"><p style="font-size:18px;margin-bottom:5px;">شرفتونا ❤️</p><p style="font-size:14px;color:#555;">امسح الكود لعرض المنيو وطلب الطعام أونلاين.</p></div>
+                </div>`;
+            try { new QRCode(document.getElementById('online-print-qr-target'),{text:url,width:220,height:220,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H}); waitForPrintReady(()=>window.print(),450); }
+            catch(e){ console.error('Online QR print error:',e); showCustomAlert('تعذر تجهيز كود QR للطباعة. حاول مرة أخرى.'); }
+        }
+
         function generateTablesQR() {
             const count=parseInt(document.getElementById('tablesCountInput').value)||4;
             const container=document.getElementById('qrResultsContainer');
