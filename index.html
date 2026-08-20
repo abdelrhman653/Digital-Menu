@@ -2645,7 +2645,22 @@ html{scroll-behavior:smooth}.main-content,.content,.container{animation:uiFade .
 
             const flush = () => {
                 if (!current || !current.name || current.name.length < 2) { current = null; return; }
-                current.description = (current.description || []).map(cleanOcrLine).filter(Boolean).join(' ').trim();
+
+                // OCR قد يكرر نفس سطر التفاصيل أكثر من مرة؛ احتفظ بكل سطر مرة واحدة فقط.
+                const seenDescriptionLines = new Set();
+                const descriptionLines = (current.description || [])
+                    .map(cleanOcrLine)
+                    .filter(Boolean)
+                    .filter(line => {
+                        const key = normalizeOcrDigits(line)
+                            .toLowerCase()
+                            .replace(/[\s\-–—•·،,.!؟?؛;:()\[\]{}]/g, '');
+                        if (!key || seenDescriptionLines.has(key)) return false;
+                        seenDescriptionLines.add(key);
+                        return true;
+                    });
+
+                current.description = descriptionLines.join(' ').trim();
                 result.push({ name: current.name, category: current.category || 'غير مصنف', price: current.price, description: current.description });
                 current = null;
             };
