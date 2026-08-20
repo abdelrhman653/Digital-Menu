@@ -844,6 +844,11 @@ td {
 /* Keep the login page starting at the top even when its card is taller than the screen. */
 #authSection{height:100dvh;min-height:100dvh;overflow-y:auto;align-items:flex-start;padding:22px 14px 30px;}
 #authSection .auth-card{margin:auto;flex:0 0 auto;}
+
+
+/* ===== 2026 Restaurant Dashboard UI polish ===== */
+html{scroll-behavior:smooth}.main-content,.content,.container{animation:uiFade .35s ease both}@keyframes uiFade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}.card,.panel,.stat-card,.settings-card,.category-card,.item-card,.modal-content{box-shadow:0 14px 42px rgba(0,0,0,.12)}.card:hover,.stat-card:hover,.category-card:hover,.item-card:hover{transform:translateY(-2px);box-shadow:0 20px 52px rgba(0,0,0,.18)}button,.btn,.nav-item,.sidebar-link,input,select,textarea{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}button:active,.btn:active{transform:scale(.98)}input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)!important}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--primary) 45%,transparent);border-radius:99px}@media(max-width:768px){body{padding-bottom:76px}.main-content,.content,.container{padding-left:12px!important;padding-right:12px!important}.card,.panel,.settings-card,.modal-content{border-radius:16px!important}.stats-grid,.dashboard-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}.table-wrapper,table{overflow-x:auto}button,.btn{min-height:42px}.modal-content{max-height:90vh;overflow:auto}}@media(max-width:420px){.stats-grid,.dashboard-grid{grid-template-columns:1fr!important}}
+
 </style>
 </head>
 <body>
