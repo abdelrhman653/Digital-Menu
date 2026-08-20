@@ -849,6 +849,107 @@ td {
 /* ===== 2026 Restaurant Dashboard UI polish ===== */
 html{scroll-behavior:smooth}.main-content,.content,.container{animation:uiFade .35s ease both}@keyframes uiFade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}.card,.panel,.stat-card,.settings-card,.category-card,.item-card,.modal-content{box-shadow:0 14px 42px rgba(0,0,0,.12)}.card:hover,.stat-card:hover,.category-card:hover,.item-card:hover{transform:translateY(-2px);box-shadow:0 20px 52px rgba(0,0,0,.18)}button,.btn,.nav-item,.sidebar-link,input,select,textarea{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}button:active,.btn:active{transform:scale(.98)}input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)!important}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--primary) 45%,transparent);border-radius:99px}@media(max-width:768px){body{padding-bottom:76px}.main-content,.content,.container{padding-left:12px!important;padding-right:12px!important}.card,.panel,.settings-card,.modal-content{border-radius:16px!important}.stats-grid,.dashboard-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}.table-wrapper,table{overflow-x:auto}button,.btn{min-height:42px}.modal-content{max-height:90vh;overflow:auto}}@media(max-width:420px){.stats-grid,.dashboard-grid{grid-template-columns:1fr!important}}
 
+
+
+        /* === Dashboard square stats upgrade === */
+        #tab-dashboard .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        #tab-dashboard .stat-card {
+            aspect-ratio: 1 / 1;
+            min-height: 0;
+            padding: 18px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        #tab-dashboard .stat-info {
+            order: 2;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+        }
+
+        #tab-dashboard .stat-icon {
+            order: 1;
+            width: 58px;
+            height: 58px;
+            flex: 0 0 58px;
+            border-radius: 18px;
+            font-size: 22px;
+        }
+
+        #tab-dashboard .stat-info h4 {
+            margin: 0;
+            min-height: auto;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.45;
+        }
+
+        #tab-dashboard .stat-info h2 {
+            margin: 0;
+            font-size: clamp(24px, 7vw, 38px);
+            line-height: 1.05;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        #tab-dashboard .stat-card::after {
+            width: 95px;
+            height: 95px;
+            left: -38px;
+            bottom: -45px;
+        }
+
+        @media (max-width: 600px) {
+            #tab-dashboard .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 12px !important;
+            }
+
+            #tab-dashboard .stat-card {
+                aspect-ratio: 1 / 1;
+                padding: 12px;
+                border-radius: 20px;
+                gap: 9px;
+            }
+
+            #tab-dashboard .stat-icon {
+                width: 48px;
+                height: 48px;
+                flex-basis: 48px;
+                border-radius: 15px;
+                font-size: 19px;
+            }
+
+            #tab-dashboard .stat-info h4 {
+                font-size: 11px;
+            }
+
+            #tab-dashboard .stat-info h2 {
+                font-size: clamp(21px, 8vw, 30px);
+            }
+        }
+
+        @media (max-width: 420px) {
+            #tab-dashboard .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+
 </style>
 </head>
 <body>
