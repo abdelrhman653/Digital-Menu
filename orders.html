@@ -323,7 +323,23 @@ header {
 /* ===== 2026 Customer Ordering UI polish ===== */
 html{scroll-behavior:smooth}.item-card{box-shadow:0 10px 30px rgba(0,0,0,.12)}.item-card:hover{transform:translateY(-3px);box-shadow:0 18px 45px rgba(0,0,0,.2)}.add-btn,.btn-submit,.header-action-btn,.theme-toggle-btn,.qty-btn{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}.add-btn:active,.btn-submit:active,.header-action-btn:active{transform:scale(.98)}.search-box input:focus,.input-group input:focus,.input-group select:focus,.input-group textarea:focus{border-color:var(--primary)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)}.cart-bar{box-shadow:0 18px 44px rgba(0,0,0,.32)}@media(max-width:768px){.container{padding:14px 12px}.items-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}.item-img{height:118px!important}.item-details{padding:11px!important}.item-title{font-size:13px!important}.item-price{font-size:14px!important}.add-btn{padding:9px!important;font-size:12px!important}.cart-modal{padding:18px!important}.live-order-banner{margin-left:12px!important;margin-right:12px!important}}@media(max-width:380px){.items-grid{grid-template-columns:1fr!important}.item-img{height:150px!important}}
 
-</style>
+
+        /* Product details modal */
+        .item-card{cursor:pointer}
+        .item-card:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,transparent);outline-offset:3px}
+        .product-details-modal{max-width:520px!important;text-align:right!important;padding:0!important;overflow:hidden}
+        .product-details-image{width:100%;height:230px;object-fit:cover;display:block;background:var(--input-bg)}
+        .product-details-content{padding:20px}
+        .product-details-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+        .product-details-category{display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--secondary) 14%,transparent);color:var(--secondary);border:1px solid color-mix(in srgb,var(--secondary) 28%,transparent);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;margin-bottom:9px}
+        .product-details-name{font-size:24px;font-weight:900;line-height:1.35;margin:0 0 8px}
+        .product-details-price{font-size:23px;font-weight:900;color:var(--primary);margin:8px 0 14px}
+        .product-details-description{background:var(--input-bg);border:1px solid var(--border-color);border-radius:16px;padding:14px;line-height:1.9;color:var(--text-muted);font-size:14px;white-space:pre-wrap}
+        .product-details-add{width:100%;margin-top:16px;border:none;border-radius:15px;padding:14px;background:var(--primary);color:#fff;font-size:15px;font-weight:900;cursor:pointer}
+        .product-details-close{background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);width:38px;height:38px;border-radius:12px;cursor:pointer;font-size:18px;flex:0 0 auto}
+        @media(max-width:480px){.product-details-image{height:190px}.product-details-name{font-size:21px}.product-details-content{padding:16px}}
+
+    </style>
 </head>
 <body>
 
@@ -374,6 +390,14 @@ html{scroll-behavior:smooth}.item-card{box-shadow:0 10px 30px rgba(0,0,0,.12)}.i
         <!-- Items Grid -->
         <div class="items-grid" id="itemsGrid">
             <!-- Dynamic Items -->
+        </div>
+    </div>
+
+
+    <!-- Product Details Modal -->
+    <div id="productDetailsModal" class="modal-overlay" onclick="if(event.target===this)closeProductDetails()">
+        <div class="cart-modal product-details-modal">
+            <div id="productDetailsContent"></div>
         </div>
     </div>
 
@@ -609,19 +633,45 @@ html{scroll-behavior:smooth}.item-card{box-shadow:0 10px 30px rgba(0,0,0,.12)}.i
             container.innerHTML = filtered.map(item => {
                 let finalPrice = item.price - (item.discount || 0);
                 return `
-                    <div class="item-card">
-                        <img src="${escapeHtml(item.img)}" class="item-img" alt="" loading="lazy">
+                    <div class="item-card" role="button" tabindex="0" onclick="openItemDetails(${item.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openItemDetails(${item.id})}">
+                        <img src="${escapeHtml(item.img)}" class="item-img" alt="${escapeHtml(item.name)}" loading="lazy">
                         <div class="item-details">
                             <div>
                                 <div class="item-title">${escapeHtml(item.name)}</div>
                                 <div class="item-price">${finalPrice} ج.م ${item.discount ? `<small style="text-decoration:line-through; color:var(--text-muted); font-size:12px;">${item.price}</small>` : ''}</div>
                                 ${item.description ? `<details style="margin-top:8px;font-size:12px;color:var(--text-muted);"><summary style="cursor:pointer;color:var(--secondary);">تفاصيل الصنف</summary><div style="padding-top:6px;line-height:1.7;">${escapeHtml(item.description)}</div></details>` : ''}
                             </div>
-                            <button class="add-btn" onclick="addToCart(${item.id})"><i class="fa-solid fa-plus"></i> إضافة للسلّة</button>
+                            <button class="add-btn" onclick="event.stopPropagation();addToCart(${item.id})"><i class="fa-solid fa-plus"></i> إضافة للسلّة</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        function openItemDetails(itemId) {
+            const item = (restaurantData.items || []).find(i => i.id == itemId);
+            if (!item) return;
+            const finalPrice = Number(item.price || 0) - Number(item.discount || 0);
+            const content = document.getElementById('productDetailsContent');
+            const safeImg = item.img ? escapeHtml(item.img) : '';
+            content.innerHTML = `
+                ${safeImg ? `<img src="${safeImg}" class="product-details-image" alt="${escapeHtml(item.name)}">` : ''}
+                <div class="product-details-content">
+                    <div class="product-details-top">
+                        <div style="min-width:0;flex:1;">
+                            ${item.category ? `<div class="product-details-category"><i class="fa-solid fa-layer-group"></i>${escapeHtml(item.category)}</div>` : ''}
+                            <h2 class="product-details-name">${escapeHtml(item.name)}</h2>
+                        </div>
+                        <button class="product-details-close" onclick="closeProductDetails()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="product-details-price">${finalPrice} ج.م ${item.discount ? `<span style="font-size:13px;text-decoration:line-through;color:var(--text-muted);font-weight:600;margin-right:8px;">${item.price} ج.م</span>` : ''}</div>
+                    ${item.description ? `<div class="product-details-description"><strong style="display:block;color:var(--text-color);margin-bottom:6px;">تفاصيل الصنف</strong>${escapeHtml(item.description)}</div>` : '<div class="product-details-description" style="opacity:.72;">لا توجد تفاصيل إضافية لهذا الصنف.</div>'}
+                    <button class="product-details-add" onclick="addToCart(${item.id});closeProductDetails()"><i class="fa-solid fa-cart-plus"></i> إضافة للسلّة</button>
+                </div>`;
+            document.getElementById('productDetailsModal').classList.add('active');
+        }
+        function closeProductDetails() {
+            document.getElementById('productDetailsModal').classList.remove('active');
         }
 
         function addToCart(itemId) {

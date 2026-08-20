@@ -2598,75 +2598,97 @@ html{scroll-behavior:smooth}.main-content,.content,.container{animation:uiFade .
                 status.innerText='';
             }
         }
+        // OCR parser: expected menu pattern is repeated as
+        // Category -> Item + Price -> Description -> Category -> Item + Price -> Description
         function normalizeOcrDigits(value) {
-            return String(value || '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/٫/g,'.').replace(/٬/g,',');
+            return String(value || '')
+                .replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+                .replace(/٫/g, '.')
+                .replace(/٬/g, ',');
         }
         function cleanOcrLine(value) {
-            return String(value || '').replace(/[|¦]/g,' ').replace(/\s+/g,' ').replace(/^[-–—•·*]+\s*/,'').trim();
+            return String(value || '')
+                .replace(/[|¦]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .replace(/^[-–—•·*]+\s*/, '')
+                .trim();
         }
         function extractOcrPrice(line) {
-            const normalized=normalizeOcrDigits(line);
-            const matches=[...normalized.matchAll(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)?\s*(\d+(?:[.,]\d{1,2})?)(?:\s*(?:ج\.م|جنيه|ريال|sar|egp|usd|\$))?/gi)];
-            if(!matches.length) return null;
-            const m=matches[matches.length-1];
-            const raw=m[1].replace(',','.');
-            const value=Number(raw);
-            if(!Number.isFinite(value) || value<=0 || value>1000000) return null;
-            return { value, index:m.index, raw:m[0] };
+            const normalized = normalizeOcrDigits(line);
+            const matches = [...normalized.matchAll(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)?\s*(\d+(?:[.,]\d{1,2})?)(?:\s*(?:ج\.م|جنيه|ريال|sar|egp|usd|\$))?/gi)];
+            if (!matches.length) return null;
+            const m = matches[matches.length - 1];
+            const value = Number(m[1].replace(',', '.'));
+            if (!Number.isFinite(value) || value <= 0 || value > 1000000) return null;
+            return { value, index: m.index, raw: m[0] };
         }
-        function likelyOcrCategory(line,nextLine='') {
-            const l=cleanOcrLine(line), n=cleanOcrLine(nextLine);
-            if(!l || extractOcrPrice(l)) return false;
-            if(extractOcrPrice(n) && l.length<=45) return true;
-            if(l.length>34) return false;
-            return /^(برجر|بيتزا|باستا|مكرونة|مشروبات|مشروب|عصائر|حلويات|حلو|سلطات|سلطة|مقبلات|ساندوتش|ساندوتشات|وجبات|فطور|إفطار|غداء|عشاء|دجاج|فراخ|لحوم|أسماك|سي فود|seafood|drinks|desserts|burgers|pizza|pasta|appetizers|salads|breakfast|lunch|dinner|main courses?)$/i.test(l)
-                || /^[A-Z][A-Z\s&/-]{2,30}$/.test(l);
+        function isKnownOcrCategory(line) {
+            const l = cleanOcrLine(line).replace(/[：:]/g, '').trim();
+            if (!l || l.length > 45 || extractOcrPrice(l)) return false;
+            return /^(برجر|برغر|بيتزا|باستا|مكرونة|مشروبات|مشروب|عصائر|عصير|حلويات|حلو|سلطات|سلطة|مقبلات|ساندوتش|ساندوتشات|وجبات|فطور|إفطار|غداء|عشاء|دجاج|فراخ|لحوم|أسماك|سي فود|مشويات|كريب|سناكس|seafood|drinks|desserts|burgers|burger|pizza|pasta|appetizers|salads|breakfast|lunch|dinner|main courses?|grill|grills)$/i.test(l)
+                || /^[A-Z][A-Z\s&/\-]{2,30}$/.test(l);
+        }
+        function splitNameAndPrice(line, price) {
+            const normalized = normalizeOcrDigits(line);
+            let before = normalized.slice(0, price.index).trim();
+            let after = normalized.slice(price.index + price.raw.length).trim();
+            before = before.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi, '').replace(/[|¦•·]+/g, ' ').replace(/\s+/g, ' ').trim();
+            after = after.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi, '').replace(/^[\-–—:|]+/, '').trim();
+            return { name: before.replace(/^[-–—:|]+|[-–—:|]+$/g, '').trim(), inlineDescription: after };
         }
         function parseMenuOcrLines(rawText) {
-            const raw=String(rawText||'').split(/\r?\n/).map(cleanOcrLine).filter(Boolean);
-            const lines=[];
-            raw.forEach(line=>{
-                if(!line) return;
-                if(lines.length && !extractOcrPrice(line) && line.length<90 && /[\u0600-\u06FFa-zA-Z]/.test(line) && !likelyOcrCategory(line, lines[lines.length-1])) {
-                    // Keep separate OCR lines; merging is intentionally conservative to avoid corrupting names/details.
-                }
-                lines.push(line);
-            });
-            const result=[]; let category='غير مصنف'; let pendingDescription=[];
-            for(let i=0;i<lines.length;i++){
-                const line=lines[i], next=lines[i+1]||'';
-                const price=extractOcrPrice(line);
-                if(!price){
-                    if(likelyOcrCategory(line,next)){
-                        category=line;
-                        pendingDescription=[];
-                    } else if(result.length){
-                        const prev=result[result.length-1];
-                        if(prev && pendingDescription.length<4 && line.length>=2 && line.length<=180) pendingDescription.push(line);
-                    }
+            const lines = String(rawText || '').split(/\r?\n/).map(cleanOcrLine).filter(Boolean);
+            const result = [];
+            let category = 'غير مصنف';
+            let current = null;
+            let looseName = '';
+
+            const flush = () => {
+                if (!current || !current.name || current.name.length < 2) { current = null; return; }
+                current.description = (current.description || []).map(cleanOcrLine).filter(Boolean).join(' ').trim();
+                result.push({ name: current.name, category: current.category || 'غير مصنف', price: current.price, description: current.description });
+                current = null;
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const price = extractOcrPrice(line);
+
+                if (isKnownOcrCategory(line)) {
+                    flush();
+                    category = cleanOcrLine(line).replace(/[：:]/g, '').trim();
+                    looseName = '';
                     continue;
                 }
-                const normalized=normalizeOcrDigits(line);
-                let before=normalized.slice(0,price.index).trim();
-                let after=normalized.slice(price.index+price.raw.length).trim();
-                before=before.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/[|¦•·]+/g,' ').replace(/\s+/g,' ').trim();
-                after=after.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/^[\-–—:|]+/,'').trim();
-                let name=before;
-                let inlineDescription=after;
-                if(!name && i>0 && !extractOcrPrice(lines[i-1]) && !likelyOcrCategory(lines[i-1],line)) name=lines[i-1];
-                name=name.replace(/^[-–—:|]+|[-–—:|]+$/g,'').trim();
-                if(name.length<2) continue;
-                const item={name,category:category||'غير مصنف',price:price.value,description:[inlineDescription,...pendingDescription].filter(Boolean).join(' ').trim()};
-                result.push(item); pendingDescription=[];
+
+                if (price) {
+                    flush();
+                    const parts = splitNameAndPrice(line, price);
+                    let name = parts.name || looseName;
+                    if (!name && i > 0) {
+                        const prev = lines[i - 1];
+                        if (prev && !extractOcrPrice(prev) && !isKnownOcrCategory(prev)) name = prev;
+                    }
+                    if (!name || name.length < 2) { looseName = ''; continue; }
+                    current = {
+                        name: cleanOcrLine(name),
+                        category,
+                        price: price.value,
+                        description: parts.inlineDescription ? [parts.inlineDescription] : []
+                    };
+                    looseName = '';
+                    continue;
+                }
+
+                if (current) {
+                    current.description.push(line);
+                } else {
+                    looseName = line;
+                }
             }
+            flush();
             return result;
         }
-        function normalizeOcrDigits(value){return String(value||'').replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/٫/g,'.').replace(/٬/g,',');}
-        function cleanOcrLine(value){return String(value||'').replace(/[|¦]/g,' ').replace(/\s+/g,' ').replace(/^[-–—•·*]+\s*/,'').trim();}
-        function extractOcrPrice(line){const normalized=normalizeOcrDigits(line);const matches=[...normalized.matchAll(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)?\s*(\d+(?:[.,]\d{1,2})?)(?:\s*(?:ج\.م|جنيه|ريال|sar|egp|usd|\$))?/gi)];if(!matches.length)return null;const m=matches[matches.length-1],raw=m[1].replace(',','.');const value=Number(raw);return Number.isFinite(value)&&value>0&&value<1000000?{value,index:m.index,raw:m[0]}:null;}
-        function likelyOcrCategory(line,nextLine=''){const l=cleanOcrLine(line),n=cleanOcrLine(nextLine);if(!l||extractOcrPrice(l))return false;if(extractOcrPrice(n)&&l.length<=45)return true;if(l.length>34)return false;return /^(برجر|بيتزا|باستا|مكرونة|مشروبات|مشروب|عصائر|حلويات|حلو|سلطات|سلطة|مقبلات|ساندوتش|ساندوتشات|وجبات|فطور|إفطار|غداء|عشاء|دجاج|فراخ|لحوم|أسماك|سي فود|seafood|drinks|desserts|burgers|pizza|pasta|appetizers|salads|breakfast|lunch|dinner|main courses?)$/i.test(l)||/^[A-Z][A-Z\s&/-]{2,30}$/.test(l);}
-        function parseMenuOcrLines(rawText){const lines=String(rawText||'').split(/\r?\n/).map(cleanOcrLine).filter(Boolean),result=[];let category='غير مصنف',pending=[];for(let i=0;i<lines.length;i++){const line=lines[i],next=lines[i+1]||'',price=extractOcrPrice(line);if(!price){if(likelyOcrCategory(line,next)){category=line;pending=[];}else if(result.length&&pending.length<4&&line.length<=180)pending.push(line);continue;}const normalized=normalizeOcrDigits(line);let before=normalized.slice(0,price.index).trim(),after=normalized.slice(price.index+price.raw.length).trim();before=before.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/[|¦•·]+/g,' ').replace(/\s+/g,' ').trim();after=after.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)/gi,'').replace(/^[\-–—:|]+/,'').trim();let name=before;if(!name&&i>0&&!extractOcrPrice(lines[i-1])&&!likelyOcrCategory(lines[i-1],line))name=lines[i-1];name=name.replace(/^[-–—:|]+|[-–—:|]+$/g,'').trim();if(name.length<2)continue;result.push({name,category,price:price.value,description:[after,...pending].filter(Boolean).join(' ').trim()});pending=[];}return result;}
-        async function importBilingualMenuOCR(replace){if(!aiMenuImageFile)return showCustomAlert('اختر صورة أولاً');const btn=document.getElementById('parseAiBtn'),stat=document.getElementById('aiProgressStatus');btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...';stat.innerText='قراءة النصوص بالعربي والإنجليزي...';try{const res=await Tesseract.recognize(aiMenuImageFile,'ara+eng',{logger:m=>{if(m.status==='recognizing text')stat.innerText=`قراءة... ${Math.round(m.progress*100)}%`;}});const parsed=parseMenuOcrLines(res.data.text);if(!parsed.length)throw new Error('لم يتم العثور على أصناف واضحة تحتوي على أسعار.');const preview=parsed.slice(0,20).map((x,i)=>`${i+1}. ${x.category} ← ${x.name} — ${x.price} ج.م${x.description?' — '+x.description:''}`).join('\n');if(!confirm(`تم العثور على ${parsed.length} صنف.\n\nمراجعة أولية:\n${preview}${parsed.length>20?'\n...':''}\n\nاضغط موافق لحفظ النتائج، أو إلغاء لإلغاء الاستيراد.`)){stat.innerText='تم إلغاء الاستيراد.';btn.innerHTML='<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';return;}let items=replace?[]:restaurantDataCache.items,cats=[...(restaurantDataCache.categories||defaultCategories)],added=0;parsed.forEach((x,i)=>{if(x.category!=='غير مصنف'&&!cats.includes(x.category))cats.push(x.category);items.push({id:Date.now()+i+Math.random(),name:x.name,category:x.category,price:x.price,discount:0,description:x.description||'',img:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'});added++;});restaurantDataCache.categories=cats;restaurantDataCache.items=items;updateCategoryDropdown();renderCategoriesManagement();renderItems();try{const menuImageUrl=await uploadFileToStorage(aiMenuImageFile,'menu-source');if(menuImageUrl)restaurantDataCache.menuImageUrl=menuImageUrl;}catch(uploadErr){console.warn(uploadErr);}await saveRestaurantDataToCloud();stat.innerText='';btn.innerHTML='<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';showCustomAlert(`تم استيراد ${added} صنف مع التصنيف والسعر والتفاصيل قدر الإمكان.`);}catch(e){console.error('OCR import error:',e);stat.innerText='';btn.innerHTML='<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕';showCustomAlert('تعذر تحليل المنيو: '+(e.message||'خطأ غير معروف'));}}
 
         function buildOrdersUrl(tableNum=null) {
             const url=new URL('orders.html',document.baseURI);
