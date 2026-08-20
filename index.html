@@ -2690,6 +2690,113 @@ html{scroll-behavior:smooth}.main-content,.content,.container{animation:uiFade .
             return result;
         }
 
+        async function importBilingualMenuOCR(replace) {
+            if (!aiMenuImageFile) {
+                showCustomAlert('اختر صورة المنيو أولاً.');
+                return;
+            }
+            if (typeof Tesseract === 'undefined') {
+                showCustomAlert('مكتبة قراءة الصور لم يتم تحميلها. تأكد من اتصال الإنترنت ثم أعد المحاولة.');
+                return;
+            }
+
+            const btn = document.getElementById('parseAiBtn');
+            const replaceBtn = document.getElementById('parseAiReplaceBtn');
+            const stat = document.getElementById('aiProgressStatus');
+            const oldBtnHtml = btn ? btn.innerHTML : '';
+            const oldReplaceHtml = replaceBtn ? replaceBtn.innerHTML : '';
+
+            try {
+                if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري قراءة الصورة...'; }
+                if (replaceBtn) replaceBtn.disabled = true;
+                if (stat) stat.innerText = 'يتم تجهيز الصورة للقراءة... 0%';
+
+                const result = await Tesseract.recognize(
+                    aiMenuImageFile,
+                    'ara+eng',
+                    {
+                        logger: message => {
+                            if (!stat) return;
+                            if (message.status === 'recognizing text') {
+                                stat.innerText = `جاري قراءة النصوص... ${Math.round((message.progress || 0) * 100)}%`;
+                            } else if (message.status === 'loading language traineddata') {
+                                stat.innerText = 'جاري تحميل لغة القراءة...';
+                            } else if (message.status === 'initializing tesseract') {
+                                stat.innerText = 'جاري تشغيل قارئ الصورة...';
+                            }
+                        }
+                    }
+                );
+
+                const rawText = result?.data?.text || '';
+                if (!rawText.trim()) throw new Error('لم يتم استخراج أي نص من الصورة. حاول بصورة أوضح ومقربة.');
+
+                const parsed = parseMenuOcrLines(rawText);
+                if (!parsed.length) {
+                    throw new Error('تمت قراءة الصورة، لكن لم يتم العثور على أصناف وأسعار بالصيغة المطلوبة. تأكد أن السعر ظاهر بجانب أو أسفل اسم الصنف.');
+                }
+
+                const preview = parsed.slice(0, 25).map((x, i) =>
+                    `${i + 1}. ${x.category} ← ${x.name} — ${x.price} ج.م${x.description ? ' — ' + x.description : ''}`
+                ).join('\n');
+
+                const ok = confirm(
+                    `تم العثور على ${parsed.length} صنف.\n\nمراجعة أولية:\n${preview}${parsed.length > 25 ? '\n...' : ''}\n\nاضغط موافق لحفظ النتائج، أو إلغاء للرجوع دون حفظ.`
+                );
+                if (!ok) {
+                    if (stat) stat.innerText = 'تم إلغاء الاستيراد، ولم يتم تغيير المنيو.';
+                    return;
+                }
+
+                const previousItems = [...(restaurantDataCache.items || [])];
+                const previousCategories = [...(restaurantDataCache.categories || defaultCategories)];
+                const items = replace ? [] : [...previousItems];
+                const categories = [...previousCategories];
+                const baseId = Date.now();
+
+                parsed.forEach((entry, index) => {
+                    const category = cleanOcrLine(entry.category || 'غير مصنف') || 'غير مصنف';
+                    if (category !== 'غير مصنف' && !categories.includes(category)) categories.push(category);
+                    items.push({
+                        id: baseId + index + Math.random(),
+                        name: cleanOcrLine(entry.name),
+                        category,
+                        price: Number(entry.price) || 0,
+                        discount: 0,
+                        description: cleanOcrLine(entry.description || ''),
+                        img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'
+                    });
+                });
+
+                restaurantDataCache.items = items;
+                restaurantDataCache.categories = categories;
+                updateCategoryDropdown();
+                renderCategoriesManagement();
+                renderItems();
+
+                try {
+                    await saveRestaurantDataToCloud();
+                } catch (saveError) {
+                    restaurantDataCache.items = previousItems;
+                    restaurantDataCache.categories = previousCategories;
+                    updateCategoryDropdown();
+                    renderCategoriesManagement();
+                    renderItems();
+                    throw saveError;
+                }
+
+                if (stat) stat.innerText = `تم استيراد ${parsed.length} صنف بنجاح.`;
+                showCustomAlert(`تم استيراد ${parsed.length} صنف مع التصنيف والسعر والتفاصيل.`);
+            } catch (error) {
+                console.error('OCR import error:', error);
+                if (stat) stat.innerText = 'فشلت قراءة الصورة.';
+                showCustomAlert('تعذر قراءة المنيو: ' + (error?.message || 'خطأ غير معروف'));
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = oldBtnHtml || '<i class="fa-solid fa-brain"></i> قراءة واستيراد المنيو ➕'; }
+                if (replaceBtn) { replaceBtn.disabled = false; replaceBtn.innerHTML = oldReplaceHtml || '<i class="fa-solid fa-rotate"></i> استبدال 🔄'; }
+            }
+        }
+
         function buildOrdersUrl(tableNum=null) {
             const url=new URL('orders.html',document.baseURI);
             url.searchParams.set('restaurant',currentRestaurant||'default');
