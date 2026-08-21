@@ -844,7 +844,11 @@ td {
 /* Keep the login page starting at the top even when its card is taller than the screen. */
 #authSection{height:100dvh;min-height:100dvh;overflow-y:auto;align-items:flex-start;padding:22px 14px 30px;}
 #authSection .auth-card{margin:auto;flex:0 0 auto;}
-</style>
+
+        /* OCR image review */
+        .image-review-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:10050;display:none;align-items:center;justify-content:center;padding:14px}.image-review-modal.show{display:flex}.image-review-panel{width:min(1050px,100%);max-height:92vh;overflow:hidden;background:var(--surface,#171717);border:1px solid var(--panel-border,#333);border-radius:22px;display:flex;flex-direction:column}.image-review-head{padding:18px 20px;border-bottom:1px solid var(--panel-border,#333);display:flex;justify-content:space-between;gap:12px;align-items:center}.image-review-list{overflow:auto;padding:14px;display:grid;gap:12px}.image-review-card{display:grid;grid-template-columns:120px minmax(180px,1fr) minmax(250px,1.2fr);gap:14px;align-items:center;padding:12px;border:1px solid var(--panel-border,#333);border-radius:16px}.image-review-thumb{width:120px;height:95px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center}.image-review-thumb img{width:100%;height:100%;object-fit:cover}.image-review-info{display:flex;flex-direction:column;gap:7px}.image-review-info small{opacity:.75}.image-review-actions{display:flex;flex-wrap:wrap;gap:8px}.image-review-actions .btn{padding:8px 10px;font-size:12px}.image-review-options{display:flex;gap:7px;overflow:auto;padding-bottom:2px}.image-option{width:74px;height:62px;border:2px solid transparent;border-radius:10px;padding:0;overflow:hidden;background:#111;flex:0 0 auto}.image-option.selected{border-color:var(--primary,#8E2DE2)}.image-option img{width:100%;height:100%;object-fit:cover}.image-review-foot{padding:16px 20px;border-top:1px solid var(--panel-border,#333);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}@media(max-width:700px){.image-review-card{grid-template-columns:86px 1fr}.image-review-thumb{width:86px;height:78px}.image-review-options{grid-column:1/-1}.image-review-head{align-items:flex-start}.image-review-head h3{font-size:16px}}
+
+    </style>
 </head>
 <body>
 
@@ -1123,14 +1127,6 @@ td {
                     <div class="card glass" style="border: 1px dashed var(--primary);">
                         <h3 data-i18n="section_smart_menu"><i class="fa-solid fa-wand-magic-sparkles" style="color: #8E2DE2;"></i> استيراد المنيو الذكي (عربي / إنجليزي)</h3>
                         <p style="margin-bottom: 20px;" data-i18n="smart_menu_desc">ارفع صورة المنيو (سواء عربي أو إنجليزي)، وسيقوم النظام بالتعرف على التصنيفات والأصناف بدقة.</p>
-                        <div style="margin:-6px 0 16px;padding:14px 16px;border:1px solid rgba(46,213,115,.35);border-radius:14px;background:rgba(46,213,115,.08);line-height:1.9;font-size:14px;">
-                            <strong style="color:var(--secondary);"><i class="fa-solid fa-check-double"></i> أفضل صيغة للقراءة:</strong><br>
-                            <b>التصنيف:</b> مشروبات<br>
-                            <b>الصنف:</b> عصير مانجو<br>
-                            <b>السعر:</b> 80<br>
-                            <b>التفاصيل:</b> مانجو طبيعي طازج<br><br>
-                            <span style="color:var(--text-muted);">يمكنك كتابة الحقول بأي ترتيب؛ النظام يعتمد على كلمات: التصنيف، الصنف، السعر، التفاصيل وليس ترتيب السطور.</span>
-                        </div>
                         <div class="file-upload-box" onclick="document.getElementById('aiMenuFile').click()">
                             <i class="fa-solid fa-file-arrow-up"></i>
                             <div id="aiFileNameDisplay" data-i18n="choose_menu_img">اضغط لاختيار صورة المنيو من جهازك</div>
@@ -2462,6 +2458,7 @@ td {
                             <div style="font-weight:700;">${escapeHtml(item.name)} <span style="font-size:11px; color:var(--primary);">(${escapeHtml(item.category)})</span></div>
                             <div style="color:var(--secondary); font-size:14px; font-weight:700;">${item.price - (item.discount||0)} ج.م</div>
                             ${item.description ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.6;">${escapeHtml(item.description)}</div>` : ''}
+                            ${item.description ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.6;">${escapeHtml(item.description)}</div>` : ''}
                         </div>
                     </div>
                     <div class="action-btns">
@@ -2489,304 +2486,155 @@ td {
                 status.innerText='';
             }
         }
+        // OCR parsing stays label-based and order-independent.
         function normalizeOcrDigits(value) {
-            return String(value || '')
-                .replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
-                .replace(/٫/g, '.')
-                .replace(/٬/g, ',');
+            return String(value || '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/٫/g,'.').replace(/٬/g,',');
         }
-
         function cleanOcrLine(value) {
-            return normalizeOcrDigits(value)
-                .replace(/[|¦]/g, ' ')
-                .replace(/[–—]/g, '-')
-                .replace(/[\u064B-\u065F\u0670]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
+            return String(value || '').replace(/[|¦]/g,' ').replace(/\s+/g,' ').replace(/^[-–—•·*]+\s*/,'').trim();
         }
-
-        function normalizeOcrLabel(value) {
-            return cleanOcrLine(value)
-                .toLowerCase()
-                .replace(/[：:؛،,.\-_/\\]+/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        function splitOcrLabel(line) {
-            const raw = cleanOcrLine(line);
-            const normalized = normalizeOcrLabel(raw);
-            const labels = [
-                { type: 'category', keys: ['التصنيف', 'تصنيف', 'القسم', 'الفئة', 'category'] },
-                { type: 'item', keys: ['الصنف', 'اسم الصنف', 'المنتج', 'اسم المنتج', 'item', 'product', 'name'] },
-                { type: 'price', keys: ['السعر', 'سعر', 'price', 'cost'] },
-                { type: 'description', keys: ['التفاصيل', 'تفاصيل', 'الوصف', 'وصف', 'description', 'details'] }
-            ];
-
-            for (const group of labels) {
-                for (const key of group.keys) {
-                    const keyNormalized = normalizeOcrLabel(key);
-                    if (normalized === keyNormalized) return { type: group.type, value: '' };
-                    if (normalized.startsWith(keyNormalized + ' ')) {
-                        const re = new RegExp('^\\s*' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[:：؛،,\\-–—]*\\s*', 'i');
-                        const value = raw.replace(re, '').trim();
-                        return { type: group.type, value };
-                    }
-                    // Handles OCR when punctuation is removed or read oddly.
-                    if (normalized.startsWith(keyNormalized)) {
-                        const rough = raw.replace(/^\s*[^:：؛،\-–—]*?\s*[:：؛،\-–—]\s*/i, '').trim();
-                        if (rough && rough !== raw) return { type: group.type, value: rough };
-                    }
-                }
-            }
-            return null;
-        }
-
-        function extractOcrPriceValue(value) {
-            const normalized = normalizeOcrDigits(value);
-            const matches = [...normalized.matchAll(/(\d+(?:[.,]\d{1,2})?)/g)];
-            if (!matches.length) return null;
-            const m = matches[matches.length - 1];
-            const price = Number(m[1].replace(',', '.'));
-            return Number.isFinite(price) && price > 0 && price < 1000000 ? price : null;
-        }
-
         function uniqueOcrText(value) {
-            const parts = String(value || '')
-                .split(/\s*[|]\s*|\n+/)
-                .map(v => cleanOcrLine(v))
-                .filter(Boolean);
-            const seen = new Set();
-            return parts.filter(v => {
-                const key = normalizeOcrLabel(v);
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            }).join(' ');
+            const words=String(value||'').split(/\s+/).filter(Boolean), out=[];
+            for (const w of words) if (!out.length || out[out.length-1] !== w) out.push(w);
+            return out.join(' ').trim();
         }
-
-        function parseLabeledMenuOcr(rawText) {
-            const lines = String(rawText || '')
-                .split(/\r?\n/)
-                .map(cleanOcrLine)
-                .filter(Boolean);
-
-            /*
-             * مهم:
-             * لا نربط الحقول حسب ترتيب ظهورها في النص.
-             * نجمع كل حقل باسمه أولاً، ثم نطابقه مع الصنف بنفس رقم التكرار.
-             * لذلك:
-             *   السعر -> التصنيف -> الصنف -> التفاصيل
-             * و:
-             *   التفاصيل -> الصنف -> السعر -> التصنيف
-             * يعطون نفس النتيجة.
-             */
-            const fields = [];
-
-            for (let i = 0; i < lines.length; i++) {
-                const tagged = splitOcrLabel(lines[i]);
-                if (!tagged) continue;
-
-                let value = tagged.value || '';
-
-                // لو اسم الحقل في سطر وقيمته في السطر/السطور التالية، اجمع القيمة
-                // حتى بداية حقل جديد. هذا يمنع فقدان التفاصيل الطويلة متعددة السطور.
-                if (!value) {
-                    const continuation = [];
-                    let j = i + 1;
-                    while (j < lines.length && !splitOcrLabel(lines[j])) {
-                        continuation.push(lines[j]);
-                        j++;
-                    }
-                    if (continuation.length) {
-                        value = continuation.join(' ');
-                        i = j - 1;
-                    }
-                }
-
-                value = uniqueOcrText(value);
-                if (value) fields.push({ type: tagged.type, value });
-            }
-
-            const items = fields
-                .filter(f => f.type === 'item')
-                .map(f => uniqueOcrText(f.value))
-                .filter(Boolean);
-
-            if (!items.length) return [];
-
-            const prices = fields
-                .filter(f => f.type === 'price')
-                .map(f => extractOcrPriceValue(f.value));
-
-            const descriptions = fields
-                .filter(f => f.type === 'description')
-                .map(f => uniqueOcrText(f.value));
-
-            const categories = fields
-                .filter(f => f.type === 'category')
-                .map(f => uniqueOcrText(f.value))
-                .filter(Boolean);
-
-            // مطابقة الفئات:
-            // - فئة واحدة = فئة عامة لكل الأصناف.
-            // - فئة لكل صنف = تطابق حسب رقم الصنف، وليس حسب مكان السطر.
-            // - عدد أقل = آخر فئة معروفة تستمر للأصناف التالية.
-            const categoryForIndex = (index) => {
-                if (!categories.length) return 'غير مصنف';
-                if (categories.length === 1) return categories[0];
-                if (categories[index]) return categories[index];
-                return categories[categories.length - 1] || 'غير مصنف';
-            };
-
-            const result = [];
-            const seen = new Set();
-
-            for (let i = 0; i < items.length; i++) {
-                const name = items[i];
-                const price = prices[i];
-                const description = descriptions[i] || '';
-                const category = categoryForIndex(i);
-
-                // لا نحفظ صنفًا ناقصًا أو مكررًا بسبب تكرار OCR.
-                if (!name || !Number.isFinite(price) || price <= 0) continue;
-
-                const key = [
-                    normalizeOcrLabel(category),
-                    normalizeOcrLabel(name),
-                    String(price),
-                    normalizeOcrLabel(description)
-                ].join('||');
-
-                if (seen.has(key)) continue;
-                seen.add(key);
-
-                result.push({ name, category, price, description });
-            }
-
-            return result;
-        }
-
         function parseMenuOcrLines(rawText) {
-            // The labeled format is the primary and safest parser.
-            const labeled = parseLabeledMenuOcr(rawText);
-            if (labeled.length) return labeled;
-
-            // Fallback for old menus that are not labeled.
-            const lines = String(rawText || '').split(/\r?\n/).map(cleanOcrLine).filter(Boolean);
-            const result = [];
-            let category = 'غير مصنف';
-            let pending = [];
-
-            const knownCategories = /^(برجر|بيتزا|باستا|مكرونة|مشروبات|مشروب|عصائر|حلويات|حلو|سلطات|سلطة|مقبلات|ساندوتش|ساندوتشات|وجبات|فطور|إفطار|غداء|عشاء|دجاج|فراخ|لحوم|أسماك|سي فود|seafood|drinks|desserts|burgers|pizza|pasta|appetizers|salads|breakfast|lunch|dinner)$/i;
-
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const price = extractOcrPriceValue(line);
-                if (price == null) {
-                    if (knownCategories.test(line) && line.length <= 45) {
-                        category = line;
-                        pending = [];
-                    } else if (result.length && line.length <= 180) {
-                        pending.push(line);
-                    }
-                    continue;
-                }
-
-                const name = cleanOcrLine(line.replace(/(?:ر\.س|ج\.م|جنيه|ريال|sar|egp|usd|\$)?\s*\d+(?:[.,]\d{1,2})?(?:\s*(?:ج\.م|جنيه|ريال|sar|egp|usd|\$))?/gi, ''));
-                if (name.length < 2) continue;
-                result.push({
-                    name,
-                    category,
-                    price,
-                    description: uniqueOcrText(pending.join(' '))
-                });
-                pending = [];
-            }
-            return result;
-        }
-
-        async function importBilingualMenuOCR(replace) {
-            if (!aiMenuImageFile) return showCustomAlert('اختر صورة أولاً');
-
-            const btn = document.getElementById('parseAiBtn');
-            const replaceBtn = document.getElementById('parseAiReplaceBtn');
-            const stat = document.getElementById('aiProgressStatus');
-            const oldBtnHtml = btn.innerHTML;
-            const oldReplaceHtml = replaceBtn ? replaceBtn.innerHTML : '';
-
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...';
-            btn.disabled = true;
-            if (replaceBtn) replaceBtn.disabled = true;
-            stat.innerText = 'جاري قراءة المنيو حسب أسماء الحقول: التصنيف / الصنف / السعر / التفاصيل...';
-
-            try {
-                const res = await Tesseract.recognize(aiMenuImageFile, 'ara+eng', {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            stat.innerText = `جاري القراءة والتحليل... ${Math.round(m.progress * 100)}%`;
+            const lines=String(rawText||'').split(/\r?\n/).map(cleanOcrLine).filter(Boolean);
+            const aliases={
+                category:['التصنيف','تصنيف','القسم','الفئة','category'],
+                name:['الصنف','اسم الصنف','المنتج','الوجبة','name','item'],
+                price:['السعر','سعر','الثمن','price','cost'],
+                description:['التفاصيل','تفاصيل','الوصف','وصف','description','details']
+            };
+            const norm=x=>String(x||'').toLowerCase().replace(/[ـ_\-–—]/g,' ').replace(/\s+/g,' ').trim();
+            const detect=line=>{
+                const n=norm(line);
+                for(const [key,list] of Object.entries(aliases)){
+                    for(const a of list){
+                        const aa=norm(a);
+                        if(n===aa || n.startsWith(aa+':') || n.startsWith(aa+' :') || n.startsWith(aa+'-') || n.startsWith(aa+' -')){
+                            const rest=cleanOcrLine(line.slice(line.toLowerCase().indexOf(a.toLowerCase())+a.length).replace(/^\s*[:：\-–—]\s*/,''));
+                            return {key,value:rest};
                         }
                     }
-                });
-
-                const parsed = parseMenuOcrLines(res.data.text);
-                if (!parsed.length) {
-                    throw new Error('لم يتم العثور على أصناف بالصيغة المطلوبة. اكتب بجانب كل جزء: التصنيف، الصنف، السعر، التفاصيل.');
                 }
-
-                const preview = parsed.slice(0, 20).map((x, i) =>
-                    `${i + 1}. التصنيف: ${x.category}\n   الصنف: ${x.name}\n   السعر: ${x.price} ج.م\n   التفاصيل: ${x.description || 'بدون تفاصيل'}`
-                ).join('\n\n');
-
-                if (!confirm(`تم العثور على ${parsed.length} صنف.\n\nمراجعة أولية:\n\n${preview}${parsed.length > 20 ? '\n\n...' : ''}\n\nاضغط موافق للحفظ أو إلغاء لمراجعة الصورة.`)) {
-                    stat.innerText = 'تم إلغاء الاستيراد.';
-                    return;
-                }
-
-                let items = replace ? [] : [...(restaurantDataCache.items || [])];
-                let cats = [...(restaurantDataCache.categories || defaultCategories)];
-
-                parsed.forEach((x, i) => {
-                    if (x.category && x.category !== 'غير مصنف' && !cats.includes(x.category)) cats.push(x.category);
-                    items.push({
-                        id: Date.now() + i + Math.random(),
-                        name: x.name,
-                        category: x.category || 'غير مصنف',
-                        price: x.price,
-                        discount: 0,
-                        description: x.description || '',
-                        img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'
-                    });
-                });
-
-                restaurantDataCache.categories = cats;
-                restaurantDataCache.items = items;
-                updateCategoryDropdown();
-                renderCategoriesManagement();
-                renderItems();
-
-                try {
-                    const menuImageUrl = await uploadFileToStorage(aiMenuImageFile, 'menu-source');
-                    if (menuImageUrl) restaurantDataCache.menuImageUrl = menuImageUrl;
-                } catch (uploadErr) {
-                    console.warn('Menu source image upload failed:', uploadErr);
-                }
-
-                await saveRestaurantDataToCloud();
-                stat.innerText = `تم استيراد ${parsed.length} صنف بنجاح.`;
-                showCustomAlert(`تم استيراد ${parsed.length} صنف بالتصنيف والسعر والتفاصيل.`);
-            } catch (e) {
-                console.error('OCR import error:', e);
-                stat.innerText = '';
-                showCustomAlert('تعذر تحليل المنيو: ' + (e.message || 'خطأ غير معروف'));
-            } finally {
-                btn.innerHTML = oldBtnHtml;
-                btn.disabled = false;
-                if (replaceBtn) {
-                    replaceBtn.innerHTML = oldReplaceHtml;
-                    replaceBtn.disabled = false;
-                }
+                return null;
+            };
+            const fields={category:[],name:[],price:[],description:[]};
+            let currentCategory='غير مصنف';
+            for(let i=0;i<lines.length;i++){
+                const hit=detect(lines[i]);
+                if(!hit) continue;
+                let value=hit.value;
+                if(!value && i+1<lines.length && !detect(lines[i+1])) value=lines[++i];
+                value=cleanOcrLine(value);
+                if(!value) continue;
+                if(hit.key==='category') currentCategory=value;
+                else fields[hit.key].push({value,category:currentCategory});
             }
+            const count=Math.max(fields.name.length,fields.price.length,fields.description.length);
+            const result=[];
+            for(let i=0;i<count;i++){
+                const name=fields.name[i]?.value||'';
+                if(!name) continue;
+                const priceRaw=normalizeOcrDigits(fields.price[i]?.value||'').match(/\d+(?:[.,]\d{1,2})?/);
+                const price=priceRaw?Number(priceRaw[0].replace(',','.')):0;
+                if(!Number.isFinite(price)||price<=0) continue;
+                const category=fields.name[i]?.category||fields.price[i]?.category||fields.description[i]?.category||currentCategory||'غير مصنف';
+                const description=uniqueOcrText(fields.description[i]?.value||'');
+                result.push({name:cleanOcrLine(name),category,price,description});
+            }
+            return result;
+        }
+
+        // Free image suggestions from Wikimedia Commons. No API key required.
+        let pendingMenuImport=null;
+        let imageReviewItems=[];
+        const imageSearchCache=new Map();
+        function buildFoodSearchQuery(item){
+            return [item.name,item.category,item.description].filter(Boolean).join(' food ').slice(0,180);
+        }
+        async function searchFreeFoodImages(query, limit=6){
+            const key=query.toLowerCase();
+            if(imageSearchCache.has(key)) return imageSearchCache.get(key);
+            const url='https://commons.wikimedia.org/w/api.php?origin=*&action=query&generator=search&gsrsearch='+encodeURIComponent(query)+'&gsrnamespace=6&gsrlimit='+limit+'&prop=imageinfo&iiprop=url&iiurlwidth=700&format=json';
+            const res=await fetch(url);
+            if(!res.ok) throw new Error('تعذر البحث عن الصور المجانية');
+            const data=await res.json();
+            const pages=Object.values(data.query?.pages||{});
+            const images=pages.map(p=>({title:p.title,url:p.imageinfo?.[0]?.thumburl||p.imageinfo?.[0]?.url||''})).filter(x=>x.url);
+            imageSearchCache.set(key,images);
+            return images;
+        }
+        function openImageReview(items, replace){
+            pendingMenuImport={items,replace};
+            imageReviewItems=items.map((item,index)=>({...item,_index:index,img:'',_images:[],_loading:true,_noImage:false}));
+            const modal=document.getElementById('menuImageReviewModal');
+            modal.classList.add('show');
+            renderImageReview();
+            suggestImagesForAll();
+        }
+        function renderImageReview(){
+            const list=document.getElementById('menuImageReviewList');
+            list.innerHTML=imageReviewItems.map((x,i)=>`<div class="image-review-card">
+                <div class="image-review-thumb">${x._loading?'<i class="fa-solid fa-spinner fa-spin"></i>':x.img?`<img src="${escapeHtml(x.img)}" alt="${escapeHtml(x.name)}">`:'<i class="fa-solid fa-image"></i>'}</div>
+                <div class="image-review-info"><b>${escapeHtml(x.name)}</b><small>${escapeHtml(x.category)} • ${x.price} ج.م</small><div class="image-review-actions"><button class="btn btn-ai" onclick="suggestImagesForOne(${i})"><i class="fa-solid fa-arrows-rotate"></i> اقتراحات أخرى</button><button class="btn btn-secondary" onclick="chooseNoImage(${i})"><i class="fa-solid fa-ban"></i> بدون صورة</button></div></div>
+                <div class="image-review-options">${x._images.slice(0,6).map((im,j)=>`<button class="image-option ${x.img===im.url?'selected':''}" title="${escapeHtml(im.title)}" onclick="selectSuggestedImage(${i},${j})"><img src="${escapeHtml(im.url)}" alt="اقتراح ${j+1}"></button>`).join('')||(!x._loading?'<span>لا توجد اقتراحات حاليًا</span>':'')}</div>
+            </div>`).join('');
+        }
+        async function suggestImagesForOne(index){
+            const item=imageReviewItems[index]; if(!item) return;
+            item._loading=true; renderImageReview();
+            try{
+                const images=await searchFreeFoodImages(buildFoodSearchQuery(item)+' '+Math.random().toString(36).slice(2),6);
+                item._images=images; item.img=images[0]?.url||''; item._noImage=!item.img;
+            }catch(e){item._images=[];item.img='';item._noImage=true;}
+            item._loading=false; renderImageReview();
+        }
+        async function suggestImagesForAll(){
+            for(let i=0;i<imageReviewItems.length;i++) await suggestImagesForOne(i);
+        }
+        function selectSuggestedImage(itemIndex,imageIndex){
+            const item=imageReviewItems[itemIndex], im=item?._images?.[imageIndex];
+            if(!item||!im) return; item.img=im.url; item._noImage=false; renderImageReview();
+        }
+        function chooseNoImage(index){const item=imageReviewItems[index]; if(!item)return; item.img=''; item._noImage=true; renderImageReview();}
+        function closeImageReview(){document.getElementById('menuImageReviewModal').classList.remove('show'); pendingMenuImport=null;}
+        async function confirmMenuImportWithImages(){
+            if(!pendingMenuImport) return;
+            const {replace}=pendingMenuImport;
+            let items=replace?[]:[...(restaurantDataCache.items||[])];
+            let cats=[...(restaurantDataCache.categories||defaultCategories)];
+            imageReviewItems.forEach((x,i)=>{
+                if(x.category!=='غير مصنف'&&!cats.includes(x.category)) cats.push(x.category);
+                items.push({id:Date.now()+i+Math.random(),name:x.name,category:x.category,price:x.price,discount:0,description:x.description||'',img:x.img||''});
+            });
+            restaurantDataCache.categories=cats; restaurantDataCache.items=items;
+            updateCategoryDropdown(); renderCategoriesManagement(); renderItems();
+            try{const menuImageUrl=await uploadFileToStorage(aiMenuImageFile,'menu-source'); if(menuImageUrl) restaurantDataCache.menuImageUrl=menuImageUrl;}catch(e){console.warn(e);}
+            await saveRestaurantDataToCloud();
+            document.getElementById('menuImageReviewModal').classList.remove('show');
+            const stat=document.getElementById('aiProgressStatus'); if(stat) stat.innerText='';
+            showCustomAlert(`تم استيراد ${imageReviewItems.length} صنف بعد مراجعة الصور.`);
+            pendingMenuImport=null;
+        }
+        async function importBilingualMenuOCR(replace){
+            if(!aiMenuImageFile) return showCustomAlert('اختر صورة أولاً');
+            const btn=document.getElementById('parseAiBtn'), replaceBtn=document.getElementById('parseAiReplaceBtn'), stat=document.getElementById('aiProgressStatus');
+            const oldBtn=btn.innerHTML, oldReplace=replaceBtn?replaceBtn.innerHTML:'';
+            btn.disabled=true; if(replaceBtn) replaceBtn.disabled=true;
+            btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> جاري القراءة...';
+            stat.innerText='جاري قراءة المنيو حسب أسماء الحقول: التصنيف / الصنف / السعر / التفاصيل...';
+            try{
+                const res=await Tesseract.recognize(aiMenuImageFile,'ara+eng',{logger:m=>{if(m.status==='recognizing text') stat.innerText=`جاري القراءة والتحليل... ${Math.round(m.progress*100)}%`;}});
+                const parsed=parseMenuOcrLines(res.data.text);
+                if(!parsed.length) throw new Error('لم يتم العثور على أصناف بالصيغة المطلوبة. اكتب بجانب كل جزء: التصنيف، الصنف، السعر، التفاصيل.');
+                const preview=parsed.slice(0,20).map((x,i)=>`${i+1}. التصنيف: ${x.category}\n   الصنف: ${x.name}\n   السعر: ${x.price} ج.م\n   التفاصيل: ${x.description||'بدون تفاصيل'}`).join('\n\n');
+                if(!confirm(`تم العثور على ${parsed.length} صنف.\n\nمراجعة أولية:\n\n${preview}${parsed.length>20?'\n\n...':''}\n\nاضغط موافق لاختيار الصور قبل الحفظ.`)){stat.innerText='تم إلغاء الاستيراد.';return;}
+                stat.innerText='جاري تجهيز اقتراحات الصور المجانية...';
+                openImageReview(parsed,replace);
+            }catch(e){console.error('OCR import error:',e);stat.innerText='';showCustomAlert('تعذر تحليل المنيو: '+(e.message||'خطأ غير معروف'));}
+            finally{btn.disabled=false;if(replaceBtn)replaceBtn.disabled=false;btn.innerHTML=oldBtn;if(replaceBtn)replaceBtn.innerHTML=oldReplace;}
         }
 
         function buildOrdersUrl(tableNum=null) {
@@ -2872,5 +2720,14 @@ td {
         }
 
     </script>
+
+    <div id="menuImageReviewModal" class="image-review-modal" aria-hidden="true">
+        <div class="image-review-panel">
+            <div class="image-review-head"><div><h3 style="margin:0"><i class="fa-solid fa-images"></i> مراجعة صور الأصناف</h3><div style="font-size:12px;opacity:.75;margin-top:5px">اقتراحات مجانية من صور عامة. راجعها قبل الحفظ واختر المناسب.</div></div><button class="btn btn-danger" onclick="closeImageReview()"><i class="fa-solid fa-xmark"></i></button></div>
+            <div id="menuImageReviewList" class="image-review-list"></div>
+            <div class="image-review-foot"><button class="btn btn-secondary" onclick="suggestImagesForAll()"><i class="fa-solid fa-wand-magic-sparkles"></i> اقتراح صور للكل</button><button class="btn btn-ai" onclick="confirmMenuImportWithImages()"><i class="fa-solid fa-check"></i> اعتماد الصور وحفظ المنيو</button></div>
+        </div>
+    </div>
+
 </body>
 </html>
