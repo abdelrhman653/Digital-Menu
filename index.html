@@ -844,6 +844,22 @@ td {
 /* Keep the login page starting at the top even when its card is taller than the screen. */
 #authSection{height:100dvh;min-height:100dvh;overflow-y:auto;align-items:flex-start;padding:22px 14px 30px;}
 #authSection .auth-card{margin:auto;flex:0 0 auto;}
+
+/* ===== LAMMA / Digital Menu visual refresh ===== */
+:root{--ui-glow:rgba(255,71,87,.18);--ui-line:rgba(255,255,255,.09);--ui-glass:rgba(20,18,22,.78)}
+html{scroll-behavior:smooth}body{background:radial-gradient(850px 480px at 8% -8%,rgba(255,71,87,.13),transparent 65%),radial-gradient(700px 420px at 100% 18%,rgba(142,45,226,.10),transparent 60%),var(--bg-color)}
+.sidebar{backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-inline-end:1px solid var(--ui-line);box-shadow:12px 0 50px rgba(0,0,0,.18)}
+.sidebar-brand{padding:22px 18px}.sidebar-brand img{border-radius:16px;box-shadow:0 0 28px var(--ui-glow)}
+.nav-item{border-radius:13px;margin:4px 10px;transition:all .22s ease}.nav-item:hover,.nav-item.active{transform:translateX(-2px);box-shadow:0 8px 24px rgba(255,71,87,.12)}
+.main-content{min-width:0}.top-header{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--ui-line);box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.card.glass,.stat-card,.modal-content,.modal,.settings-card{border:1px solid var(--ui-line);box-shadow:0 16px 42px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.035);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+.card.glass:hover,.stat-card:hover{border-color:rgba(255,71,87,.30);box-shadow:0 20px 48px rgba(0,0,0,.25),0 0 25px rgba(255,71,87,.06)}
+.btn,button{border-radius:13px;transition:transform .18s ease,filter .18s ease,box-shadow .18s ease}.btn:hover,button:hover{filter:brightness(1.08);box-shadow:0 8px 22px rgba(0,0,0,.18)}
+input,select,textarea{border-radius:12px!important;border-color:var(--panel-border)!important;min-height:43px;transition:border-color .2s,box-shadow .2s}input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)!important;box-shadow:0 0 0 3px var(--ui-glow)!important}
+img{max-width:100%}table{border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px}th{position:sticky;top:0;z-index:2}
+@media(max-width:900px){.content-scroll{padding:14px!important}.top-header{padding:12px 14px!important}.stats-grid{gap:12px!important}}
+@media(max-width:600px){.sidebar{box-shadow:0 20px 60px rgba(0,0,0,.45)}.card.glass,.stat-card{border-radius:17px!important}.header-actions{gap:7px!important}.hide-mobile{display:none!important}.content-scroll{padding:12px!important}}
+
 </style>
 </head>
 <body>
