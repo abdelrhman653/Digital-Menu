@@ -380,17 +380,12 @@ header {
 html{scroll-behavior:smooth}body{background:radial-gradient(700px 420px at 90% -5%,color-mix(in srgb,var(--primary) 9%,transparent),transparent 65%),var(--bg-color)}.order-card,.ticket,.card{box-shadow:0 12px 38px rgba(0,0,0,.14)}.order-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.order-card:hover{transform:translateY(-2px);box-shadow:0 20px 50px rgba(0,0,0,.22)}button,.btn,.status-btn{min-height:42px;transition:transform .16s ease,filter .16s ease}button:hover,.btn:hover{filter:brightness(1.06)}button:active,.btn:active{transform:scale(.98)}header{box-shadow:0 8px 30px rgba(0,0,0,.08)}.orders-grid,.orders-container{gap:14px!important}@media(max-width:768px){header{padding:12px!important}.container,.main-container{padding:12px!important}.order-card,.ticket{border-radius:16px!important}.orders-grid,.orders-container{grid-template-columns:1fr!important}.order-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}button,.btn,.status-btn{font-size:13px!important}}@media(max-width:420px){.order-actions{grid-template-columns:1fr!important}}
 
 
-/* ===== Kitchen live board refresh ===== */
-html{scroll-behavior:smooth}body{background:radial-gradient(800px 420px at 100% -10%,rgba(255,71,87,.11),transparent 65%),var(--dark-bg)}
-body>header{position:sticky;top:0;z-index:50;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(13,17,23,.88);border-bottom:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.2)}
-.container{width:min(1440px,calc(100% - 32px));margin-inline:auto;padding-top:20px;padding-bottom:35px}
-.stats-bar{gap:12px}.total-badge{border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.16);backdrop-filter:blur(12px)}
-.tabs-row{gap:9px;flex-wrap:wrap}.tab-btn{border-radius:12px;transition:all .2s ease}.tab-btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
-.filter-box{border:1px solid var(--border);border-radius:18px;box-shadow:0 12px 32px rgba(0,0,0,.17);backdrop-filter:blur(12px)}
-.order-card,.kitchen-order-card,.stat-card{border:1px solid var(--border)!important;border-radius:18px!important;box-shadow:0 14px 35px rgba(0,0,0,.20);transition:transform .2s,border-color .2s,box-shadow .2s}.order-card:hover,.kitchen-order-card:hover{transform:translateY(-2px);border-color:rgba(255,71,87,.38)!important}
-input,select,textarea{border-radius:12px!important;min-height:42px}input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(255,71,87,.13)}
-button{transition:filter .2s,transform .2s}button:hover{filter:brightness(1.08)}
-@media(max-width:700px){.container{width:calc(100% - 20px);padding-top:13px}.stats-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.total-badge{min-width:0}.date-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.header-brand h1{font-size:17px}}
+/* 2026 kitchen display refresh */
+:root{--primary:#ff365d;--primary-gradient:linear-gradient(135deg,#ff315d,#a719e8);--secondary:#00d887;--dark-bg:#09090d;--dark-card:rgba(24,21,30,.94);--dark-card-solid:#17131d;--border:rgba(255,255,255,.1)}
+body{background-image:radial-gradient(ellipse at 0 0,rgba(255,54,93,.14),transparent 34%),radial-gradient(ellipse at 100% 15%,rgba(90,0,255,.12),transparent 35%),linear-gradient(180deg,#09090d,#100d14)!important;background-attachment:fixed}
+header{background:rgba(15,12,19,.9)!important;border-bottom:1px solid rgba(255,54,93,.22)!important;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.order-card,.ticket,.card,.kitchen-card{border:1px solid rgba(255,255,255,.1)!important;border-radius:21px!important;box-shadow:0 12px 36px rgba(0,0,0,.3)!important} button{border-radius:13px!important;transition:.2s ease} button:hover{filter:brightness(1.12);transform:translateY(-1px)}
+@media(max-width:650px){header{padding:12px!important}.order-card,.ticket{border-radius:17px!important}}
 
 </style>
 </head>

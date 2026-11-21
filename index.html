@@ -845,20 +845,15 @@ td {
 #authSection{height:100dvh;min-height:100dvh;overflow-y:auto;align-items:flex-start;padding:22px 14px 30px;}
 #authSection .auth-card{margin:auto;flex:0 0 auto;}
 
-/* ===== LAMMA / Digital Menu visual refresh ===== */
-:root{--ui-glow:rgba(255,71,87,.18);--ui-line:rgba(255,255,255,.09);--ui-glass:rgba(20,18,22,.78)}
-html{scroll-behavior:smooth}body{background:radial-gradient(850px 480px at 8% -8%,rgba(255,71,87,.13),transparent 65%),radial-gradient(700px 420px at 100% 18%,rgba(142,45,226,.10),transparent 60%),var(--bg-color)}
-.sidebar{backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-inline-end:1px solid var(--ui-line);box-shadow:12px 0 50px rgba(0,0,0,.18)}
-.sidebar-brand{padding:22px 18px}.sidebar-brand img{border-radius:16px;box-shadow:0 0 28px var(--ui-glow)}
-.nav-item{border-radius:13px;margin:4px 10px;transition:all .22s ease}.nav-item:hover,.nav-item.active{transform:translateX(-2px);box-shadow:0 8px 24px rgba(255,71,87,.12)}
-.main-content{min-width:0}.top-header{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--ui-line);box-shadow:0 8px 30px rgba(0,0,0,.12)}
-.card.glass,.stat-card,.modal-content,.modal,.settings-card{border:1px solid var(--ui-line);box-shadow:0 16px 42px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.035);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
-.card.glass:hover,.stat-card:hover{border-color:rgba(255,71,87,.30);box-shadow:0 20px 48px rgba(0,0,0,.25),0 0 25px rgba(255,71,87,.06)}
-.btn,button{border-radius:13px;transition:transform .18s ease,filter .18s ease,box-shadow .18s ease}.btn:hover,button:hover{filter:brightness(1.08);box-shadow:0 8px 22px rgba(0,0,0,.18)}
-input,select,textarea{border-radius:12px!important;border-color:var(--panel-border)!important;min-height:43px;transition:border-color .2s,box-shadow .2s}input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)!important;box-shadow:0 0 0 3px var(--ui-glow)!important}
-img{max-width:100%}table{border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px}th{position:sticky;top:0;z-index:2}
-@media(max-width:900px){.content-scroll{padding:14px!important}.top-header{padding:12px 14px!important}.stats-grid{gap:12px!important}}
-@media(max-width:600px){.sidebar{box-shadow:0 20px 60px rgba(0,0,0,.45)}.card.glass,.stat-card{border-radius:17px!important}.header-actions{gap:7px!important}.hide-mobile{display:none!important}.content-scroll{padding:12px!important}}
+/* 2026 visual refresh */
+:root{--primary:#ff365d;--primary-hover:#ff6680;--primary-grad:linear-gradient(135deg,#ff315d,#a719e8);--secondary:#00d887;--ai-grad:linear-gradient(135deg,#5600ef,#b02cff);--bg-color:#09090d;--panel-bg:rgba(22,19,27,.88);--panel-border:rgba(255,54,93,.22);--shadow:0 18px 55px rgba(0,0,0,.42)}
+body{background-image:radial-gradient(ellipse at 8% 5%,rgba(255,45,92,.13),transparent 32%),radial-gradient(ellipse at 92% 22%,rgba(102,0,255,.13),transparent 35%),linear-gradient(180deg,#09090d,#100d14 55%,#08090c);background-attachment:fixed}
+.glass,.card{border-radius:24px;border-color:rgba(255,255,255,.09);box-shadow:0 12px 36px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.035)}
+.card{padding:clamp(16px,2.5vw,26px)} .btn{border-radius:15px;min-height:46px;box-shadow:0 7px 22px rgba(255,54,93,.16)} .btn-ai{background:linear-gradient(115deg,#5400ed,#a62af1)!important;box-shadow:0 8px 28px rgba(116,0,255,.28)}
+input,select,textarea{border-radius:14px!important;background:rgba(7,7,11,.72)!important;border-color:rgba(255,255,255,.12)!important} input:focus,select:focus,textarea:focus{border-color:#00d887!important;box-shadow:0 0 0 3px rgba(0,216,135,.12)!important}
+.modal-content{border:1px solid rgba(255,54,93,.25)!important;border-radius:26px!important;box-shadow:0 25px 90px rgba(0,0,0,.65)!important}
+button,.btn,.glass,.card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease} button:hover,.btn:hover{filter:brightness(1.08)}
+@media(max-width:700px){.card{border-radius:19px;padding:16px;margin-bottom:16px}h1{font-size:clamp(22px,6vw,32px)}}
 
 </style>
 </head>
